@@ -11,7 +11,7 @@ navigation and the route-guard / sidebar de-drift rule) and `docs/database-schem
 
 ```bash
 npm install
-copy .env.example .env     # VITE_API_URL points at the backend (default :4000)
+copy .env.example .env     # Windows; on macOS/Linux use cp. VITE_API_URL points at the backend (default :4000)
 npm run dev                # http://localhost:5173
 ```
 
