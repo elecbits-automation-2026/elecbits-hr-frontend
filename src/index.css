@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/*
+ * Global styles. Tailwind v4: theme tokens are declared here in CSS rather
+ * than a tailwind.config.js. Keep component styling in the components; this
+ * file holds only the base layer.
+ */
+@theme {
+  --color-brand-50: #eef6ff;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-900: #1e3a5f;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
