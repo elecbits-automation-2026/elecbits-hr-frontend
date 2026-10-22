@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { MyCareer, TeamCareerRow } from '@app-types/api.types';
+import PageTabs from '@components/Common/Tabs/PageTabs.component';
 import PromotionHistory from '@components/Employee/Growth/PromotionHistory.component';
 import RoadmapNotes from '@components/Employee/Growth/RoadmapNotes.component';
 import { careerApi } from '@services/api/career.api';
@@ -76,6 +77,7 @@ const MyGrowthPage = () => {
   const queryClient = useQueryClient();
   const [closing, setClosing] = useState<TeamCareerRow | null>(null);
   const [notesFor, setNotesFor] = useState<TeamCareerRow | null>(null);
+  const [tab, setTab] = useState<'mine' | 'team'>('mine');
 
   const mine = useQuery({ queryKey: ['my-career'], queryFn: careerApi.mine });
   const team = useQuery({ queryKey: ['career-team'], queryFn: careerApi.team });
@@ -105,164 +107,189 @@ const MyGrowthPage = () => {
   const c = mine.data;
   const current = c.ladder.find((b) => b.code === c.current)!;
   const next = c.next ? c.ladder.find((b) => b.code === c.next) : null;
+  // Mine | My team: the RM's roadmap work sits on its own tab.
+  const hasTeam = (team.data?.length ?? 0) > 0;
+  const dueCount = (team.data ?? []).filter(dueConversation).length;
+  const view = hasTeam ? tab : 'mine';
 
   return (
     <div className='w-full space-y-4'>
       <h1 className='text-2xl font-semibold text-slate-800'>My growth</h1>
 
-      {/* Current vs next band */}
-      <div className='grid gap-3 sm:grid-cols-2'>
-        <div className='rounded-xl border border-slate-200 bg-white p-5'>
-          <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-            You are here
-          </p>
-          <p className='mt-1 text-lg font-semibold text-slate-800'>
-            {current.code} · {current.name}
-          </p>
-          <p className='mt-1 text-sm text-slate-600'>{current.expects}</p>
-        </div>
-        {next ? (
-          <div className='rounded-xl border border-brand-200 bg-white p-5'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-brand-600'>Next</p>
-            <p className='mt-1 text-lg font-semibold text-slate-800'>
-              {next.code} · {next.name}
-            </p>
-            <p className='mt-1 text-sm text-slate-600'>{next.expects}</p>
-          </div>
-        ) : (
-          <div className='rounded-xl border border-slate-200 bg-white p-5'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Next</p>
-            <p className='mt-1 text-sm text-slate-500'>There is no band above this one.</p>
-          </div>
-        )}
-      </div>
+      {hasTeam && (
+        <PageTabs
+          tabs={[
+            { key: 'mine', label: 'Mine' },
+            { key: 'team', label: 'My team', count: dueCount },
+          ]}
+          active={view}
+          onChange={setTab}
+        />
+      )}
 
-      {/* The ladder */}
-      <div className='rounded-xl border border-slate-200 bg-white p-5'>
-        <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>The ladder</h2>
-        <div className='mt-3 space-y-1.5'>
-          {[...c.ladder].reverse().map((b) => (
-            <div
-              key={b.code}
-              className={`flex flex-wrap items-baseline gap-2 rounded-md px-3 py-1.5 ${
-                b.code === c.current ? 'bg-brand-50' : b.code === c.next ? 'bg-slate-50' : ''
-              }`}
-            >
-              <span className='w-8 font-mono text-xs text-slate-400'>{b.code}</span>
-              <span className='font-medium text-slate-700'>{b.name}</span>
-              {b.code === c.current && (
-                <span className='rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase text-white'>
-                  you
-                </span>
-              )}
-              <span className='min-w-0 flex-1 text-xs text-slate-400'>{b.expects}</span>
+      {view === 'mine' && (
+        <>
+          {/* Current vs next band */}
+          <div className='grid gap-3 sm:grid-cols-2'>
+            <div className='rounded-xl border border-slate-200 bg-white p-5'>
+              <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+                You are here
+              </p>
+              <p className='mt-1 text-lg font-semibold text-slate-800'>
+                {current.code} · {current.name}
+              </p>
+              <p className='mt-1 text-sm text-slate-600'>{current.expects}</p>
             </div>
-          ))}
-        </div>
-      </div>
+            {next ? (
+              <div className='rounded-xl border border-brand-200 bg-white p-5'>
+                <p className='text-xs font-semibold uppercase tracking-wide text-brand-600'>Next</p>
+                <p className='mt-1 text-lg font-semibold text-slate-800'>
+                  {next.code} · {next.name}
+                </p>
+                <p className='mt-1 text-sm text-slate-600'>{next.expects}</p>
+              </div>
+            ) : (
+              <div className='rounded-xl border border-slate-200 bg-white p-5'>
+                <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Next</p>
+                <p className='mt-1 text-sm text-slate-500'>There is no band above this one.</p>
+              </div>
+            )}
+          </div>
 
-      {/* Evidence + conversation */}
-      <div className='rounded-xl border border-slate-200 bg-white p-5'>
-        <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-          The evidence — read from the record, not typed in
-        </h2>
-        <div className='mt-3 flex flex-wrap gap-6 text-sm'>
-          <div>
-            <p className='text-2xl font-semibold text-slate-800'>{c.evidence.punchedDays30}</p>
-            <p className='text-xs text-slate-500'>days punched, last 30</p>
+          {/* The ladder */}
+          <div className='rounded-xl border border-slate-200 bg-white p-5'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+              The ladder
+            </h2>
+            <div className='mt-3 space-y-1.5'>
+              {[...c.ladder].reverse().map((b) => (
+                <div
+                  key={b.code}
+                  className={`flex flex-wrap items-baseline gap-2 rounded-md px-3 py-1.5 ${
+                    b.code === c.current ? 'bg-brand-50' : b.code === c.next ? 'bg-slate-50' : ''
+                  }`}
+                >
+                  <span className='w-8 font-mono text-xs text-slate-400'>{b.code}</span>
+                  <span className='font-medium text-slate-700'>{b.name}</span>
+                  {b.code === c.current && (
+                    <span className='rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase text-white'>
+                      you
+                    </span>
+                  )}
+                  <span className='min-w-0 flex-1 text-xs text-slate-400'>{b.expects}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <p className='text-2xl font-semibold text-slate-800'>{c.evidence.recognitions}</p>
-            <p className='text-xs text-slate-500'>awards on the board</p>
-          </div>
-          <div>
-            <p className='text-2xl font-semibold text-slate-800'>{c.evidence.appreciationNotes}</p>
-            <p className='text-xs text-slate-500'>appreciation notes received</p>
-          </div>
-          <div>
-            <p className='text-2xl font-semibold text-slate-800'>
-              {c.evidence.quarter.attainment === null ? '—' : `${c.evidence.quarter.attainment}%`}
-            </p>
-            <p className='text-xs text-slate-500'>
-              {c.evidence.quarter.attainment === null
-                ? `no goals in ${c.evidence.quarter.name} yet`
-                : `goal attainment, ${c.evidence.quarter.name}`}
-            </p>
-          </div>
-        </div>
-        <p className='mt-3 text-sm text-slate-600'>{readingOf(c)}</p>
 
-        <div className='mt-4 border-t border-slate-100 pt-4'>
-          {c.track ? (
-            <div className='text-sm'>
-              <span className='rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700'>
-                conversation open
-              </span>
-              <span className='ml-2 text-slate-600'>
-                {c.track.bandCode} → {c.track.targetBand}
-                {c.track.openedByName ? ` · opened by ${c.track.openedByName}` : ''} ·{' '}
-                {c.track.createdAt.slice(0, 10)}
-              </span>
-              {c.track.note && <p className='mt-1 text-xs text-slate-400'>{c.track.note}</p>}
-              <h3 className='mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400'>
-                Notes from your manager
-              </h3>
-              <div className='mt-2'>
-                <RoadmapNotes notes={c.notes} />
+          {/* Evidence + conversation */}
+          <div className='rounded-xl border border-slate-200 bg-white p-5'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+              The evidence — read from the record, not typed in
+            </h2>
+            <div className='mt-3 flex flex-wrap gap-6 text-sm'>
+              <div>
+                <p className='text-2xl font-semibold text-slate-800'>{c.evidence.punchedDays30}</p>
+                <p className='text-xs text-slate-500'>days punched, last 30</p>
+              </div>
+              <div>
+                <p className='text-2xl font-semibold text-slate-800'>{c.evidence.recognitions}</p>
+                <p className='text-xs text-slate-500'>awards on the board</p>
+              </div>
+              <div>
+                <p className='text-2xl font-semibold text-slate-800'>
+                  {c.evidence.appreciationNotes}
+                </p>
+                <p className='text-xs text-slate-500'>appreciation notes received</p>
+              </div>
+              <div>
+                <p className='text-2xl font-semibold text-slate-800'>
+                  {c.evidence.quarter.attainment === null
+                    ? '—'
+                    : `${c.evidence.quarter.attainment}%`}
+                </p>
+                <p className='text-xs text-slate-500'>
+                  {c.evidence.quarter.attainment === null
+                    ? `no goals in ${c.evidence.quarter.name} yet`
+                    : `goal attainment, ${c.evidence.quarter.name}`}
+                </p>
               </div>
             </div>
-          ) : c.next ? (
-            <>
-              {request.error && (
-                <p className='mb-2 text-sm text-red-600'>{apiErrorMessage(request.error)}</p>
-              )}
-              <button
-                type='button'
-                disabled={request.isPending || !c.selfRequest.allowed}
-                onClick={() => request.mutate()}
-                className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
-              >
-                {request.isPending ? 'Requesting…' : 'Request a roadmap conversation'}
-              </button>
-              {c.selfRequest.allowed ? (
-                <p className='mt-1 text-xs text-slate-400'>
-                  Opens a conversation with your manager about the band above this one.
-                </p>
-              ) : (
-                <div className='mt-2 text-xs text-slate-500'>
-                  <p>Not yet — you can ask once:</p>
-                  <ul className='mt-1 list-disc space-y-0.5 pl-5'>
-                    {c.selfRequest.blockers.map((b) => (
-                      <li key={b}>{b}</li>
-                    ))}
-                  </ul>
-                  <p className='mt-1 text-slate-400'>
-                    Your manager or HR can still open the conversation for you at any time.
-                  </p>
-                </div>
-              )}
-            </>
-          ) : null}
-        </div>
-      </div>
+            <p className='mt-3 text-sm text-slate-600'>{readingOf(c)}</p>
 
-      {/* Band history */}
-      <div className='rounded-xl border border-slate-200 bg-white p-5'>
-        <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-          Your band history
-        </h2>
-        {c.selfRequest.inBandSince && (
-          <p className='mt-1 text-xs text-slate-400'>
-            In {c.current} since {c.selfRequest.inBandSince}
-          </p>
-        )}
-        <div className='mt-3'>
-          <PromotionHistory history={c.history} />
-        </div>
-      </div>
+            <div className='mt-4 border-t border-slate-100 pt-4'>
+              {c.track ? (
+                <div className='text-sm'>
+                  <span className='rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700'>
+                    conversation open
+                  </span>
+                  <span className='ml-2 text-slate-600'>
+                    {c.track.bandCode} → {c.track.targetBand}
+                    {c.track.openedByName ? ` · opened by ${c.track.openedByName}` : ''} ·{' '}
+                    {c.track.createdAt.slice(0, 10)}
+                  </span>
+                  {c.track.note && <p className='mt-1 text-xs text-slate-400'>{c.track.note}</p>}
+                  <h3 className='mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400'>
+                    Notes from your manager
+                  </h3>
+                  <div className='mt-2'>
+                    <RoadmapNotes notes={c.notes} />
+                  </div>
+                </div>
+              ) : c.next ? (
+                <>
+                  {request.error && (
+                    <p className='mb-2 text-sm text-red-600'>{apiErrorMessage(request.error)}</p>
+                  )}
+                  <button
+                    type='button'
+                    disabled={request.isPending || !c.selfRequest.allowed}
+                    onClick={() => request.mutate()}
+                    className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
+                  >
+                    {request.isPending ? 'Requesting…' : 'Request a roadmap conversation'}
+                  </button>
+                  {c.selfRequest.allowed ? (
+                    <p className='mt-1 text-xs text-slate-400'>
+                      Opens a conversation with your manager about the band above this one.
+                    </p>
+                  ) : (
+                    <div className='mt-2 text-xs text-slate-500'>
+                      <p>Not yet — you can ask once:</p>
+                      <ul className='mt-1 list-disc space-y-0.5 pl-5'>
+                        {c.selfRequest.blockers.map((b) => (
+                          <li key={b}>{b}</li>
+                        ))}
+                      </ul>
+                      <p className='mt-1 text-slate-400'>
+                        Your manager or HR can still open the conversation for you at any time.
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Band history */}
+          <div className='rounded-xl border border-slate-200 bg-white p-5'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+              Your band history
+            </h2>
+            {c.selfRequest.inBandSince && (
+              <p className='mt-1 text-xs text-slate-400'>
+                In {c.current} since {c.selfRequest.inBandSince}
+              </p>
+            )}
+            <div className='mt-3'>
+              <PromotionHistory history={c.history} />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Manager view */}
-      {(team.data?.length ?? 0) > 0 && (
+      {view === 'team' && hasTeam && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
             Your people

@@ -9,10 +9,17 @@ import QuarterReportCard from './QuarterReportCard.component';
 
 /**
  * Pick a quarter, see the team overview and each person's frozen report.
- * HR (`canClose`) also closes quarters; everyone sees only the people they
- * manage or their HR grant reaches — the server filters.
+ * HR (`canClose`) also closes quarters. `scope='hr'` (default) shows the
+ * people the viewer manages plus their HR reach; `scope='rm'` (the personal
+ * My performance board) only the people they manage — the server filters.
  */
-const QuarterBoard = ({ canClose = false }: { canClose?: boolean }) => {
+const QuarterBoard = ({
+  canClose = false,
+  scope = 'hr',
+}: {
+  canClose?: boolean;
+  scope?: 'rm' | 'hr';
+}) => {
   const queryClient = useQueryClient();
   const cycles = useQuery({ queryKey: ['quarter-cycles'], queryFn: quarterReportsApi.cycles });
   const [picked, setPicked] = useState<string | null>(null);
@@ -22,8 +29,8 @@ const QuarterBoard = ({ canClose = false }: { canClose?: boolean }) => {
   const cycle = cycles.data?.find((c) => c.name === name) ?? null;
 
   const view = useQuery({
-    queryKey: ['quarter-view', name],
-    queryFn: () => quarterReportsApi.view(name!),
+    queryKey: ['quarter-view', name, scope],
+    queryFn: () => quarterReportsApi.view(name!, scope === 'rm' ? { as: 'rm' } : undefined),
     enabled: name !== null && cycle?.closedAt !== null,
   });
   const close = useMutation({
