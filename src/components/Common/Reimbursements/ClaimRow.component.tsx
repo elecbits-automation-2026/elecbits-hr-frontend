@@ -8,7 +8,8 @@ import { apiErrorMessage } from '@utils/apiError';
 
 /**
  * One claim. `mode` decides the buttons: the claimant can withdraw while it
- * waits; an approver approves or declines (decline needs a reason).
+ * waits; an approver approves or declines (decline needs a reason). A claim
+ * without a receipt file can't be approved — the server refuses it too.
  */
 const ClaimRow = ({
   claim,
@@ -75,7 +76,7 @@ const ClaimRow = ({
         {claim.rmDecidedByName ? ` · manager: ${claim.rmDecidedByName}` : ''}
         {claim.payrollDecidedByName ? ` · payroll: ${claim.payrollDecidedByName}` : ''}
       </p>
-      {(claim.receipt || canAttach) && (
+      {(claim.receipt || canAttach || waiting) && (
         <div className='mt-1 flex flex-wrap items-center gap-2 text-xs'>
           <input
             ref={file}
@@ -92,6 +93,12 @@ const ClaimRow = ({
             >
               Receipt: {claim.receipt.fileName}
             </button>
+          ) : waiting ? (
+            <span className='rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700'>
+              {mode === 'approver'
+                ? 'Receipt missing — can’t be approved yet'
+                : 'Receipt missing — upload it to get this approved'}
+            </span>
           ) : (
             <span className='text-slate-400'>No receipt file</span>
           )}
@@ -132,7 +139,8 @@ const ClaimRow = ({
         <div className='mt-2 flex gap-3'>
           <button
             type='button'
-            disabled={decide.isPending}
+            disabled={decide.isPending || !claim.receipt}
+            title={claim.receipt ? undefined : 'Receipts are required — ask them to upload it'}
             onClick={() => decide.mutate('approve')}
             className='rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-50'
           >

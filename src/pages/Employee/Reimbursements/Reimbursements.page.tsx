@@ -12,6 +12,10 @@ const inputClass =
 
 const today = () => new Date().toLocaleDateString('en-CA');
 
+/** What the server accepts for a receipt (reimbursements.service RECEIPT_TYPES). */
+const RECEIPT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
+
 /**
  * Own reimbursement claims: raise one, follow it through the manager and
  * Payroll, see the month it was paid in. Managers also see the claims waiting
@@ -24,27 +28,55 @@ const ReimbursementsPage = () => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [receiptNote, setReceiptNote] = useState('');
+  // The receipt file is mandatory (user decision 2026-10-22): it goes up right
+  // after the claim is created; approvals are refused without it.
+  const [receipt, setReceipt] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0);
 
   const mine = useQuery({ queryKey: ['my-reimbursements'], queryFn: reimbursementsApi.mine });
   const team = useQuery({ queryKey: ['team-reimbursements'], queryFn: reimbursementsApi.team });
 
   const create = useMutation({
-    mutationFn: () =>
-      reimbursementsApi.create({
+    mutationFn: async () => {
+      const claim = await reimbursementsApi.create({
         spentOn,
         category,
         description: description.trim(),
         amount: Number(amount),
         ...(receiptNote.trim() ? { receiptNote: receiptNote.trim() } : {}),
-      }),
+      });
+      try {
+        await reimbursementsApi.uploadReceipt(claim.id, receipt!);
+      } catch (err) {
+        throw new Error(
+          `The claim was saved but the receipt didn't upload (${apiErrorMessage(err)}). Attach it from the claim below — it can't be approved without one.`,
+        );
+      }
+      return claim;
+    },
     onSuccess: () => {
       setDescription('');
       setAmount('');
       setReceiptNote('');
-      queryClient.invalidateQueries({ queryKey: ['my-reimbursements'] });
+      setReceipt(null);
+      setFileKey((k) => k + 1);
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['my-reimbursements'] }),
   });
-  const valid = description.trim().length >= 5 && Number(amount) > 0 && spentOn <= today();
+  const fileProblem =
+    receipt === null
+      ? null
+      : !RECEIPT_TYPES.includes(receipt.type)
+        ? 'Receipts must be a PDF, JPG or PNG'
+        : receipt.size > RECEIPT_MAX_BYTES
+          ? 'Receipts must be 10 MB or smaller'
+          : null;
+  const valid =
+    description.trim().length >= 5 &&
+    Number(amount) > 0 &&
+    spentOn <= today() &&
+    receipt !== null &&
+    fileProblem === null;
 
   return (
     <div className='w-full max-w-3xl space-y-4'>
@@ -126,12 +158,23 @@ const ReimbursementsPage = () => {
           />
         </label>
         <label className='block text-xs text-slate-500'>
-          Receipt (optional — where it is)
+          Receipt file (required — PDF, JPG or PNG, up to 10 MB)
+          <input
+            key={fileKey}
+            type='file'
+            accept={RECEIPT_TYPES.join(',')}
+            onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
+            className='mt-1 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:text-slate-700 hover:file:bg-slate-200'
+          />
+        </label>
+        {fileProblem && <p className='text-sm text-red-600'>{fileProblem}</p>}
+        <label className='block text-xs text-slate-500'>
+          Note about the receipt (optional)
           <input
             value={receiptNote}
             onChange={(e) => setReceiptNote(e.target.value)}
             maxLength={300}
-            placeholder='e.g. emailed to finance on 3 Oct'
+            placeholder='e.g. original handed to finance on 3 Oct'
             className={`${inputClass} mt-1`}
           />
         </label>
