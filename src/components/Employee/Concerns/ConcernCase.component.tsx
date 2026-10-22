@@ -12,6 +12,7 @@ import {
   dueLine,
   fmtDate,
 } from '@constants/Common/concerns.constants';
+import RequestMeeting from '@components/Employee/OpenDoor/RequestMeeting.component';
 import { concernsApi } from '@services/api/concerns.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -185,6 +186,14 @@ const ConcernCase = ({
       </div>
 
       {act.error && <p className='text-sm text-red-600'>{apiErrorMessage(act.error)}</p>}
+
+      {/* Raiser of a named, live case: ask to talk it through. */}
+      {mode === 'raiser' && live && !c.anonymous && (
+        <RequestMeeting
+          concernId={c.id}
+          onSent={() => void concernsApi.get(c.id).then(onChanged)}
+        />
+      )}
 
       {/* Raiser decisions on a dispute level. */}
       {mode === 'raiser' && c.status === 'decided' && (c.can.accept || c.can.escalate) && (

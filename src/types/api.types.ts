@@ -1536,6 +1536,46 @@ export interface OpenDoorMe {
   slots: OpenDoorOwnerSlot[];
 }
 
+/** Who a session request may go to (HR and department heads). */
+export interface OpenDoorHost {
+  id: string;
+  name: string;
+  designation: string | null;
+}
+
+export type OpenDoorRequestStatus = 'requested' | 'offered' | 'declined' | 'cancelled';
+
+/** "Request a session" — to a host, or to whoever handles a named concern. */
+export interface OpenDoorRequest {
+  id: string;
+  employee: { id: string; name: string };
+  /** Null for a concern request — the case's handlers answer. */
+  host: { id: string; name: string } | null;
+  concern: { id: string; code: string } | null;
+  preferredFrom: string;
+  preferredTo: string;
+  topic: string | null;
+  status: OpenDoorRequestStatus;
+  /** The offered time, once offered. */
+  slot: OpenDoorSlot | null;
+  declineReason: string | null;
+  decidedBy: { id: string; name: string } | null;
+  createdAt: string;
+}
+
+export interface OpenDoorRequests {
+  mine: OpenDoorRequest[];
+  incoming: OpenDoorRequest[];
+}
+
+export interface CreateOpenDoorRequestInput {
+  hostId?: string;
+  concernId?: string;
+  preferredFrom: string;
+  preferredTo: string;
+  topic?: string;
+}
+
 // ── OPS asset manager ───────────────────────────────────────────────────────
 
 export type AssetStatus =

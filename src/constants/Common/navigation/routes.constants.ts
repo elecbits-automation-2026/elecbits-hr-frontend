@@ -23,6 +23,9 @@ export const GROWTH_ROUTE = '/growth';
 export const PERFORMANCE_ROUTE = '/performance';
 export const TEAM_ATTENDANCE_ROUTE = '/team-attendance';
 export const RESIGNATION_ROUTE = '/resignation';
+/** Concerns + open door + session requests, one page with tabs (?tab=). */
+export const GRIEVANCES_ROUTE = '/grievances';
+/** Old homes — redirect to the Grievances tabs. */
 export const CONCERNS_ROUTE = '/concerns';
 export const CONCERNS_FOLLOW_UP_ROUTE = '/concerns/follow-up';
 export const OPEN_DOOR_ROUTE = '/open-door';

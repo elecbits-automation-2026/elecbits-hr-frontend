@@ -25,8 +25,7 @@ import {
   HR_QUARTER_REPORTS_ROUTE,
   HR_POLICIES_ROUTE,
   GROWTH_ROUTE,
-  CONCERNS_ROUTE,
-  OPEN_DOOR_ROUTE,
+  GRIEVANCES_ROUTE,
   ONBOARDING_ROUTE,
   PERFORMANCE_ROUTE,
   POLICIES_ROUTE,
@@ -77,8 +76,7 @@ export const EMPLOYEE_NAV: NavItem[] = [
   { label: 'Recognition', to: RECOGNITION_ROUTE },
   { label: 'My growth', to: GROWTH_ROUTE },
   { label: 'My performance', to: PERFORMANCE_ROUTE },
-  { label: 'Open door', to: OPEN_DOOR_ROUTE },
-  { label: 'Concerns', to: CONCERNS_ROUTE },
+  { label: 'Grievances', to: GRIEVANCES_ROUTE },
   // Team items show only when me.hasReports — PortalShell filters them (UX
   // only; the backend returns empty team lists for non-RMs regardless).
   { label: 'Team leaves', to: TEAM_LEAVES_ROUTE },

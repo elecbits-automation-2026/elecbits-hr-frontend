@@ -211,7 +211,8 @@ const NewSlotForm = ({ horizonDays, onDone }: { horizonDays: number; onDone: () 
  * they start. Publishers also manage their own slots and mark each booking
  * met or no-show afterwards.
  */
-const OpenDoorPage = () => {
+/** `embedded` drops the page title when it sits inside the Grievances page. */
+const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
   const queryClient = useQueryClient();
   const slots = useQuery({ queryKey: ['open-door-slots'], queryFn: openDoorApi.slots });
   const me = useQuery({ queryKey: ['open-door-me'], queryFn: openDoorApi.me });
@@ -240,10 +241,11 @@ const OpenDoorPage = () => {
   return (
     <div className='w-full max-w-3xl space-y-4'>
       <div>
-        <h1 className='text-2xl font-semibold text-slate-800'>Open door</h1>
+        {!embedded && <h1 className='text-2xl font-semibold text-slate-800'>Open door</h1>}
         <p className='text-sm text-slate-500'>
           Book time with HR or a department head to talk about anything — no case, no form. What you
-          write as the topic is seen only by the person you book.
+          write as the topic is seen only by the person you book. Nothing that suits? Use the
+          Requests tab to ask for a time.
         </p>
       </div>
       {act.error && <p className='text-sm text-red-600'>{apiErrorMessage(act.error)}</p>}

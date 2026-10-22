@@ -1,7 +1,8 @@
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
 import { APP_SECTION } from '@constants/Common/auth/portal.constants';
 import { ROUTE_TITLES } from '@constants/Common/navigation/documentTitles.constants';
+import { GRIEVANCES_ROUTE } from '@constants/Common/navigation/routes.constants';
 import AdminLayout from '@layouts/Admin/admin.layout';
 import EmployeeLayout from '@layouts/Employee/employee.layout';
 import HrLayout from '@layouts/Hr/hr.layout';
@@ -35,15 +36,12 @@ const MyPoliciesPage = lazyRoute(() => import('@pages/Employee/Policies/MyPolici
 const MyOnboardingPage = lazyRoute(() => import('@pages/Employee/Onboarding/MyOnboarding.page'));
 const RecognitionPage = lazyRoute(() => import('@pages/Employee/Recognition/Recognition.page'));
 const MyGrowthPage = lazyRoute(() => import('@pages/Employee/Growth/MyGrowth.page'));
-const MyPerformancePage = lazyRoute(
-  () => import('@pages/Employee/Performance/MyPerformance.page'),
-);
+const MyPerformancePage = lazyRoute(() => import('@pages/Employee/Performance/MyPerformance.page'));
 const ResignationPage = lazyRoute(() => import('@pages/Employee/Exit/Resignation.page'));
-const ConcernsPage = lazyRoute(() => import('@pages/Employee/Concerns/Concerns.page'));
+const GrievancesPage = lazyRoute(() => import('@pages/Employee/Grievances/Grievances.page'));
 const ConcernFollowUpPage = lazyRoute(
   () => import('@pages/Employee/Concerns/ConcernFollowUp.page'),
 );
-const OpenDoorPage = lazyRoute(() => import('@pages/Employee/OpenDoor/OpenDoor.page'));
 
 const PeoplePage = lazyRoute(() => import('@pages/Hrbp/People/People.page'));
 const OrgStructurePage = lazyRoute(() => import('@pages/Hrbp/OrgStructure/OrgStructure.page'));
@@ -204,12 +202,17 @@ const AppRoutes = () => (
         }
       />
       <Route
-        path='concerns'
+        path='grievances'
         element={
-          <RouteScreen title={ROUTE_TITLES.concerns}>
-            <ConcernsPage />
+          <RouteScreen title={ROUTE_TITLES.grievances}>
+            <GrievancesPage />
           </RouteScreen>
         }
+      />
+      {/* Concerns and open door now live on Grievances; old links still work. */}
+      <Route
+        path='concerns'
+        element={<Navigate to={`${GRIEVANCES_ROUTE}?tab=concerns`} replace />}
       />
       <Route
         path='concerns/follow-up'
@@ -221,11 +224,7 @@ const AppRoutes = () => (
       />
       <Route
         path='open-door'
-        element={
-          <RouteScreen title={ROUTE_TITLES.openDoor}>
-            <OpenDoorPage />
-          </RouteScreen>
-        }
+        element={<Navigate to={`${GRIEVANCES_ROUTE}?tab=open-door`} replace />}
       />
       <Route
         path='policies'
