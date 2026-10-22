@@ -10,6 +10,7 @@ import WfhModal from '@components/Employee/Attendance/WfhModal.component';
 import { attendanceApi } from '@services/api/attendance.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { wfhSlots } from '@utils/approvals';
+import { bestPosition } from '@utils/geolocation';
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
 
@@ -46,20 +47,16 @@ const Chip = ({ status }: { status: ApprovalStatus }) => (
 );
 
 /**
- * Ask the browser where we are, briefly. Denied / unavailable / slow resolves
- * to undefined — the punch is still ATTEMPTED, but the server's geo policy
- * rejects it (403 OUT_OF_OFFICE_RANGE) unless an approved remote request
- * covers the day; the error toast explains what to do.
+ * Where we are: the sharpest fresh fix within a few seconds (bestPosition).
+ * Denied / unavailable / slow resolves to undefined — the punch is still
+ * ATTEMPTED, but the server's geo policy rejects it (403 OUT_OF_OFFICE_RANGE,
+ * naming the nearest zone and the distance) unless an approved remote
+ * request covers the day.
  */
-const getPosition = (): Promise<{ lat: number; lng: number } | undefined> =>
-  new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve(undefined);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => resolve(undefined),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
-    );
-  });
+const getPosition = async (): Promise<{ lat: number; lng: number } | undefined> => {
+  const fix = await bestPosition();
+  return fix ? { lat: fix.lat, lng: fix.lng } : undefined;
+};
 
 /** Own attendance: punch buttons, classified month calendar, reg/WFH requests. */
 const MyAttendancePage = () => {
@@ -176,7 +173,7 @@ const MyAttendancePage = () => {
               onClick={() => checkIn.mutate()}
               className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
             >
-              Check in
+              {checkIn.isPending ? 'Locating…' : 'Check in'}
             </button>
           )}
           {today.checkedIn && !today.checkedOut && (
@@ -186,7 +183,7 @@ const MyAttendancePage = () => {
               onClick={() => checkOut.mutate()}
               className='rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 disabled:opacity-50'
             >
-              Check out
+              {checkOut.isPending ? 'Locating…' : 'Check out'}
             </button>
           )}
           {punchError && <p className='w-full text-sm text-red-600'>{apiErrorMessage(punchError)}</p>}
