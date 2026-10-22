@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 
 import type { Session } from '@app-types/api.types';
+import { queryClient } from '@providers/queryClient';
 import { useAuthStore } from '@store/auth.store';
 
 const baseURL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:4000'}/api/v1`;
@@ -47,6 +48,7 @@ const renewAccessToken = (): Promise<string> => {
 
 const endSession = () => {
   useAuthStore.getState().clearSession();
+  queryClient.clear();
   // The route guard reads the store non-reactively, so an expired session
   // would otherwise leave a dead page of failing queries (review finding
   // M1). A hard redirect guarantees the login screen from anywhere.
