@@ -915,6 +915,14 @@ export interface DirectoryEntry {
   designation: string | null;
 }
 
+/** GET /payroll/people — who payroll may put on payroll (invited included). */
+export interface CompensationPerson {
+  id: string;
+  name: string;
+  employeeCode: string;
+  status: 'invited' | 'active' | 'exiting';
+}
+
 export interface CreateRecognitionInput {
   employeeIds: string[];
   type: AwardType;

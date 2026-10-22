@@ -1,5 +1,6 @@
 import type {
   AnnexureInput,
+  CompensationPerson,
   CreateLoanInput,
   Loan,
   LoanDetail,
@@ -72,6 +73,9 @@ export const payrollApi = {
     downloadPdf(`/payroll/runs/${runId}/payslips/${payslipId}/pdf`, 'payslip.pdf'),
   myPayslips: async (): Promise<MyPayslip[]> =>
     (await api.get<MyPayslip[]>('/payroll/payslips/mine')).data,
+  /** Compensation people list — everyone payroll may set a salary for. */
+  people: async (): Promise<CompensationPerson[]> =>
+    (await api.get<CompensationPerson[]>('/payroll/people')).data,
   /** TDS calculator — behind pr.payroll.compensation (shows annual CTC). */
   tdsEstimates: async (): Promise<TdsEstimate[]> =>
     (await api.get<TdsEstimate[]>('/payroll/tds')).data,
