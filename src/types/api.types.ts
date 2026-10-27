@@ -2099,14 +2099,17 @@ export interface SeatsOverview {
 
 // ── Hiring (TA Step B) ───────────────────────────────────────────────────
 export type InterviewRound = 'hr' | 'technical' | 'practical' | 'managerial' | 'hr_final';
-export type ApproverRole = 'hr_head' | 'admin';
+/** Any HRBP-batch holder approves a hiring request (2026-10-27). */
+export type ApproverRole = 'hrbp';
+export type HiringPriority = 'high' | 'normal' | 'low';
 export type RequisitionStatus =
   | 'draft'
   | 'queued'
   | 'submitted'
   | 'returned'
   | 'approved'
-  | 'cancelled';
+  | 'cancelled'
+  | 'rejected';
 
 export interface HiringMe {
   headOf: Array<{ departmentId: string; departmentName: string; acting: boolean }>;
@@ -2124,9 +2127,15 @@ export interface Requisition {
   roleTitle: string;
   quantity: number;
   notes: string | null;
-  /** Budget per hire: annual CTC in ₹ (null only on lines made before budgets). */
-  budgetMin: number | null;
-  budgetMax: number | null;
+  /** Readable Hiring Request ID, e.g. HR-2027Q1-0007. */
+  requestCode: string | null;
+  /** Request details (TA workflow deck); null only on lines made before 2026-10-27. */
+  reason: string | null;
+  targetJoiningOn: string | null;
+  location: string | null;
+  reportingManager: { id: string; name: string } | null;
+  priority: HiringPriority;
+  employmentType: string | null;
   version: number;
   status: RequisitionStatus;
   urgent: boolean;
@@ -2150,10 +2159,16 @@ export interface Requisition {
   createdAt: string;
   /** Step C — present once the line is approved. */
   positions: Position[];
-  documents: { jd: TaDocument | null; scorecard: TaDocument | null };
 }
 
 /** Someone Admin can give a line to: holds the TA batch and has reports. */
+/** A report the TA RM can give a position to (holds the TA batch). */
+export interface RecruiterOption {
+  id: string;
+  name: string;
+  employeeCode: string;
+}
+
 export interface TaRmOption {
   id: string;
   name: string;
@@ -2175,9 +2190,12 @@ export interface RequisitionInput {
   roleTitle: string;
   quantity: number;
   notes?: string | null;
-  /** Budget per hire: annual CTC in ₹. */
-  budgetMin: number;
-  budgetMax: number;
+  reason: string;
+  targetJoiningOn: string;
+  location: string;
+  reportingManagerId: string;
+  priority: HiringPriority;
+  employmentType: string;
   rounds: Array<{ round: InterviewRound; interviewerId: string | null }>;
 }
 
@@ -2189,30 +2207,57 @@ export type PositionStatus =
   | 'offer'
   | 'filled'
   | 'cancelled';
-export type DocRole = 'dept_head' | 'admin';
+/** A position's JD / scorecard reviewers: the line's TA RM + the dept head. */
+export type DocRole = 'dept_head' | 'ta_rm';
+
+/** A sourcing channel activated for a position (workflow deck step 6). */
+export interface SourceActivation {
+  id: string;
+  channel: CandidateSource;
+  activatedOn: string;
+  spocName: string;
+  notes: string | null;
+}
 
 export interface Position {
   id: string;
   number: number;
   status: PositionStatus;
+  /** TA ownership: priority (from the line) and the expected closure date. */
+  priority: HiringPriority;
+  expectedCloseOn: string | null;
+  sources: SourceActivation[];
   recruiterId: string | null;
   recruiterName: string | null;
   /** The recruiter's hiring goal this quarter (progress follows the position). */
   goal: { id: string; weight: number; progress: number } | null;
   openedAt: string | null;
+  /** Its own JD + scorecard, written by its recruiter. */
+  documents: { jd: TaDocument | null; scorecard: TaDocument | null };
 }
 
+/** The JD's role-specific parts (company template); the fixed company text is added on display. */
 export interface JdContent {
-  summary: string;
-  responsibilities: string;
-  requirements: string;
-  location: string;
-  employmentType: string;
-  ctcRange?: string | null;
+  jobType: string;
+  city: string;
+  ctc: string;
+  businessUnit: string;
+  roleSummary: string;
+  responsibilities: string[];
+  requiredSkills: string[];
+  preferredSkills: string[];
 }
 
+/** One round's sheet: its weight (%) and the attributes it rates, with the questions to ask. */
+export interface ScorecardRound {
+  round: InterviewRound;
+  weight: number;
+  attributes: Array<{ name: string; questions: string[] }>;
+}
+
+/** The scorecard, as per the company's Excel: round weights add up to 100. */
 export interface ScorecardContent {
-  criteria: Array<{ round: InterviewRound; criterion: string; guidance?: string | null }>;
+  rounds: ScorecardRound[];
 }
 
 export interface TaDocument {
@@ -2240,6 +2285,9 @@ export interface DocumentReview {
   departmentName: string;
   roleTitle: string;
   quantity: number;
+  positionId: string;
+  positionNumber: number;
+  recruiterName: string | null;
   document: TaDocument;
 }
 
@@ -2268,13 +2316,30 @@ export type ApplicationStage =
   | 'offer_withdrawn'
   | 'no_show'
   | 'rejected'
-  | 'withdrawn';
+  | 'withdrawn'
+  | 'joined';
+
+export type InterviewMode = 'in_person' | 'video' | 'phone';
+
+/** When and how a round happens (scheduled by the recruiter / TA RM). */
+export interface InterviewSlot {
+  id: string;
+  startsAt: string;
+  durationMin: number;
+  mode: InterviewMode;
+  /** Room / address, meeting link, or phone number. */
+  location: string | null;
+  status: 'scheduled' | 'done' | 'cancelled' | 'no_show';
+  endReason: string | null;
+}
 
 export interface RoundScore {
   round: InterviewRound;
   interviewerName: string;
-  scores: Array<{ criterion: string; score: number }>;
-  average: number;
+  /** Per attribute: 1–4 and the evidence written for it. */
+  scores: Array<{ attribute: string; score: number; evidence: string | null }>;
+  /** The round out of 100. */
+  roundScore: number;
   recommendation: 'hire' | 'no_hire';
   notes: string | null;
   submittedAt: string;
@@ -2284,44 +2349,78 @@ export interface Application {
   id: string;
   candidateId: string;
   candidateName: string;
+  candidateCode: string | null;
+  candidateSource: CandidateSource;
+  candidateNoticeDays: number | null;
+  /** Live progress: what happens next, who does it, by when. */
+  nextAction: { text: string; ownerId: string | null; ownerName: string | null; due: string | null } | null;
+  contactCount: number;
+  lastContactAt: string | null;
   positionId: string;
   positionNumber: number;
   requisitionId: string;
   /** The line's TA RM — validates the shortlist and decides the hire. */
   taRmId: string | null;
+  /** The position's recruiter — works the candidate and schedules the rounds. */
+  recruiterId: string | null;
   roleTitle: string;
   departmentName: string;
   stage: ApplicationStage;
+  /** The round open now — rounds run one after another; null outside interviews. */
+  currentRound: InterviewRound | null;
+  /** The rejection record: the round, who rejected, when the candidate was told. */
+  rejectedRound: InterviewRound | null;
+  rejectedByName: string | null;
+  informedAt: string | null;
   shortlistedByName: string | null;
   outcomeReason: string | null;
   rounds: Array<{
     round: InterviewRound;
+    /** The round's weight on the position's scorecard (%). */
+    weight: number | null;
     interviewerId: string | null;
     interviewerName: string | null;
     score: RoundScore | null;
+    slot: InterviewSlot | null;
   }>;
+  /** Σ round score × weight over the rounds scored so far, out of 100. */
+  scoreTotal: number | null;
+  candidateEducation: string | null;
+  candidateExperienceYears: number | null;
   createdAt: string;
-  // Step E
-  decision: {
-    approvals: Array<{
-      role: HireRole;
-      decision: 'approve' | 'reject';
-      decidedByName: string;
-      reason: string | null;
-    }>;
-    waitingOn: HireRole[];
-  };
-  /** Urgent lines must be approved before an offer goes out. */
+  /** Last change — the board's "days since it last moved". */
+  updatedAt: string;
+  /** The offer waits for the line's approval (always true once positions exist). */
   lineApproved: boolean;
+  /** TA drafts the terms + letter → the HR Head approves and signs → TA shares. */
+  offer: {
+    status: 'draft' | 'pending' | 'approved' | 'returned';
+    ctc: number | null;
+    joiningDate: string | null;
+    terms: string | null;
+    returnReason: string | null;
+    approvedByName: string | null;
+    approvedAt: string | null;
+  } | null;
   offeredCtc: number | null;
-  /** The line's budget per hire — an offer above the max is flagged, not blocked. */
-  budgetMin: number | null;
-  budgetMax: number | null;
   joiningDate: string | null;
   hasOfferLetter: boolean;
-  bgvStatus: BgvStatus;
-  bgvNotes: string | null;
+  hasSignedLetter: boolean;
+  documents: { received: number; pending: number; total: number };
+  folderLink: string | null;
   employeeId: string | null;
+  /** HRBP confirmed the actual joining. */
+  joinedAt: string | null;
+}
+
+export type CandidateDocStatus = 'requested' | 'received' | 'not_applicable';
+
+/** A document asked of the candidate after the last round. */
+export interface CandidateDocument {
+  id: string;
+  name: string;
+  status: CandidateDocStatus;
+  updatedAt: string;
 }
 
 export interface Candidate {
@@ -2332,10 +2431,27 @@ export interface Candidate {
   source: CandidateSource;
   referredByName: string | null;
   notes: string | null;
+  /** Readable candidate ID, e.g. C-000123. */
+  candidateCode: string | null;
+  education: string | null;
+  experienceYears: number | null;
+  currentCompany: string | null;
+  designation: string | null;
+  location: string | null;
+  noticeDays: number | null;
+  currentCtc: number | null;
+  expectedCtc: number | null;
+  availableFrom: string | null;
   hasCv: boolean;
   retainUntil: string;
   anonymised: boolean;
   createdAt: string;
+  applications: Application[];
+}
+
+/** The Hiring board: live lines and every candidate on their positions. */
+export interface HiringBoard {
+  lines: Requisition[];
   applications: Application[];
 }
 
@@ -2353,7 +2469,43 @@ export interface CandidateInput {
   source: CandidateSource;
   referredById?: string;
   notes?: string;
+  education: string;
+  experienceYears: number;
+  currentCompany?: string;
+  designation?: string;
+  location: string;
+  noticeDays: number;
+  currentCtc?: number;
+  expectedCtc?: number;
+  availableFrom?: string;
   consent: true;
+}
+
+/** Fill or correct a candidate's profile (TA). */
+export type CandidateUpdate = Partial<{
+  name: string;
+  education: string;
+  experienceYears: number;
+  currentCompany: string | null;
+  designation: string | null;
+  location: string;
+  noticeDays: number;
+  currentCtc: number | null;
+  expectedCtc: number | null;
+  availableFrom: string | null;
+}>;
+
+export type ActivityKind = 'call' | 'email' | 'whatsapp' | 'meeting';
+export type ActivityOutcome = 'connected' | 'no_answer' | 'busy' | 'wrong_number' | 'other';
+
+/** A contact with the candidate on an application. */
+export interface Activity {
+  id: string;
+  kind: ActivityKind;
+  outcome: ActivityOutcome;
+  notes: string | null;
+  happenedAt: string;
+  byName: string;
 }
 
 export interface MyInterview {
@@ -2364,8 +2516,15 @@ export interface MyInterview {
   roleTitle: string;
   departmentName: string;
   round: InterviewRound;
-  criteria: Array<{ criterion: string; guidance: string | null }>;
+  /** This round's weight on the scorecard (%). */
+  roundWeight: number | null;
+  /** This round's sheet only. */
+  attributes: Array<{ name: string; questions: string[] }>;
+  candidateEducation: string | null;
+  candidateExperienceYears: number | null;
   jdSummary: string | null;
+  /** When and how — null until the recruiter schedules it. */
+  slot: InterviewSlot | null;
   myScore: RoundScore | null;
 }
 
@@ -2386,4 +2545,73 @@ export interface MarkHiredResult {
   application: Application;
   employeeId: string;
   claim: { token: string; expiresAt: string };
+}
+
+// ── Hiring reports + trackers (workflow deck slides 13–16) ──
+export interface HiringReportRow {
+  positionId: string;
+  requestCode: string | null;
+  roleTitle: string;
+  positionNumber: number;
+  departmentName: string;
+  spocName: string | null;
+  sourced: number;
+  callAttempts: number;
+  callUnique: number;
+  screened: number;
+  aligned: number;
+  held: number;
+  offersShared: number;
+  accepted: number;
+  joined: number;
+  rejected: number;
+  withdrawn: number;
+  overdue: number;
+}
+
+export interface HiringReport {
+  from: string;
+  to: string;
+  rows: HiringReportRow[];
+}
+
+export interface PendingAction {
+  applicationId: string;
+  candidateName: string;
+  candidateCode: string | null;
+  roleTitle: string;
+  positionNumber: number;
+  stage: ApplicationStage;
+  nextAction: string;
+  ownerName: string | null;
+  due: string | null;
+  overdue: boolean;
+}
+
+export type TrackerView = 'internal' | 'external';
+
+/** One candidate on one position; the external view leaves contacts and CTC out (null). */
+export interface TrackerRow {
+  applicationId: string;
+  requestCode: string | null;
+  candidateCode: string | null;
+  candidateName: string;
+  roleTitle: string;
+  positionNumber: number;
+  departmentName: string;
+  spocName: string | null;
+  source: CandidateSource;
+  stage: ApplicationStage;
+  currentRound: InterviewRound | null;
+  experienceYears: number | null;
+  location: string | null;
+  noticeDays: number | null;
+  joiningDate: string | null;
+  scoreTotal: number | null;
+  addedOn: string;
+  email: string | null;
+  phone: string | null;
+  currentCtc: number | null;
+  expectedCtc: number | null;
+  offeredCtc: number | null;
 }

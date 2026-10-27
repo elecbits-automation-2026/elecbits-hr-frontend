@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { InterviewRound, Requisition, RequisitionInput } from '@app-types/api.types';
+import type {
+  HiringPriority,
+  InterviewRound,
+  Requisition,
+  RequisitionInput,
+} from '@app-types/api.types';
 import RequisitionCard from '@components/Common/Hiring/RequisitionCard.component';
 import TaDocumentPanel from '@components/Common/Hiring/TaDocumentPanel.component';
+import { TrackerTable } from '@components/Ta/Hiring/Board/HiringReports.component';
 import {
+  EMPLOYMENT_TYPES,
+  PRIORITY_LABEL,
   ROUNDS,
   ROUND_LABEL,
   longDate,
@@ -39,11 +47,14 @@ const LineForm = ({
   const [roleTitle, setRoleTitle] = useState(initial.roleTitle);
   const [quantity, setQuantity] = useState(initial.quantity);
   const [notes, setNotes] = useState(initial.notes ?? '');
-  const [budgetMin, setBudgetMin] = useState(initial.budgetMin ? String(initial.budgetMin) : '');
-  const [budgetMax, setBudgetMax] = useState(initial.budgetMax ? String(initial.budgetMax) : '');
-  const min = Number(budgetMin);
-  const max = Number(budgetMax);
-  const budgetOk = min > 0 && max >= min;
+  const [reason, setReason] = useState(initial.reason);
+  const [targetJoiningOn, setTargetJoiningOn] = useState(initial.targetJoiningOn);
+  const [location, setLocation] = useState(initial.location);
+  const [reportingManagerId, setReportingManagerId] = useState(initial.reportingManagerId);
+  const [priority, setPriority] = useState<HiringPriority>(initial.priority);
+  const [employmentType, setEmploymentType] = useState(initial.employmentType);
+  const detailsOk =
+    reason.trim() && targetJoiningOn && location.trim() && reportingManagerId && employmentType;
   const [rounds, setRounds] = useState<Map<InterviewRound, string | null>>(
     new Map(initial.rounds.map((r) => [r.round, r.interviewerId])),
   );
@@ -57,7 +68,7 @@ const LineForm = ({
   const pick = (round: InterviewRound, id: string) =>
     setRounds((prev) => new Map(prev).set(round, id || null));
   const valid =
-    roleTitle.trim() && quantity >= 1 && quantity <= 50 && rounds.size > 0 && budgetOk;
+    roleTitle.trim() && quantity >= 1 && quantity <= 50 && rounds.size > 0 && detailsOk;
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
@@ -87,50 +98,99 @@ const LineForm = ({
           placeholder='What you need: skills, experience, why now'
           className={input}
         />
-        <div className='space-y-1'>
-          <p className='text-xs text-slate-500'>Budget for ONE hire — annual CTC (₹)</p>
-          <div className='grid grid-cols-2 gap-2'>
+        <input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder='Reason for hiring, e.g. backfill for Arjun, new IoT project'
+          className={input}
+          aria-label='Reason for hiring'
+        />
+        <div className='grid grid-cols-2 gap-2'>
+          <label className='space-y-1'>
+            <span className='text-xs text-slate-500'>Target joining date</span>
             <input
-              type='number'
-              min={1}
-              value={budgetMin}
-              onChange={(e) => setBudgetMin(e.target.value)}
-              placeholder='Minimum, e.g. 1200000'
+              type='date'
+              value={targetJoiningOn}
+              onChange={(e) => setTargetJoiningOn(e.target.value)}
               className={input}
-              aria-label='Budget minimum'
             />
+          </label>
+          <label className='space-y-1'>
+            <span className='text-xs text-slate-500'>Location</span>
             <input
-              type='number'
-              min={1}
-              value={budgetMax}
-              onChange={(e) => setBudgetMax(e.target.value)}
-              placeholder='Maximum, e.g. 1800000'
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder='Bengaluru'
               className={input}
-              aria-label='Budget maximum'
             />
-          </div>
-          {budgetMin && budgetMax && !budgetOk && (
-            <p className='text-xs text-red-600'>The maximum must be at least the minimum.</p>
-          )}
+          </label>
+          <label className='space-y-1'>
+            <span className='text-xs text-slate-500'>Reporting manager</span>
+            <select
+              value={reportingManagerId}
+              onChange={(e) => setReportingManagerId(e.target.value)}
+              className={input}
+            >
+              <option value=''>Pick…</option>
+              {people.data
+                ?.filter((p) => p.status === 'active')
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className='space-y-1'>
+            <span className='text-xs text-slate-500'>Employment type</span>
+            <select
+              value={employmentType}
+              onChange={(e) => setEmploymentType(e.target.value)}
+              className={input}
+            >
+              {EMPLOYMENT_TYPES.map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className='flex items-center gap-3 text-sm text-slate-700'>
+          <span className='text-xs text-slate-500'>Priority</span>
+          {(Object.keys(PRIORITY_LABEL) as HiringPriority[]).map((p) => (
+            <label key={p} className='flex items-center gap-1'>
+              <input type='radio' checked={priority === p} onChange={() => setPriority(p)} />
+              {PRIORITY_LABEL[p].label.replace(' priority', '')}
+            </label>
+          ))}
         </div>
         <div className='space-y-1.5'>
-          <p className='text-xs text-slate-500'>Interview rounds and who conducts each</p>
+          <p className='text-xs text-slate-500'>
+            Interview rounds, in order, and who conducts each — a round opens only after the one
+            before it passes
+          </p>
           {ROUNDS.map((round) => (
             <div key={round} className='grid grid-cols-[180px_1fr] items-center gap-2'>
               <label className='flex items-center gap-1.5 text-sm text-slate-700'>
-                <input type='checkbox' checked={rounds.has(round)} onChange={() => toggle(round)} />
+                <input
+                  type='checkbox'
+                  checked={rounds.has(round)}
+                  disabled={round === 'hr'}
+                  onChange={() => toggle(round)}
+                />
                 {ROUND_LABEL[round]}
               </label>
-              {rounds.has(round) && (
+              {round === 'hr' ? (
+                <span className='text-xs text-slate-500'>
+                  Round 1, always — the position&apos;s recruiter (TA SPOC) calls the candidate
+                </span>
+              ) : rounds.has(round) && (
                 <select
                   value={rounds.get(round) ?? ''}
                   onChange={(e) => pick(round, e.target.value)}
                   className={input}
                 >
                   <option value=''>
-                    {round === 'hr' || round === 'hr_final'
-                      ? 'The recruiter (default)'
-                      : 'Name later'}
+                    {round === 'hr_final' ? 'The recruiter (default)' : 'Name later'}
                   </option>
                   {people.data
                     ?.filter((p) => p.status === 'active')
@@ -157,8 +217,12 @@ const LineForm = ({
                 roleTitle: roleTitle.trim(),
                 quantity,
                 notes: notes.trim() || null,
-                budgetMin: min,
-                budgetMax: max,
+                reason: reason.trim(),
+                targetJoiningOn,
+                location: location.trim(),
+                reportingManagerId,
+                priority,
+                employmentType,
                 rounds: ROUNDS.filter((r) => rounds.has(r)).map((r) => ({
                   round: r,
                   interviewerId: rounds.get(r) ?? null,
@@ -179,8 +243,12 @@ const BLANK: RequisitionInput = {
   roleTitle: '',
   quantity: 1,
   notes: null,
-  budgetMin: 0,
-  budgetMax: 0,
+  reason: '',
+  targetJoiningOn: '',
+  location: 'Bengaluru',
+  reportingManagerId: '',
+  priority: 'normal',
+  employmentType: 'Full-time',
   rounds: [
     { round: 'hr', interviewerId: null },
     { round: 'technical', interviewerId: null },
@@ -192,7 +260,7 @@ const BLANK: RequisitionInput = {
 /**
  * The department head's quarterly hiring plan (TA design): add lines for the
  * quarter being planned and submit them; submitted lines wait until the
- * deadline, then all go to the HR head and Admin together. A returned line is
+ * deadline, then all go to HRBP together. A returned line is
  * edited (new version) and goes straight back. Earlier quarters stay visible.
  * Visible only to heads; the backend checks the seat on every call.
  */
@@ -255,7 +323,7 @@ const HiringPlanPage = () => {
           <h1 className='text-2xl font-semibold text-slate-800'>Hiring plan</h1>
           <p className='text-sm text-slate-500'>
             Add the people your department needs next quarter. Submitted lines wait until the
-            deadline, then all go to the HR head and Admin together; one approval from either
+            deadline, then all go to HRBP together; one approval from either
             approves a line, then Admin gives it to a TA RM.
           </p>
         </div>
@@ -309,7 +377,7 @@ const HiringPlanPage = () => {
           }
         >
           {plan.data.open
-            ? `Plan for ${quarter}: submit lines by ${longDate(plan.data.deadline)}. They wait here until then and go to the HR head and Admin the day after. Anything added later goes into the next quarter's plan — for a real emergency, HR hires offline and adds the person directly.`
+            ? `Plan for ${quarter}: submit lines by ${longDate(plan.data.deadline)}. They wait here until then and go to HRBP the day after. Anything added later goes into the next quarter's plan — for a real emergency, HR hires offline and adds the person directly.`
             : `The ${quarter} plan closed on ${longDate(plan.data.deadline)} and went for approval. Returned lines can still be fixed and resubmitted here.`}
         </p>
       )}
@@ -344,23 +412,34 @@ const HiringPlanPage = () => {
             req={r}
             actions={
               <>
-                {r.status === 'approved' && (r.documents.jd || r.documents.scorecard) && (
-                  <div className='grid w-full gap-3 lg:grid-cols-2'>
-                    {[r.documents.jd, r.documents.scorecard].map(
-                      (d) =>
-                        // TA's unsent drafts stay with TA.
-                        d &&
-                        d.status !== 'draft' && (
-                          <TaDocumentPanel
-                            key={d.id}
-                            doc={d}
-                            canReview={d.waitingOn.includes('dept_head')}
-                            invalidate={[['hiring-plan']]}
-                          />
-                        ),
-                    )}
-                  </div>
-                )}
+                {r.status === 'approved' &&
+                  r.positions.map((p) => {
+                    // Each position's own JD + scorecard; the recruiter's unsent drafts stay with them.
+                    const docs = [p.documents.jd, p.documents.scorecard].filter(
+                      (d) => d && d.status !== 'draft',
+                    );
+                    return (
+                      docs.length > 0 && (
+                        <div key={p.id} className='w-full space-y-1'>
+                          <p className='text-xs font-medium text-slate-500'>
+                            Position #{p.number}
+                            {p.recruiterName ? ` · ${p.recruiterName}` : ''}
+                          </p>
+                          <div className='grid gap-3 lg:grid-cols-2'>
+                            {docs.map((d) => (
+                              <TaDocumentPanel
+                                key={d!.id}
+                                doc={d!}
+                                roleTitle={r.roleTitle}
+                                canReview={d!.waitingOn.includes('dept_head')}
+                                invalidate={[['hiring-plan']]}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    );
+                  })}
                 {(r.status === 'draft' || r.status === 'returned') && (
                   <>
                     <button
@@ -418,6 +497,8 @@ const HiringPlanPage = () => {
         ))}
       </div>
 
+      <TrackerTable view='external' title='Hiring tracker — your department' />
+
       {form && (
         <LineForm
           title={form.edit ? `Edit: ${form.edit.roleTitle}` : `New line · ${quarter}`}
@@ -427,8 +508,12 @@ const HiringPlanPage = () => {
                   roleTitle: form.edit.roleTitle,
                   quantity: form.edit.quantity,
                   notes: form.edit.notes,
-                  budgetMin: form.edit.budgetMin ?? 0,
-                  budgetMax: form.edit.budgetMax ?? 0,
+                  reason: form.edit.reason ?? '',
+                  targetJoiningOn: form.edit.targetJoiningOn ?? '',
+                  location: form.edit.location ?? '',
+                  reportingManagerId: form.edit.reportingManager?.id ?? '',
+                  priority: form.edit.priority,
+                  employmentType: form.edit.employmentType ?? 'Full-time',
                   rounds: form.edit.rounds.map((x) => ({
                     round: x.round,
                     interviewerId: x.interviewerId,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { JdContent, ScorecardContent, TaDocument } from '@app-types/api.types';
+import JdDocument from '@components/Common/Hiring/JdDocument.component';
 import { ROUND_LABEL } from '@constants/Common/hiring.constants';
 import { hiringApi } from '@services/api/hiring.api';
 import { apiErrorMessage } from '@utils/apiError';
@@ -20,53 +21,75 @@ const DOC_STATUS_CLASS: Record<TaDocument['status'], string> = {
   approved: 'bg-emerald-50 text-emerald-700',
 };
 
-const REVIEWER_LABEL = { dept_head: 'Dept head', admin: 'Admin' } as const;
+const REVIEWER_LABEL = { dept_head: 'Dept head', ta_rm: 'TA RM' } as const;
 
-const JdView = ({ c }: { c: JdContent }) => (
-  <dl className='space-y-2 text-sm'>
-    {(
-      [
-        ['Summary', c.summary],
-        ['Responsibilities', c.responsibilities],
-        ['Requirements', c.requirements],
-        ['Location', c.location],
-        ['Employment type', c.employmentType],
-        ['CTC range', c.ctcRange],
-      ] as const
-    )
-      .filter(([, v]) => v)
-      .map(([k, v]) => (
-        <div key={k}>
-          <dt className='text-xs text-slate-400'>{k}</dt>
-          <dd className='whitespace-pre-wrap text-slate-700'>{v}</dd>
-        </div>
-      ))}
-  </dl>
-);
+/** The JD at a glance; "View JD" opens it as the branded, printable page. */
+const JdView = ({ c, roleTitle }: { c: Partial<JdContent>; roleTitle: string }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className='space-y-2 text-sm'>
+      <p className='text-xs text-slate-500'>
+        {[c.jobType, c.city, c.ctc].filter(Boolean).join(' · ')}
+      </p>
+      {c.roleSummary && <p className='line-clamp-3 text-slate-700'>{c.roleSummary}</p>}
+      <p className='text-xs text-slate-500'>
+        {c.responsibilities?.length ?? 0} responsibilities · {c.requiredSkills?.length ?? 0}{' '}
+        required skills
+      </p>
+      <button
+        type='button'
+        onClick={() => setOpen(true)}
+        className='rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50'
+      >
+        View JD (print / PDF)
+      </button>
+      {open && <JdDocument c={c} roleTitle={roleTitle} onClose={() => setOpen(false)} />}
+    </div>
+  );
+};
 
-const ScorecardView = ({ c }: { c: ScorecardContent }) => (
-  <ul className='space-y-1 text-sm'>
-    {c.criteria.map((x, i) => (
-      <li key={i} className='text-slate-700'>
-        <span className='text-xs text-slate-400'>{ROUND_LABEL[x.round]} · </span>
-        {x.criterion} <span className='text-xs text-slate-400'>(1–5)</span>
-        {x.guidance && <p className='text-xs text-slate-500'>{x.guidance}</p>}
-      </li>
+/** The scorecard by round: weight, attributes and their questions. */
+const ScorecardView = ({ c }: { c: Partial<ScorecardContent> }) => (
+  <div className='space-y-2 text-sm'>
+    {(c.rounds ?? []).map((r) => (
+      <details key={r.round} className='rounded-md bg-white px-2 py-1.5'>
+        <summary className='cursor-pointer text-slate-700'>
+          <span className='font-medium'>{ROUND_LABEL[r.round]}</span>{' '}
+          <span className='text-xs text-slate-400'>
+            · weight {r.weight}% · {r.attributes.length} attributes, scored 1–4
+          </span>
+        </summary>
+        <ul className='mt-1 space-y-1 pl-2'>
+          {r.attributes.map((a) => (
+            <li key={a.name}>
+              <p className='text-slate-700'>{a.name}</p>
+              {a.questions.map((q, i) => (
+                <p key={i} className='pl-3 text-xs text-slate-500'>
+                  • {q}
+                </p>
+              ))}
+            </li>
+          ))}
+        </ul>
+      </details>
     ))}
-  </ul>
+  </div>
 );
 
 /**
  * A JD or scorecard as everyone sees it: content, status, and where the two
- * reviews (dept head + Admin) stand on the CURRENT version. With `canReview`
+ * reviews (TA RM + dept head) stand on the CURRENT version. With `canReview`
  * the reviewer approves or returns it, for the version shown.
  */
 const TaDocumentPanel = ({
   doc,
+  roleTitle,
   canReview = false,
   invalidate,
 }: {
   doc: TaDocument;
+  /** The position's role, shown as "Job Role –" on the JD. */
+  roleTitle: string;
   canReview?: boolean;
   /** Query keys to refresh after a decision. */
   invalidate: string[][];
@@ -104,9 +127,9 @@ const TaDocumentPanel = ({
         </span>
       </div>
       {doc.kind === 'jd' ? (
-        <JdView c={doc.content as unknown as JdContent} />
+        <JdView c={doc.content as Partial<JdContent>} roleTitle={roleTitle} />
       ) : (
-        <ScorecardView c={doc.content as unknown as ScorecardContent} />
+        <ScorecardView c={doc.content as Partial<ScorecardContent>} />
       )}
       {doc.status === 'returned' && doc.returnReason && (
         <p className='rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800'>
@@ -138,7 +161,7 @@ const TaDocumentPanel = ({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
-              placeholder='What should TA change?'
+              placeholder='What should the recruiter change?'
               className='w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
             />
           )}
@@ -158,7 +181,7 @@ const TaDocumentPanel = ({
                 onClick={() => go.mutate('reject')}
                 className='rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50'
               >
-                Return to TA
+                Return to recruiter
               </button>
             ) : (
               <button

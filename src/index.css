@@ -15,3 +15,23 @@
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+/*
+ * Printing a JD (JdDocument): only the JD overlay prints, on A4, with its
+ * colours kept. Everything else on the page is hidden while it is open.
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body:has(.jd-print-root) > *:not(.jd-print-root) {
+    display: none !important;
+  }
+  .jd-print-root {
+    position: static !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -3,10 +3,11 @@ import type { ReactNode } from 'react';
 import type { Requisition } from '@app-types/api.types';
 import {
   APPROVER_LABEL,
+  longDate,
   POSITION_STATUS_LABEL,
+  PRIORITY_LABEL,
   REQ_STATUS_CLASS,
   REQ_STATUS_LABEL,
-  budgetText,
   ROUND_LABEL,
 } from '@constants/Common/hiring.constants';
 
@@ -27,7 +28,17 @@ const RequisitionCard = ({
     <div className='flex flex-wrap items-start justify-between gap-2'>
       <div>
         <p className='font-medium text-slate-800'>
+          {req.requestCode && (
+            <span className='mr-2 font-mono text-xs font-semibold text-slate-400'>
+              {req.requestCode}
+            </span>
+          )}
           {req.quantity} × {req.roleTitle}
+          <span
+            className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_LABEL[req.priority].cls}`}
+          >
+            {PRIORITY_LABEL[req.priority].label}
+          </span>
           {req.urgent && (
             <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
               urgent
@@ -38,8 +49,10 @@ const RequisitionCard = ({
           {[
             showDepartment && req.departmentName,
             req.quarter,
-            budgetText(req.budgetMin, req.budgetMax) &&
-              `budget ${budgetText(req.budgetMin, req.budgetMax)} per hire`,
+            req.employmentType,
+            req.location,
+            req.targetJoiningOn && `join by ${longDate(req.targetJoiningOn)}`,
+            req.reportingManager && `reports to ${req.reportingManager.name}`,
             `v${req.version}`,
             `by ${req.createdByName}`,
           ]
@@ -53,6 +66,12 @@ const RequisitionCard = ({
         {REQ_STATUS_LABEL[req.status]}
       </span>
     </div>
+    {req.reason && (
+      <p className='text-sm text-slate-700'>
+        <span className='text-xs text-slate-400'>Reason: </span>
+        {req.reason}
+      </p>
+    )}
     {req.notes && <p className='whitespace-pre-wrap text-sm text-slate-600'>{req.notes}</p>}
     <div className='flex flex-wrap gap-1.5'>
       {req.rounds.map((r) => (
@@ -62,6 +81,11 @@ const RequisitionCard = ({
         </span>
       ))}
     </div>
+    {req.returnReason && req.status === 'rejected' && (
+      <p className='rounded-md bg-red-50 px-3 py-2 text-sm text-red-800'>
+        Rejected: {req.returnReason}
+      </p>
+    )}
     {req.returnReason && req.status === 'returned' && (
       <p className='rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800'>
         Returned: {req.returnReason}

@@ -3,11 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Requisition, TaRmOption } from '@app-types/api.types';
 import RequisitionCard from '@components/Common/Hiring/RequisitionCard.component';
-import HireDecisionCard from '@components/Common/Hiring/HireDecisionCard.component';
+import OfferApprovalCard from '@components/Common/Hiring/OfferApprovalCard.component';
 import TaDocumentPanel from '@components/Common/Hiring/TaDocumentPanel.component';
 import { hireApi } from '@services/api/hire.api';
 import { APPROVER_LABEL } from '@constants/Common/hiring.constants';
 import { hiringApi } from '@services/api/hiring.api';
+import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 const Decide = ({ req }: { req: Requisition }) => {
@@ -15,11 +16,11 @@ const Decide = ({ req }: { req: Requisition }) => {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
   const go = useMutation({
-    mutationFn: (decision: 'approve' | 'reject') =>
+    mutationFn: (decision: 'approve' | 'reject' | 'decline') =>
       hiringApi.decide(req.id, {
         version: req.version,
         decision,
-        reason: decision === 'reject' ? reason.trim() : undefined,
+        reason: decision === 'approve' ? undefined : reason.trim(),
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hiring-approvals'] }),
   });
@@ -49,9 +50,17 @@ const Decide = ({ req }: { req: Requisition }) => {
               type='button'
               disabled={!reason.trim() || go.isPending}
               onClick={() => go.mutate('reject')}
+              className='rounded-md border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-50'
+            >
+              Return to fix
+            </button>
+            <button
+              type='button'
+              disabled={!reason.trim() || go.isPending}
+              onClick={() => go.mutate('decline')}
               className='rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50'
             >
-              Return to the head
+              Reject for good
             </button>
           </>
         ) : (
@@ -139,11 +148,12 @@ const GiveToTaRm = ({ req, options }: { req: Requisition; options: TaRmOption[] 
 const HiringApprovalsPage = () => {
   const me = useQuery({ queryKey: ['hiring-me'], queryFn: hiringApi.me });
   const waiting = useQuery({ queryKey: ['hiring-approvals'], queryFn: hiringApi.approvals });
-  // JDs and scorecards — the Admin account reviews them here (dept heads on their plan).
+  // Positions' JDs and scorecards — the line's TA RM reviews them here (dept heads on their plan).
   const reviews = useQuery({ queryKey: ['hiring-reviews'], queryFn: hiringApi.reviews });
-  // Final hire decisions: dept head, the line's TA RM, HR head and Admin (Step E).
-  const decisions = useQuery({ queryKey: ['hire-decisions'], queryFn: hireApi.decisions });
-  const isAdmin = !!me.data?.approverRoles.includes('admin');
+  // Offers the HR Head approves and signs (workflow deck step 15).
+  const decisions = useQuery({ queryKey: ['pending-offers'], queryFn: hireApi.pendingOffers });
+  const owner = useQuery({ queryKey: ['me'], queryFn: meApi.get, staleTime: 60_000 });
+  const isAdmin = !!owner.data?.isOwner;
   // Lines Admin still has to give (or may still move): approved,
   // and nobody on the TA RM's team holds one of its positions yet.
   const lines = useQuery({
@@ -170,15 +180,15 @@ const HiringApprovalsPage = () => {
         <h1 className='text-2xl font-semibold text-slate-800'>Hiring approvals</h1>
         <p className='text-sm text-slate-500'>
           {roles.length
-            ? `You approve hiring lines as ${roles.map((r) => APPROVER_LABEL[r]).join(' + ')}. One approval is enough: whichever of the HR head or Admin decides first approves or returns the line, and the other is told (the HR department's own lines are Admin's only).`
-            : 'Final hire decisions for your department, and anything else waiting for you.'}
+            ? `You review hiring requests as ${roles.map((r) => APPROVER_LABEL[r]).join(' + ')}. One HRBP's decision is enough: approve, return it to fix, or reject it for good — the department head and the other HRBPs are told. Your own requests go to the other HRBPs.`
+            : 'JDs, scorecards and offers waiting for you.'}
         </p>
       </div>
       {(decisions.data?.length ?? 0) > 0 && (
         <div className='space-y-3'>
-          <h2 className='text-lg font-semibold text-slate-800'>Final hire decisions</h2>
+          <h2 className='text-lg font-semibold text-slate-800'>Offers to approve and sign</h2>
           {decisions.data!.map((a) => (
-            <HireDecisionCard key={a.id} app={a} />
+            <OfferApprovalCard key={a.id} app={a} />
           ))}
         </div>
       )}
@@ -220,9 +230,15 @@ const HiringApprovalsPage = () => {
           {reviews.data!.map((v) => (
             <div key={v.document.id} className='space-y-1'>
               <p className='text-xs text-slate-500'>
-                {v.quantity} × {v.roleTitle} · {v.departmentName}
+                {v.roleTitle} #{v.positionNumber} · {v.departmentName}
+                {v.recruiterName && <> · written by {v.recruiterName}</>}
               </p>
-              <TaDocumentPanel doc={v.document} canReview invalidate={[['hiring-reviews']]} />
+              <TaDocumentPanel
+                doc={v.document}
+                roleTitle={v.roleTitle}
+                canReview
+                invalidate={[['hiring-reviews']]}
+              />
             </div>
           ))}
         </div>

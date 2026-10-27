@@ -118,10 +118,8 @@ const PortalShell = ({
         (item) =>
           (!RM_ONLY_ROUTES.includes(item.to) || me?.hasReports) &&
           (!HEAD_ONLY_ROUTES.includes(item.to) || !!me?.seats?.includes('dept_head')) &&
-          // Dept heads too: they give the final hire decision for their department.
-          (!HIRING_APPROVER_ROUTES.includes(item.to) ||
-            !!me?.hiringApprover ||
-            !!me?.seats?.includes('dept_head')) &&
+          // HRBP (requests), the HR Head (offers), a TA RM (JD / scorecard reviews).
+          (!HIRING_APPROVER_ROUTES.includes(item.to) || !!me?.hiringApprover) &&
           (!INTERVIEWER_ROUTES.includes(item.to) || !!me?.hasInterviews),
       );
   const hrItems = me

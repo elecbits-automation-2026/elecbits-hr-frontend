@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Candidate } from '@app-types/api.types';
 import AddCandidateDialog from '@components/Ta/Hiring/AddCandidateDialog.component';
 import ApplicationRow from '@components/Ta/Hiring/ApplicationRow.component';
+import { Profile } from '@components/Ta/Hiring/CandidateTracker.component';
 import { SOURCE_LABEL } from '@constants/Common/hiring.constants';
 import { candidatesApi } from '@services/api/candidates.api';
 import { hiringApi } from '@services/api/hiring.api';
@@ -47,6 +48,8 @@ const CandidateDetail = ({ c }: { c: Candidate }) => {
         {c.phone && <span>{c.phone}</span>}
         <span>Source: {SOURCE_LABEL[c.source]}</span>
         {c.referredByName && <span>Referred by {c.referredByName}</span>}
+        {c.education && <span>{c.education}</span>}
+        {c.experienceYears !== null && <span>{c.experienceYears} yrs experience</span>}
         <span>Kept until {c.retainUntil}</span>
       </div>
       {c.notes && <p className='whitespace-pre-wrap text-sm text-slate-600'>{c.notes}</p>}
@@ -73,8 +76,14 @@ const CandidateDetail = ({ c }: { c: Candidate }) => {
           )}
         </div>
       )}
+      {!c.anonymised && <Profile c={c} canEdit />}
       {c.applications.map((a) => (
-        <ApplicationRow key={a.id} app={a} showRole />
+        <ApplicationRow
+          key={a.id}
+          app={a}
+          showRole
+          defaultOpen={a.rounds.some((r) => r.score)}
+        />
       ))}
       {!c.anonymised && choices.length > 0 && (
         <div className='flex flex-wrap items-center gap-2'>
