@@ -6,7 +6,6 @@ import AnnexurePanel, { BreakdownTable } from '@components/Pr/AnnexurePanel.comp
 import { employeesApi } from '@services/api/employees.api';
 import { usePtStates } from '@hooks/Common/usePtStates.hook';
 import { payrollApi } from '@services/api/payroll.api';
-import { recognitionsApi } from '@services/api/recognitions.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
@@ -50,8 +49,9 @@ const EMPTY: Draft = {
  * Where PR puts someone ON payroll: set the CTC (which is what makes payslip
  * generation include them) plus the recurring entries and bank details. PF,
  * PT and the salary structure are computed by the sheet engine — nothing to
- * type here. The people list is the sanitized directory; opening a record
- * goes through the pr.payroll.compensation door.
+ * type here. The people list is the whole org (invited joiners included, so
+ * salary is ready before day one); opening a record goes through the
+ * pr.payroll.compensation door.
  */
 const CompensationPanel = () => {
   const queryClient = useQueryClient();
@@ -60,8 +60,8 @@ const CompensationPanel = () => {
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const directory = useQuery({
-    queryKey: ['recognition-directory'],
-    queryFn: recognitionsApi.directory,
+    queryKey: ['payroll-people'],
+    queryFn: payrollApi.people,
   });
   // Who already has a CTC — the TDS list only contains people on payroll.
   const onPayroll = useQuery({ queryKey: ['payroll-tds'], queryFn: payrollApi.tdsEstimates });
@@ -211,7 +211,11 @@ const CompensationPanel = () => {
                 {p.name}
                 <span className='ml-1 font-mono text-xs text-slate-400'>{p.employeeCode}</span>
               </span>
-              {payrollIds.has(p.id) ? (
+              {p.status === 'invited' ? (
+                <span className='shrink-0 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] text-sky-700'>
+                  joining
+                </span>
+              ) : payrollIds.has(p.id) ? (
                 <span className='shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-700'>
                   on payroll
                 </span>

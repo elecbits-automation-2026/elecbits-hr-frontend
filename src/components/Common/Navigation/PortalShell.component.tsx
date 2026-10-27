@@ -8,6 +8,9 @@ import {
   EMPLOYEE_NAV,
   HR_NAV,
   RM_ONLY_ROUTES,
+  HEAD_ONLY_ROUTES,
+  HIRING_APPROVER_ROUTES,
+  INTERVIEWER_ROUTES,
   type NavItem,
 } from '@constants/Common/navigation/nav.constants';
 import {
@@ -111,7 +114,16 @@ const PortalShell = ({
 
   const employeeItems = me?.isOwner
     ? []
-    : EMPLOYEE_NAV.filter((item) => !RM_ONLY_ROUTES.includes(item.to) || me?.hasReports);
+    : EMPLOYEE_NAV.filter(
+        (item) =>
+          (!RM_ONLY_ROUTES.includes(item.to) || me?.hasReports) &&
+          (!HEAD_ONLY_ROUTES.includes(item.to) || !!me?.seats?.includes('dept_head')) &&
+          // Dept heads too: they give the final hire decision for their department.
+          (!HIRING_APPROVER_ROUTES.includes(item.to) ||
+            !!me?.hiringApprover ||
+            !!me?.seats?.includes('dept_head')) &&
+          (!INTERVIEWER_ROUTES.includes(item.to) || !!me?.hasInterviews),
+      );
   const hrItems = me
     ? HR_NAV.filter((item) =>
         (Array.isArray(item.portal) ? item.portal : [item.portal]).some((p) => holdsPortal(me, p)),

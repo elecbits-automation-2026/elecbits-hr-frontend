@@ -8,8 +8,9 @@ export const quarterReportsApi = {
   /** hrbp.people update, org. `early` closes the running quarter now. */
   close: async (name: string, early: boolean): Promise<QuarterCycle> =>
     (await api.post<QuarterCycle>(`/quarter-reports/cycles/${name}/close`, { early })).data,
-  view: async (name: string): Promise<QuarterView> =>
-    (await api.get<QuarterView>(`/quarter-reports/cycles/${name}`)).data,
+  /** `as: 'rm'` = only the caller's own people (the personal board). */
+  view: async (name: string, opts?: { as: 'rm' }): Promise<QuarterView> =>
+    (await api.get<QuarterView>(`/quarter-reports/cycles/${name}`, { params: opts })).data,
   /** One person's reports (self, their manager, or HR reach). */
   forPerson: async (employeeId: string): Promise<QuarterReport[]> =>
     (await api.get<QuarterReport[]>(`/quarter-reports/people/${employeeId}`)).data,

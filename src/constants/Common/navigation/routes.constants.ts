@@ -23,9 +23,15 @@ export const GROWTH_ROUTE = '/growth';
 export const PERFORMANCE_ROUTE = '/performance';
 export const TEAM_ATTENDANCE_ROUTE = '/team-attendance';
 export const RESIGNATION_ROUTE = '/resignation';
+/** Concerns + open door + session requests, one page with tabs (?tab=). */
+export const GRIEVANCES_ROUTE = '/grievances';
+/** Old homes — redirect to the Grievances tabs. */
 export const CONCERNS_ROUTE = '/concerns';
 export const CONCERNS_FOLLOW_UP_ROUTE = '/concerns/follow-up';
 export const OPEN_DOOR_ROUTE = '/open-door';
+export const HIRING_PLAN_ROUTE = '/hiring/plan';
+export const HIRING_APPROVALS_ROUTE = '/hiring/approvals';
+export const HIRING_INTERVIEWS_ROUTE = '/hiring/interviews';
 
 // HR console — the four HR sections (HRBP / TA / PR / OPS batches)
 export const HR_ROUTE = '/hr';
@@ -40,6 +46,7 @@ export const HR_ONBOARDING_ROUTE = '/hr/onboarding';
 export const HR_SETTINGS_ROUTE = '/hr/settings';
 export const HR_QUARTER_REPORTS_ROUTE = '/hr/quarter-reports';
 export const HR_HIRING_ROUTE = '/hr/hiring';
+export const HR_CANDIDATES_ROUTE = '/hr/candidates';
 export const HR_PAYROLL_ROUTE = '/hr/payroll';
 export const HR_ASSETS_ROUTE = '/hr/assets';
 export const HR_ASSET_REQUESTS_ROUTE = '/hr/asset-requests';
@@ -51,7 +58,9 @@ export const HR_OPS_SETUP_ROUTE = '/hr/ops-setup';
 export const ADMIN_ROUTE = '/admin';
 export const ADMIN_INVITE_ROUTE = '/admin/invite';
 export const ADMIN_BATCHES_ROUTE = '/admin/batches';
+export const ADMIN_SEATS_ROUTE = '/admin/seats';
 export const ADMIN_GRANT_REQUESTS_ROUTE = '/admin/grant-requests';
 export const ADMIN_AUDIT_ROUTE = '/admin/audit-log';
 export const ADMIN_PUNCH_ZONES_ROUTE = '/admin/punch-zones';
 export const ADMIN_SETTINGS_ROUTE = '/admin/settings';
+export const ADMIN_HIRING_APPROVALS_ROUTE = '/admin/hiring-approvals';

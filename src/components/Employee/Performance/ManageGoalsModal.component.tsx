@@ -56,6 +56,11 @@ const GoalRow = ({ goal, onChanged }: { goal: Goal; onChanged: () => void }) => 
           )}
           {GOAL_CATEGORY_LABELS[goal.category].label} · weight {goal.weight} · due {goal.dueOn}
         </p>
+        {goal.positionId ? (
+          <p className='mt-2 text-xs text-slate-400'>
+            Hiring goal — reassigned and progressed from Hiring, not here.
+          </p>
+        ) : (
         <div className='mt-2 flex gap-3'>
           <button
             type='button'
@@ -73,6 +78,7 @@ const GoalRow = ({ goal, onChanged }: { goal: Goal; onChanged: () => void }) => 
             {confirmDelete ? 'Click again to delete' : 'Delete'}
           </button>
         </div>
+        )}
         {remove.error && (
           <p className='mt-1 text-xs text-red-600'>{apiErrorMessage(remove.error)}</p>
         )}

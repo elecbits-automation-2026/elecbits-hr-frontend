@@ -57,9 +57,10 @@ const CaseList = ({
 /**
  * Concerns: raise one (dispute / complaint / whistleblower; sexual harassment
  * points to the Internal Committee), follow your own, and — for the people
- * who handle them — one tab per queue the backend says you hold.
+ * who handle them — one tab per queue the backend says you hold. `embedded`
+ * drops the page title when it sits inside the Grievances page.
  */
-const ConcernsPage = () => {
+const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('mine');
   const [openId, setOpenId] = useState<string | null>(null);
@@ -95,7 +96,7 @@ const ConcernsPage = () => {
     <div className='w-full max-w-4xl space-y-4'>
       <div className='flex flex-wrap items-end justify-between gap-2'>
         <div>
-          <h1 className='text-2xl font-semibold text-slate-800'>Concerns</h1>
+          {!embedded && <h1 className='text-2xl font-semibold text-slate-800'>Concerns</h1>}
           <p className='text-sm text-slate-500'>
             Contest a decision, report conduct or misconduct. Handled in confidence; retaliation
             against anyone who raises a concern in good faith is itself a breach.

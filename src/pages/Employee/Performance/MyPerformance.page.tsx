@@ -8,10 +8,13 @@ import type {
   StripStatus,
   TeamGoalsRow,
 } from '@app-types/api.types';
-import FeedbackModal, { type FeedbackDraft } from '@components/Employee/Home/FeedbackModal.component';
+import FeedbackModal, {
+  type FeedbackDraft,
+} from '@components/Employee/Home/FeedbackModal.component';
 import LateUpdateModal from '@components/Employee/Performance/LateUpdateModal.component';
 import ManageGoalsModal from '@components/Employee/Performance/ManageGoalsModal.component';
 import QuarterBoard from '@components/Common/QuarterReports/QuarterBoard.component';
+import PageTabs from '@components/Common/Tabs/PageTabs.component';
 import QuarterReportCard from '@components/Common/QuarterReports/QuarterReportCard.component';
 import { MyPips } from '@components/Common/Pip/PipLists.component';
 import { GOAL_CATEGORY_LABELS } from '@constants/Common/quarter.constants';
@@ -28,8 +31,14 @@ const todayStr = () => localDate(new Date());
 const STRIP_LOOK: Record<StripStatus, { cls: string; label: string }> = {
   done: { cls: 'bg-green-500', label: 'submitted' },
   late_approved: { cls: 'bg-green-300', label: 'filled in late — approved' },
-  late_pending: { cls: 'bg-amber-200 ring-1 ring-amber-400', label: 'filled in late — waiting for your manager' },
-  missed: { cls: 'bg-red-300 hover:bg-red-400 cursor-pointer', label: 'missed — click to fill it in' },
+  late_pending: {
+    cls: 'bg-amber-200 ring-1 ring-amber-400',
+    label: 'filled in late — waiting for your manager',
+  },
+  missed: {
+    cls: 'bg-red-300 hover:bg-red-400 cursor-pointer',
+    label: 'missed — click to fill it in',
+  },
   leave: { cls: 'bg-sky-200', label: 'on leave' },
   holiday: { cls: 'bg-slate-200', label: 'holiday' },
   weekend: { cls: 'bg-slate-100', label: 'weekend' },
@@ -45,7 +54,11 @@ const isAtRisk = (g: Goal, today: string): boolean =>
   g.progress < 40 && daysLeft(g.dueOn, today) < 30;
 
 const scoreTone = (score: number): string =>
-  score >= 70 ? 'text-green-700 bg-green-50' : score >= 40 ? 'text-amber-700 bg-amber-50' : 'text-red-700 bg-red-50';
+  score >= 70
+    ? 'text-green-700 bg-green-50'
+    : score >= 40
+      ? 'text-amber-700 bg-amber-50'
+      : 'text-red-700 bg-red-50';
 
 const EMPTY_GOAL: Omit<CreateGoalInput, 'employeeId'> = {
   title: '',
@@ -88,6 +101,7 @@ const MyPerformancePage = () => {
       queryClient.invalidateQueries({ queryKey: ['team-work-updates'] });
     },
   });
+  const [tab, setTab] = useState<'mine' | 'team'>('mine');
   const [lateFor, setLateFor] = useState<string | null>(null);
   const [managing, setManaging] = useState<{ id: string; name: string } | null>(null);
   const [noteDraft, setNoteDraft] = useState<FeedbackDraft | null>(null);
@@ -164,6 +178,11 @@ const MyPerformancePage = () => {
   );
   const goalTitle = new Map(g.goals.map((x) => [x.id, x.title]));
   const isRm = (teamGoals.data?.length ?? 0) > 0;
+  const lateCount = lateQueue.data?.length ?? 0;
+  // Mine | My team: an RM's team work gets its own tab; HR reach never shows
+  // here (that lives under HR → Quarter reports).
+  const hasTeam = isRm || !!me.data?.hasReports || lateCount > 0;
+  const view = hasTeam ? tab : 'mine';
 
   return (
     <div className='w-full space-y-4'>
@@ -174,255 +193,299 @@ const MyPerformancePage = () => {
         </span>
       </div>
 
-      <MyPips />
+      {hasTeam && (
+        <PageTabs
+          tabs={[
+            { key: 'mine', label: 'Mine' },
+            { key: 'team', label: 'My team', count: lateCount },
+          ]}
+          active={view}
+          onChange={setTab}
+        />
+      )}
+
+      {view === 'mine' && <MyPips />}
 
       {/* ── Own goals ──────────────────────────────────────── */}
-      <div className='rounded-xl border border-slate-200 bg-white p-5'>
-        <div className='flex flex-wrap items-baseline justify-between gap-2'>
-          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-            Goals this quarter
-          </h2>
-          {/* Self-governing (reports to Admin): nobody above sets their goals. */}
-          {me.data?.selfGoverned && (
-            <button
-              type='button'
-              onClick={() =>
-                setGoalFor({
-                  id: me.data!.id,
-                  name: me.data!.name,
-                  employeeCode: me.data!.employeeCode,
-                })
-              }
-              className='rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-500'
-            >
-              + Add my goal
-            </button>
-          )}
-          {g.attainment !== null && (
-            <span className='text-sm text-slate-600'>
-              Attainment <b className='text-slate-800'>{g.attainment}%</b>
-              {g.atRisk > 0 && (
-                <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700'>
-                  {g.atRisk} at risk
-                </span>
-              )}
-            </span>
-          )}
-        </div>
-
-        {g.goals.length > 0 && (
-          <p className='mt-1 text-xs text-slate-400'>
-            {(Object.keys(GOAL_CATEGORY_LABELS) as GoalCategory[])
-              .map(
-                (c) =>
-                  `${GOAL_CATEGORY_LABELS[c].label} ${g.byCategory[c] === null ? '—' : `${g.byCategory[c]}%`} (${GOAL_CATEGORY_LABELS[c].share}%)`,
-              )
-              .join(' · ')}
-          </p>
-        )}
-
-        {g.goals.length > 0 && g.weightTotal !== 100 && (
-          <p className='mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-700'>
-            Weights sum to {g.weightTotal}, not 100 — attainment still computes, but ask your
-            manager to rebalance.
-          </p>
-        )}
-
-        {g.goals.length === 0 ? (
-          <p className='mt-3 text-sm text-slate-400'>
-            No goals yet — they are set by your manager (or HR), not by you. Once set, only YOU
-            move the progress.
-          </p>
-        ) : (
-          <div className='mt-3 space-y-3'>
-            {g.goals.map((goal) => {
-              const value = dragging[goal.id] ?? goal.progress;
-              return (
-                <div key={goal.id} className='rounded-lg border border-slate-100 bg-slate-50 p-4'>
-                  <div className='flex flex-wrap items-baseline justify-between gap-2'>
-                    <div className='min-w-0'>
-                      <span className='font-medium text-slate-800'>{goal.title}</span>
-                      <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600'>
-                        {GOAL_CATEGORY_LABELS[goal.category].label}
-                      </span>
-                      {isAtRisk(goal, today) && (
-                        <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
-                          at risk
-                        </span>
-                      )}
-                      <p className='mt-0.5 text-xs text-slate-400'>
-                        {goal.metric && <>{goal.metric}{goal.target ? ` → ${goal.target}` : ''} · </>}
-                        weight {goal.weight} · due {goal.dueOn}
-                        {goal.createdByName && <> · set by {goal.createdByName}</>}
-                      </p>
-                    </div>
-                    <span className='text-lg font-semibold tabular-nums text-slate-800'>
-                      {value}%
-                    </span>
-                  </div>
-                  <input
-                    type='range'
-                    min={0}
-                    max={100}
-                    step={5}
-                    value={value}
-                    disabled={progress.isPending}
-                    onChange={(e) =>
-                      setDragging((d) => ({ ...d, [goal.id]: Number(e.target.value) }))
-                    }
-                    onPointerUp={() => {
-                      const v = dragging[goal.id];
-                      if (v !== undefined && v !== goal.progress)
-                        progress.mutate({ id: goal.id, value: v });
-                    }}
-                    className='mt-2 w-full accent-brand-600'
-                  />
-                </div>
-              );
-            })}
-            {progress.error && (
-              <p className='text-sm text-red-600'>{apiErrorMessage(progress.error)}</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Daily work update ──────────────────────────────── */}
-      <div className='rounded-xl border border-slate-200 bg-white p-5'>
-        <div className='flex flex-wrap items-baseline justify-between gap-2'>
-          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-            Today&apos;s work update
-          </h2>
-          <span className='text-xs text-slate-400'>
-            {myUpdates.data?.scoringEnabled
-              ? 'Scored against your goals after you submit'
-              : 'AI scoring is off — updates store unscored'}
-          </span>
-        </div>
-
-        {/* Last 14 days — leave, holidays and off days never count as a miss. */}
-        <div className='mt-3 flex gap-1'>
-          {strip.map((d) => {
-            const fillable = d.status === 'missed' && d.date >= lateWindowFloor;
-            return (
+      {view === 'mine' && (
+        <div className='rounded-xl border border-slate-200 bg-white p-5'>
+          <div className='flex flex-wrap items-baseline justify-between gap-2'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+              Goals this quarter
+            </h2>
+            {/* Self-governing (reports to Admin): nobody above sets their goals. */}
+            {me.data?.selfGoverned && (
               <button
-                key={d.date}
-                type='button'
-                disabled={!fillable}
-                onClick={() => setLateFor(d.date)}
-                title={`${d.date} — ${STRIP_LOOK[d.status].label}${
-                  d.status === 'missed' && !fillable ? ' (too old to fill in)' : ''
-                }`}
-                className={`h-4 flex-1 rounded-sm ${STRIP_LOOK[d.status].cls}`}
-              />
-            );
-          })}
-        </div>
-        {myUpdates.data && (
-          <p
-            className={`mt-1 text-xs ${
-              myUpdates.data.missesThisMonth > myUpdates.data.missAllowance
-                ? 'text-red-600'
-                : 'text-slate-400'
-            }`}
-          >
-            {myUpdates.data.missesThisMonth} missed this month (allowance{' '}
-            {myUpdates.data.missAllowance}). Click a red day to fill it in late.
-          </p>
-        )}
-
-        <textarea
-          value={draft}
-          onChange={(e) => setNote(e.target.value)}
-          rows={3}
-          placeholder='What actually moved today? Mention the goal it served — the score reads for alignment.'
-          className='mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
-        />
-        {g.goals.length > 0 && (
-          <div className='mt-2 flex flex-wrap items-center gap-1.5'>
-            <span className='text-xs text-slate-400'>About:</span>
-            {g.goals.map((goal) => (
-              <button
-                key={goal.id}
                 type='button'
                 onClick={() =>
-                  setTags(
-                    tagged.includes(goal.id)
-                      ? tagged.filter((x) => x !== goal.id)
-                      : [...tagged, goal.id],
-                  )
+                  setGoalFor({
+                    id: me.data!.id,
+                    name: me.data!.name,
+                    employeeCode: me.data!.employeeCode,
+                  })
                 }
-                className={`rounded-full px-2.5 py-0.5 text-xs ${
-                  tagged.includes(goal.id)
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                className='rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-500'
               >
-                {goal.title}
+                + Add my goal
               </button>
-            ))}
-          </div>
-        )}
-        <div className='mt-2 flex items-center justify-between gap-3'>
-          <p className='text-xs text-slate-400'>
-            One entry per day — submitting again replaces (and rescores) today&apos;s.
-          </p>
-          <button
-            type='button'
-            disabled={submit.isPending || draft.trim().length < 10}
-            onClick={() => submit.mutate(draft.trim())}
-            className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
-          >
-            {submit.isPending ? 'Saving…' : todays ? 'Replace today’s update' : 'Submit update'}
-          </button>
-        </div>
-        {submit.error && <p className='mt-1 text-sm text-red-600'>{apiErrorMessage(submit.error)}</p>}
-
-        {todays && (todays.score !== null || todays.feedback) && (
-          <div className='mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm'>
-            {todays.score !== null && (
-              <span className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${scoreTone(todays.score)}`}>
-                {todays.score}/100
+            )}
+            {g.attainment !== null && (
+              <span className='text-sm text-slate-600'>
+                Attainment <b className='text-slate-800'>{g.attainment}%</b>
+                {g.atRisk > 0 && (
+                  <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700'>
+                    {g.atRisk} at risk
+                  </span>
+                )}
               </span>
             )}
-            {todays.feedback && <span className='text-slate-600'>{todays.feedback}</span>}
-            {todays.kpiHits && todays.kpiHits.length > 0 && (
-              <p className='mt-1 text-xs text-slate-400'>Touches: {todays.kpiHits.join(' · ')}</p>
-            )}
           </div>
-        )}
 
-        {(myUpdates.data?.updates.filter((u) => u.date !== today).length ?? 0) > 0 && (
-          <div className='mt-4 space-y-2 border-t border-slate-100 pt-3'>
-            {myUpdates.data!.updates
-              .filter((u) => u.date !== today)
-              .map((u) => (
-                <div key={u.id} className='text-sm'>
-                  <span className='font-mono text-xs text-slate-400'>{u.date}</span>
-                  {u.score !== null && (
-                    <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${scoreTone(u.score)}`}>
-                      {u.score}
-                    </span>
-                  )}
-                  {u.lateStatus && (
-                    <span className='ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700'>
-                      late · {u.lateStatus}
-                    </span>
-                  )}
-                  <p className='mt-0.5 text-slate-600'>{u.note}</p>
-                  {u.goalIds && u.goalIds.length > 0 && (
-                    <p className='text-xs text-slate-400'>
-                      About: {u.goalIds.map((id) => goalTitle.get(id) ?? 'a past goal').join(' · ')}
-                    </p>
-                  )}
-                </div>
-              ))}
+          {g.goals.length > 0 && (
+            <p className='mt-1 text-xs text-slate-400'>
+              {(Object.keys(GOAL_CATEGORY_LABELS) as GoalCategory[])
+                .map(
+                  (c) =>
+                    `${GOAL_CATEGORY_LABELS[c].label} ${g.byCategory[c] === null ? '—' : `${g.byCategory[c]}%`} (${GOAL_CATEGORY_LABELS[c].share}%)`,
+                )
+                .join(' · ')}
+            </p>
+          )}
+
+          {g.goals.length > 0 && g.weightTotal !== 100 && (
+            <p className='mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-700'>
+              Weights sum to {g.weightTotal}, not 100 — attainment still computes, but ask your
+              manager to rebalance.
+            </p>
+          )}
+
+          {g.goals.length === 0 ? (
+            <p className='mt-3 text-sm text-slate-400'>
+              No goals yet — they are set by your manager (or HR), not by you. Once set, only YOU
+              move the progress.
+            </p>
+          ) : (
+            <div className='mt-3 space-y-3'>
+              {g.goals.map((goal) => {
+                const value = dragging[goal.id] ?? goal.progress;
+                return (
+                  <div key={goal.id} className='rounded-lg border border-slate-100 bg-slate-50 p-4'>
+                    <div className='flex flex-wrap items-baseline justify-between gap-2'>
+                      <div className='min-w-0'>
+                        <span className='font-medium text-slate-800'>{goal.title}</span>
+                        <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600'>
+                          {GOAL_CATEGORY_LABELS[goal.category].label}
+                        </span>
+                        {goal.positionId && (
+                          <span
+                            title='Progress follows the position in Hiring'
+                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700'
+                          >
+                            hiring
+                          </span>
+                        )}
+                        {isAtRisk(goal, today) && (
+                          <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
+                            at risk
+                          </span>
+                        )}
+                        <p className='mt-0.5 text-xs text-slate-400'>
+                          {goal.metric && (
+                            <>
+                              {goal.metric}
+                              {goal.target ? ` → ${goal.target}` : ''} ·{' '}
+                            </>
+                          )}
+                          weight {goal.weight} · due {goal.dueOn}
+                          {goal.createdByName && <> · set by {goal.createdByName}</>}
+                        </p>
+                      </div>
+                      <span className='text-lg font-semibold tabular-nums text-slate-800'>
+                        {value}%
+                      </span>
+                    </div>
+                    {goal.positionId ? (
+                      <div className='mt-2 h-2 w-full rounded-full bg-slate-200'>
+                        <div
+                          className='h-2 rounded-full bg-sky-500'
+                          style={{ width: `${goal.progress}%` }}
+                        />
+                      </div>
+                    ) : (
+                    <input
+                      type='range'
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={value}
+                      disabled={progress.isPending}
+                      onChange={(e) =>
+                        setDragging((d) => ({ ...d, [goal.id]: Number(e.target.value) }))
+                      }
+                      onPointerUp={() => {
+                        const v = dragging[goal.id];
+                        if (v !== undefined && v !== goal.progress)
+                          progress.mutate({ id: goal.id, value: v });
+                      }}
+                      className='mt-2 w-full accent-brand-600'
+                    />
+                    )}
+                  </div>
+                );
+              })}
+              {progress.error && (
+                <p className='text-sm text-red-600'>{apiErrorMessage(progress.error)}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Daily work update ──────────────────────────────── */}
+      {view === 'mine' && (
+        <div className='rounded-xl border border-slate-200 bg-white p-5'>
+          <div className='flex flex-wrap items-baseline justify-between gap-2'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+              Today&apos;s work update
+            </h2>
+            <span className='text-xs text-slate-400'>
+              {myUpdates.data?.scoringEnabled
+                ? 'Scored against your goals after you submit'
+                : 'AI scoring is off — updates store unscored'}
+            </span>
           </div>
-        )}
-      </div>
+
+          {/* Last 14 days — leave, holidays and off days never count as a miss. */}
+          <div className='mt-3 flex gap-1'>
+            {strip.map((d) => {
+              const fillable = d.status === 'missed' && d.date >= lateWindowFloor;
+              return (
+                <button
+                  key={d.date}
+                  type='button'
+                  disabled={!fillable}
+                  onClick={() => setLateFor(d.date)}
+                  title={`${d.date} — ${STRIP_LOOK[d.status].label}${
+                    d.status === 'missed' && !fillable ? ' (too old to fill in)' : ''
+                  }`}
+                  className={`h-4 flex-1 rounded-sm ${STRIP_LOOK[d.status].cls}`}
+                />
+              );
+            })}
+          </div>
+          {myUpdates.data && (
+            <p
+              className={`mt-1 text-xs ${
+                myUpdates.data.missesThisMonth > myUpdates.data.missAllowance
+                  ? 'text-red-600'
+                  : 'text-slate-400'
+              }`}
+            >
+              {myUpdates.data.missesThisMonth} missed this month (allowance{' '}
+              {myUpdates.data.missAllowance}). Click a red day to fill it in late.
+            </p>
+          )}
+
+          <textarea
+            value={draft}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            placeholder='What actually moved today? Mention the goal it served — the score reads for alignment.'
+            className='mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
+          />
+          {g.goals.length > 0 && (
+            <div className='mt-2 flex flex-wrap items-center gap-1.5'>
+              <span className='text-xs text-slate-400'>About:</span>
+              {g.goals.map((goal) => (
+                <button
+                  key={goal.id}
+                  type='button'
+                  onClick={() =>
+                    setTags(
+                      tagged.includes(goal.id)
+                        ? tagged.filter((x) => x !== goal.id)
+                        : [...tagged, goal.id],
+                    )
+                  }
+                  className={`rounded-full px-2.5 py-0.5 text-xs ${
+                    tagged.includes(goal.id)
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {goal.title}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className='mt-2 flex items-center justify-between gap-3'>
+            <p className='text-xs text-slate-400'>
+              One entry per day — submitting again replaces (and rescores) today&apos;s.
+            </p>
+            <button
+              type='button'
+              disabled={submit.isPending || draft.trim().length < 10}
+              onClick={() => submit.mutate(draft.trim())}
+              className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
+            >
+              {submit.isPending ? 'Saving…' : todays ? 'Replace today’s update' : 'Submit update'}
+            </button>
+          </div>
+          {submit.error && (
+            <p className='mt-1 text-sm text-red-600'>{apiErrorMessage(submit.error)}</p>
+          )}
+
+          {todays && (todays.score !== null || todays.feedback) && (
+            <div className='mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm'>
+              {todays.score !== null && (
+                <span
+                  className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${scoreTone(todays.score)}`}
+                >
+                  {todays.score}/100
+                </span>
+              )}
+              {todays.feedback && <span className='text-slate-600'>{todays.feedback}</span>}
+              {todays.kpiHits && todays.kpiHits.length > 0 && (
+                <p className='mt-1 text-xs text-slate-400'>Touches: {todays.kpiHits.join(' · ')}</p>
+              )}
+            </div>
+          )}
+
+          {(myUpdates.data?.updates.filter((u) => u.date !== today).length ?? 0) > 0 && (
+            <div className='mt-4 space-y-2 border-t border-slate-100 pt-3'>
+              {myUpdates
+                .data!.updates.filter((u) => u.date !== today)
+                .map((u) => (
+                  <div key={u.id} className='text-sm'>
+                    <span className='font-mono text-xs text-slate-400'>{u.date}</span>
+                    {u.score !== null && (
+                      <span
+                        className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${scoreTone(u.score)}`}
+                      >
+                        {u.score}
+                      </span>
+                    )}
+                    {u.lateStatus && (
+                      <span className='ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700'>
+                        late · {u.lateStatus}
+                      </span>
+                    )}
+                    <p className='mt-0.5 text-slate-600'>{u.note}</p>
+                    {u.goalIds && u.goalIds.length > 0 && (
+                      <p className='text-xs text-slate-400'>
+                        About:{' '}
+                        {u.goalIds.map((id) => goalTitle.get(id) ?? 'a past goal').join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── RM: late entries waiting ───────────────────────── */}
-      {(lateQueue.data?.length ?? 0) > 0 && (
+      {view === 'team' && lateCount > 0 && (
         <div className='rounded-xl border border-amber-200 bg-amber-50/50 p-5'>
           <h2 className='text-xs font-semibold uppercase tracking-wide text-amber-700'>
             Missed updates filled in late — your call
@@ -466,7 +529,7 @@ const MyPerformancePage = () => {
       )}
 
       {/* ── Own quarter reports (CGP transparency) ─────────── */}
-      {(myReports.data?.length ?? 0) > 0 && (
+      {view === 'mine' && (myReports.data?.length ?? 0) > 0 && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
             My quarter reports
@@ -480,17 +543,17 @@ const MyPerformancePage = () => {
       )}
 
       {/* ── RM: the team's quarter reports ───────────────────── */}
-      {isRm && (
+      {view === 'team' && isRm && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400'>
             Your people — quarter reports
           </h2>
-          <QuarterBoard />
+          <QuarterBoard scope='rm' />
         </div>
       )}
 
       {/* ── RM: the team's goal sheet ──────────────────────── */}
-      {isRm && (
+      {view === 'team' && isRm && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
             Your people — goals
@@ -565,7 +628,7 @@ const MyPerformancePage = () => {
       )}
 
       {/* ── RM: the team's update sheet (read-only) ────────── */}
-      {isRm && (teamUpdates.data?.length ?? 0) > 0 && (
+      {view === 'team' && isRm && (teamUpdates.data?.length ?? 0) > 0 && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
             Your people — updates this week
@@ -588,20 +651,25 @@ const MyPerformancePage = () => {
                       r.overAllowance ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
                     }`}
                   >
-                    {r.missesThisMonth} missed this month{r.overAllowance ? ' — over allowance' : ''}
+                    {r.missesThisMonth} missed this month
+                    {r.overAllowance ? ' — over allowance' : ''}
                   </span>
                   <div className='mt-1 space-y-1.5'>
                     {r.updates.map((u) => (
                       <div key={u.id} className='text-sm'>
                         <span className='font-mono text-xs text-slate-400'>{u.date}</span>
                         {u.score !== null && (
-                          <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${scoreTone(u.score)}`}>
+                          <span
+                            className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${scoreTone(u.score)}`}
+                          >
                             {u.score}
                           </span>
                         )}
                         <button
                           type='button'
-                          onClick={() => react({ id: r.employee.id, name: r.employee.name }, u.date)}
+                          onClick={() =>
+                            react({ id: r.employee.id, name: r.employee.name }, u.date)
+                          }
                           className='ml-2 text-[11px] text-brand-600 hover:underline'
                         >
                           React
@@ -658,7 +726,9 @@ const MyPerformancePage = () => {
                       <div className='flex items-center gap-2'>
                         <span className='font-mono text-[11px] text-slate-400'>{u.date}</span>
                         {u.score !== null ? (
-                          <span className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${scoreTone(u.score)}`}>
+                          <span
+                            className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${scoreTone(u.score)}`}
+                          >
                             {u.score}
                           </span>
                         ) : (
@@ -678,9 +748,7 @@ const MyPerformancePage = () => {
                         React
                       </button>
                       <p className='mt-0.5 text-sm text-slate-600'>{u.note}</p>
-                      {u.feedback && (
-                        <p className='mt-0.5 text-xs text-slate-400'>{u.feedback}</p>
-                      )}
+                      {u.feedback && <p className='mt-0.5 text-xs text-slate-400'>{u.feedback}</p>}
                     </li>
                   ))}
                 </ul>
@@ -707,7 +775,8 @@ const MyPerformancePage = () => {
           <div className='w-full max-w-md rounded-xl bg-white p-6 shadow-lg'>
             <h2 className='text-lg font-semibold text-slate-800'>Goal for {goalFor.name}</h2>
             <p className='mt-1 text-xs text-slate-400'>
-              Weights should sum to 100 within the quarter; the score weighs categories 50 / 25 / 25. Due date defaults to the cycle end.
+              Weights should sum to 100 within the quarter; the score weighs categories 50 / 25 /
+              25. Due date defaults to the cycle end.
             </p>
             <div className='mt-4 space-y-3'>
               <input
@@ -796,7 +865,11 @@ const MyPerformancePage = () => {
                 type='button'
                 disabled={createGoal.isPending || goalDraft.title.trim().length < 3}
                 onClick={() =>
-                  createGoal.mutate({ ...goalDraft, title: goalDraft.title.trim(), employeeId: goalFor.id })
+                  createGoal.mutate({
+                    ...goalDraft,
+                    title: goalDraft.title.trim(),
+                    employeeId: goalFor.id,
+                  })
                 }
                 className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
               >

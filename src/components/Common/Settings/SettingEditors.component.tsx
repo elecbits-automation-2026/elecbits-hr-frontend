@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { AwardCatalogEntry } from '@app-types/api.types';
 import { attendanceApi } from '@services/api/attendance.api';
 import { concernsApi } from '@services/api/concerns.api';
+import { departmentsApi } from '@services/api/departments.api';
 
 /*
  * One editor per setting VALUE SHAPE. Each keeps a string draft, converts on
@@ -29,6 +30,8 @@ const FIELD_LABELS: Record<string, string> = {
   salaryFloor: 'Applies from salary (₹)',
   noticeDays: 'Notice period (days)',
   probationMonths: 'Probation (months)',
+  remindDaysBefore: 'Remind heads (days before the quarter)',
+  deadlineDaysBefore: 'Deadline (days before the quarter)',
   leaves: 'Leave requests',
   remote: 'Remote-work requests',
   minMonthsInBand: 'Months in current band',
@@ -811,6 +814,39 @@ export const PeopleListEditor = ({
         </button>
         {children}
       </div>
+    </form>
+  );
+};
+
+/** One department, or none (`hiring.hrDepartment`). */
+export const DepartmentEditor = ({
+  value,
+  onSave,
+  children,
+}: EditorProps<{ departmentId: string | null }>) => {
+  const [id, setId] = useState(value.departmentId ?? '');
+  const departments = useQuery({ queryKey: ['departments'], queryFn: departmentsApi.list });
+  return (
+    <form
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        onSave({ departmentId: id || null });
+      }}
+      className='flex flex-wrap items-end gap-2'
+    >
+      <select
+        value={id}
+        onChange={(e) => setId(e.target.value)}
+        className={`${inputClass} min-w-[16rem]`}
+      >
+        <option value=''>Not set</option>
+        {departments.data?.map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.name}
+          </option>
+        ))}
+      </select>
+      {children}
     </form>
   );
 };
