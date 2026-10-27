@@ -37,7 +37,11 @@ export const MODULE_INFO: Record<string, { group: string; unlocks: string; notBu
     unlocks:
       'Whistleblower (vigil) reports — kept apart from routine HR; plain HR cannot see them. Org scope.',
   },
-  'ta.hiring': { group: 'Hiring', unlocks: 'Hiring.', notBuilt: true },
+  'ta.hiring': {
+    group: 'Hiring',
+    unlocks:
+      'Talent acquisition: every hiring line, JDs and scorecards, candidates and the talent pool, interview pipelines, offers. Org scope.',
+  },
   'pr.payroll': {
     group: 'Payroll',
     unlocks:

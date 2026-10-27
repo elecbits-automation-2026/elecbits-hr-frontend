@@ -61,6 +61,12 @@ export interface Me {
   hasReports: boolean;
   /** Reports to the Admin account: own requests self-approve, sets own goals. */
   selfGoverned: boolean;
+  /** Seats held right now — shows the hiring nav items (UX only). */
+  seats: SeatKind[];
+  /** The HR department's head, or a TA RM with a hire to decide — shows Hiring approvals (UX only). */
+  hiringApprover: boolean;
+  /** Conducts a round on a live application — shows My interviews (UX only). */
+  hasInterviews: boolean;
 }
 
 /** PATCH /me body — self-serve identity fields only (decision D3). */
@@ -1124,6 +1130,8 @@ export interface Goal {
   /** 0–100, moved ONLY by the goal's owner. */
   progress: number;
   dueOn: string;
+  /** Set = a hiring goal: progress follows the position in Hiring; not editable here. */
+  positionId: string | null;
   createdByName: string | null;
   createdAt: string;
 }
@@ -2060,4 +2068,322 @@ export interface CreatePipInput {
   targets: Pip['targets'];
   support: string;
   startOn?: string;
+}
+
+/** Seats HR assigns (TA groundwork): one holder each; ended, never deleted. */
+export type SeatKind = 'dept_head' | 'vp_hr_head';
+
+export interface Seat {
+  id: string;
+  seat: SeatKind;
+  departmentId: string | null;
+  departmentName: string | null;
+  employeeId: string;
+  employeeName: string;
+  acting: boolean;
+  startedAt: string;
+}
+
+export interface VacantSeat {
+  seat: SeatKind;
+  departmentId: string | null;
+  departmentName: string | null;
+}
+
+export interface SeatsOverview {
+  seats: Seat[];
+  vacant: VacantSeat[];
+  /** The Admin account — never offered as a holder. */
+  ownerEmployeeId: string | null;
+}
+
+// ── Hiring (TA Step B) ───────────────────────────────────────────────────
+export type InterviewRound = 'hr' | 'technical' | 'practical' | 'managerial' | 'hr_final';
+export type ApproverRole = 'hr_head' | 'admin';
+export type RequisitionStatus =
+  | 'draft'
+  | 'queued'
+  | 'submitted'
+  | 'returned'
+  | 'approved'
+  | 'cancelled';
+
+export interface HiringMe {
+  headOf: Array<{ departmentId: string; departmentName: string; acting: boolean }>;
+  approverRoles: ApproverRole[];
+  /** The quarter heads plan for now, and the day its submitted lines go for approval. */
+  planQuarter: string;
+  planDeadline: string;
+}
+
+export interface Requisition {
+  id: string;
+  departmentId: string;
+  departmentName: string;
+  quarter: string | null;
+  roleTitle: string;
+  quantity: number;
+  notes: string | null;
+  /** Budget per hire: annual CTC in ₹ (null only on lines made before budgets). */
+  budgetMin: number | null;
+  budgetMax: number | null;
+  version: number;
+  status: RequisitionStatus;
+  urgent: boolean;
+  rounds: Array<{ round: InterviewRound; interviewerId: string | null; interviewerName: string | null }>;
+  /** Decisions on the current version only. */
+  approvals: Array<{
+    role: ApproverRole;
+    decision: 'approve' | 'reject';
+    decidedByName: string;
+    reason: string | null;
+    decidedAt: string;
+  }>;
+  waitingOn: ApproverRole[];
+  returnReason: string | null;
+  createdByName: string;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  /** The TA RM Admin gave the line to — they assign its positions to their team. */
+  taRm: { id: string; name: string } | null;
+  taRmAssignedAt: string | null;
+  createdAt: string;
+  /** Step C — present once the line is approved. */
+  positions: Position[];
+  documents: { jd: TaDocument | null; scorecard: TaDocument | null };
+}
+
+/** Someone Admin can give a line to: holds the TA batch and has reports. */
+export interface TaRmOption {
+  id: string;
+  name: string;
+  employeeCode: string;
+  reports: number;
+}
+
+export interface HiringPlan {
+  departmentId: string;
+  quarter: string;
+  /** Submitted lines wait until this day, then go to the approvers together. */
+  deadline: string;
+  /** The quarter being planned now — the only one that takes new lines. */
+  open: boolean;
+  requisitions: Requisition[];
+}
+
+export interface RequisitionInput {
+  roleTitle: string;
+  quantity: number;
+  notes?: string | null;
+  /** Budget per hire: annual CTC in ₹. */
+  budgetMin: number;
+  budgetMax: number;
+  rounds: Array<{ round: InterviewRound; interviewerId: string | null }>;
+}
+
+// ── Hiring Step C: positions, JD + scorecard ─────────────────────────────
+export type PositionStatus =
+  | 'awaiting_docs'
+  | 'open'
+  | 'interviewing'
+  | 'offer'
+  | 'filled'
+  | 'cancelled';
+export type DocRole = 'dept_head' | 'admin';
+
+export interface Position {
+  id: string;
+  number: number;
+  status: PositionStatus;
+  recruiterId: string | null;
+  recruiterName: string | null;
+  /** The recruiter's hiring goal this quarter (progress follows the position). */
+  goal: { id: string; weight: number; progress: number } | null;
+  openedAt: string | null;
+}
+
+export interface JdContent {
+  summary: string;
+  responsibilities: string;
+  requirements: string;
+  location: string;
+  employmentType: string;
+  ctcRange?: string | null;
+}
+
+export interface ScorecardContent {
+  criteria: Array<{ round: InterviewRound; criterion: string; guidance?: string | null }>;
+}
+
+export interface TaDocument {
+  id: string;
+  kind: 'jd' | 'scorecard';
+  version: number;
+  status: 'draft' | 'in_review' | 'returned' | 'approved';
+  content: Record<string, unknown>;
+  writtenByName: string;
+  returnReason: string | null;
+  approvals: Array<{
+    role: DocRole;
+    decision: 'approve' | 'reject';
+    decidedByName: string;
+    reason: string | null;
+    decidedAt: string;
+  }>;
+  waitingOn: DocRole[];
+  submittedAt: string | null;
+  approvedAt: string | null;
+}
+
+export interface DocumentReview {
+  requisitionId: string;
+  departmentName: string;
+  roleTitle: string;
+  quantity: number;
+  document: TaDocument;
+}
+
+// ── Hiring Step D: candidates, applications, interviews ──────────────────
+export type CandidateSource =
+  | 'naukri'
+  | 'linkedin'
+  | 'internshala'
+  | 'careers_page'
+  | 'agency'
+  | 'campus'
+  | 'social'
+  | 'referral'
+  | 'internal'
+  | 'other';
+export type ApplicationStage =
+  | 'sourced'
+  | 'shortlisted'
+  | 'interviewing'
+  | 'interviewed'
+  | 'decision'
+  | 'selected'
+  | 'offered'
+  | 'hired'
+  | 'offer_declined'
+  | 'offer_withdrawn'
+  | 'no_show'
+  | 'rejected'
+  | 'withdrawn';
+
+export interface RoundScore {
+  round: InterviewRound;
+  interviewerName: string;
+  scores: Array<{ criterion: string; score: number }>;
+  average: number;
+  recommendation: 'hire' | 'no_hire';
+  notes: string | null;
+  submittedAt: string;
+}
+
+export interface Application {
+  id: string;
+  candidateId: string;
+  candidateName: string;
+  positionId: string;
+  positionNumber: number;
+  requisitionId: string;
+  /** The line's TA RM — validates the shortlist and decides the hire. */
+  taRmId: string | null;
+  roleTitle: string;
+  departmentName: string;
+  stage: ApplicationStage;
+  shortlistedByName: string | null;
+  outcomeReason: string | null;
+  rounds: Array<{
+    round: InterviewRound;
+    interviewerId: string | null;
+    interviewerName: string | null;
+    score: RoundScore | null;
+  }>;
+  createdAt: string;
+  // Step E
+  decision: {
+    approvals: Array<{
+      role: HireRole;
+      decision: 'approve' | 'reject';
+      decidedByName: string;
+      reason: string | null;
+    }>;
+    waitingOn: HireRole[];
+  };
+  /** Urgent lines must be approved before an offer goes out. */
+  lineApproved: boolean;
+  offeredCtc: number | null;
+  /** The line's budget per hire — an offer above the max is flagged, not blocked. */
+  budgetMin: number | null;
+  budgetMax: number | null;
+  joiningDate: string | null;
+  hasOfferLetter: boolean;
+  bgvStatus: BgvStatus;
+  bgvNotes: string | null;
+  employeeId: string | null;
+}
+
+export interface Candidate {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  source: CandidateSource;
+  referredByName: string | null;
+  notes: string | null;
+  hasCv: boolean;
+  retainUntil: string;
+  anonymised: boolean;
+  createdAt: string;
+  applications: Application[];
+}
+
+export interface CandidateMatch {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface CandidateInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  source: CandidateSource;
+  referredById?: string;
+  notes?: string;
+  consent: true;
+}
+
+export interface MyInterview {
+  applicationId: string;
+  candidateId: string;
+  candidateName: string;
+  hasCv: boolean;
+  roleTitle: string;
+  departmentName: string;
+  round: InterviewRound;
+  criteria: Array<{ criterion: string; guidance: string | null }>;
+  jdSummary: string | null;
+  myScore: RoundScore | null;
+}
+
+// ── Hiring Step E: decision, offer, BGV, hire ────────────────────────────
+export type HireRole = 'dept_head' | 'ta_rm' | 'hr_head' | 'admin';
+export type BgvStatus = 'not_started' | 'in_progress' | 'clear' | 'failed';
+
+export interface MarkHiredInput {
+  email: string;
+  employeeCode: string;
+  level: Level;
+  reportsToId: string;
+  designation?: string;
+  employmentType?: 'intern' | 'permanent' | 'contract';
+}
+
+export interface MarkHiredResult {
+  application: Application;
+  employeeId: string;
+  claim: { token: string; expiresAt: string };
 }

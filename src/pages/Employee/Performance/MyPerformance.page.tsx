@@ -276,6 +276,14 @@ const MyPerformancePage = () => {
                         <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600'>
                           {GOAL_CATEGORY_LABELS[goal.category].label}
                         </span>
+                        {goal.positionId && (
+                          <span
+                            title='Progress follows the position in Hiring'
+                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700'
+                          >
+                            hiring
+                          </span>
+                        )}
                         {isAtRisk(goal, today) && (
                           <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
                             at risk
@@ -296,6 +304,14 @@ const MyPerformancePage = () => {
                         {value}%
                       </span>
                     </div>
+                    {goal.positionId ? (
+                      <div className='mt-2 h-2 w-full rounded-full bg-slate-200'>
+                        <div
+                          className='h-2 rounded-full bg-sky-500'
+                          style={{ width: `${goal.progress}%` }}
+                        />
+                      </div>
+                    ) : (
                     <input
                       type='range'
                       min={0}
@@ -313,6 +329,7 @@ const MyPerformancePage = () => {
                       }}
                       className='mt-2 w-full accent-brand-600'
                     />
+                    )}
                   </div>
                 );
               })}

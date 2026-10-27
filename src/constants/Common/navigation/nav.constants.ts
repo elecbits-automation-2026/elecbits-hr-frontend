@@ -1,10 +1,12 @@
 import {
   ADMIN_AUDIT_ROUTE,
   ADMIN_BATCHES_ROUTE,
+  ADMIN_SEATS_ROUTE,
   ADMIN_GRANT_REQUESTS_ROUTE,
   ADMIN_INVITE_ROUTE,
   ADMIN_PUNCH_ZONES_ROUTE,
   ADMIN_SETTINGS_ROUTE,
+  ADMIN_HIRING_APPROVALS_ROUTE,
   ADMIN_ROUTE,
   HOME_ROUTE,
   HR_ASSETS_ROUTE,
@@ -13,6 +15,7 @@ import {
   HR_EXITS_ROUTE,
   HR_GATE_PASSES_ROUTE,
   HR_HIRING_ROUTE,
+  HR_CANDIDATES_ROUTE,
   HR_ATTENDANCE_ROUTE,
   HR_LEAVES_ROUTE,
   HR_OPS_SETUP_ROUTE,
@@ -26,6 +29,9 @@ import {
   HR_POLICIES_ROUTE,
   GROWTH_ROUTE,
   GRIEVANCES_ROUTE,
+  HIRING_APPROVALS_ROUTE,
+  HIRING_INTERVIEWS_ROUTE,
+  HIRING_PLAN_ROUTE,
   ONBOARDING_ROUTE,
   PERFORMANCE_ROUTE,
   POLICIES_ROUTE,
@@ -77,6 +83,10 @@ export const EMPLOYEE_NAV: NavItem[] = [
   { label: 'My growth', to: GROWTH_ROUTE },
   { label: 'My performance', to: PERFORMANCE_ROUTE },
   { label: 'Grievances', to: GRIEVANCES_ROUTE },
+  // Hiring items show only to seat holders — PortalShell filters them.
+  { label: 'Hiring plan', to: HIRING_PLAN_ROUTE },
+  { label: 'Hiring approvals', to: HIRING_APPROVALS_ROUTE },
+  { label: 'My interviews', to: HIRING_INTERVIEWS_ROUTE },
   // Team items show only when me.hasReports — PortalShell filters them (UX
   // only; the backend returns empty team lists for non-RMs regardless).
   { label: 'Team leaves', to: TEAM_LEAVES_ROUTE },
@@ -86,6 +96,11 @@ export const EMPLOYEE_NAV: NavItem[] = [
 
 /** Employee items that only make sense for an RM (filtered by hasReports). */
 export const RM_ONLY_ROUTES: string[] = [MY_TEAM_ROUTE, TEAM_LEAVES_ROUTE, TEAM_ATTENDANCE_ROUTE];
+
+/** Hiring items: the plan for department heads, approvals for hiring approvers. */
+export const HEAD_ONLY_ROUTES: string[] = [HIRING_PLAN_ROUTE];
+export const HIRING_APPROVER_ROUTES: string[] = [HIRING_APPROVALS_ROUTE];
+export const INTERVIEWER_ROUTES: string[] = [HIRING_INTERVIEWS_ROUTE];
 
 export const HR_NAV: HrNavItem[] = [
   { label: 'People', to: HR_PEOPLE_ROUTE, portal: 'HRBP' },
@@ -100,6 +115,7 @@ export const HR_NAV: HrNavItem[] = [
   { label: 'Quarter reports', to: HR_QUARTER_REPORTS_ROUTE, portal: 'HRBP' },
   { label: 'Settings', to: HR_SETTINGS_ROUTE, portal: 'HRBP' },
   { label: 'Hiring', to: HR_HIRING_ROUTE, portal: 'TA' },
+  { label: 'Candidates', to: HR_CANDIDATES_ROUTE, portal: 'TA' },
   { label: 'Payroll', to: HR_PAYROLL_ROUTE, portal: 'PR' },
   { label: 'Assets', to: HR_ASSETS_ROUTE, portal: 'OPS' },
   { label: 'Asset requests', to: HR_ASSET_REQUESTS_ROUTE, portal: 'OPS' },
@@ -112,7 +128,9 @@ export const ADMIN_NAV: NavItem[] = [
   { label: 'Overview', to: ADMIN_ROUTE, end: true },
   { label: 'Invite employee', to: ADMIN_INVITE_ROUTE },
   { label: 'Access batches', to: ADMIN_BATCHES_ROUTE },
+  { label: 'Seats', to: ADMIN_SEATS_ROUTE },
   { label: 'Grant requests', to: ADMIN_GRANT_REQUESTS_ROUTE },
+  { label: 'Hiring approvals', to: ADMIN_HIRING_APPROVALS_ROUTE },
   { label: 'Punch zones', to: ADMIN_PUNCH_ZONES_ROUTE },
   { label: 'Org settings', to: ADMIN_SETTINGS_ROUTE },
   { label: 'Audit log', to: ADMIN_AUDIT_ROUTE },

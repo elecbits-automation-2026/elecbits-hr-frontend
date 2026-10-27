@@ -7,6 +7,7 @@ import { apiErrorMessage } from '@utils/apiError';
 
 import {
   AwardCatalogEditor,
+  DepartmentEditor,
   NumberEditor,
   NumberFieldsEditor,
   OrderedLeaveTypesEditor,
@@ -55,6 +56,11 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
     <TextFieldsEditor value={v as Record<string, string>} onSave={onSave}>
       {btn}
     </TextFieldsEditor>
+  ),
+  'hiring.hrDepartment': (v, onSave, btn) => (
+    <DepartmentEditor value={v as { departmentId: string | null }} onSave={onSave}>
+      {btn}
+    </DepartmentEditor>
   ),
   'concerns.mrcMembers': (v, onSave, btn) => (
     <PeopleListEditor value={v as { employeeIds: string[] }} onSave={onSave}>

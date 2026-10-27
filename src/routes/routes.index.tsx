@@ -39,6 +39,10 @@ const MyGrowthPage = lazyRoute(() => import('@pages/Employee/Growth/MyGrowth.pag
 const MyPerformancePage = lazyRoute(() => import('@pages/Employee/Performance/MyPerformance.page'));
 const ResignationPage = lazyRoute(() => import('@pages/Employee/Exit/Resignation.page'));
 const GrievancesPage = lazyRoute(() => import('@pages/Employee/Grievances/Grievances.page'));
+const HiringPlanPage = lazyRoute(() => import('@pages/Employee/Hiring/HiringPlan.page'));
+const HiringApprovalsPage = lazyRoute(() => import('@pages/Common/Hiring/HiringApprovals.page'));
+const MyInterviewsPage = lazyRoute(() => import('@pages/Employee/Hiring/MyInterviews.page'));
+const CandidatesPage = lazyRoute(() => import('@pages/Ta/Candidates/Candidates.page'));
 const ConcernFollowUpPage = lazyRoute(
   () => import('@pages/Employee/Concerns/ConcernFollowUp.page'),
 );
@@ -46,6 +50,7 @@ const ConcernFollowUpPage = lazyRoute(
 const PeoplePage = lazyRoute(() => import('@pages/Hrbp/People/People.page'));
 const OrgStructurePage = lazyRoute(() => import('@pages/Hrbp/OrgStructure/OrgStructure.page'));
 const DepartmentsPage = lazyRoute(() => import('@pages/Hrbp/Departments/Departments.page'));
+const SeatsPage = lazyRoute(() => import('@pages/Admin/Seats/Seats.page'));
 const ExitsPage = lazyRoute(() => import('@pages/Hrbp/Exits/Exits.page'));
 const HrLeavesPage = lazyRoute(() => import('@pages/Hrbp/Leaves/Leaves.page'));
 const HrAttendancePage = lazyRoute(() => import('@pages/Hrbp/Attendance/Attendance.page'));
@@ -227,6 +232,30 @@ const AppRoutes = () => (
         element={<Navigate to={`${GRIEVANCES_ROUTE}?tab=open-door`} replace />}
       />
       <Route
+        path='hiring/plan'
+        element={
+          <RouteScreen title={ROUTE_TITLES.hiringPlan}>
+            <HiringPlanPage />
+          </RouteScreen>
+        }
+      />
+      <Route
+        path='hiring/approvals'
+        element={
+          <RouteScreen title={ROUTE_TITLES.hiringApprovals}>
+            <HiringApprovalsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
+        path='hiring/interviews'
+        element={
+          <RouteScreen title={ROUTE_TITLES.myInterviews}>
+            <MyInterviewsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
         path='policies'
         element={
           <RouteScreen title={ROUTE_TITLES.policies}>
@@ -375,6 +404,14 @@ const AppRoutes = () => (
         }
       />
       <Route
+        path='candidates'
+        element={
+          <RouteScreen title={ROUTE_TITLES.hrCandidates}>
+            <CandidatesPage />
+          </RouteScreen>
+        }
+      />
+      <Route
         path='payroll'
         element={
           <RouteScreen title={ROUTE_TITLES.hrPayroll}>
@@ -452,6 +489,14 @@ const AppRoutes = () => (
         }
       />
       <Route
+        path='seats'
+        element={
+          <RouteScreen title={ROUTE_TITLES.adminSeats}>
+            <SeatsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
         path='grant-requests'
         element={
           <RouteScreen title={ROUTE_TITLES.adminGrantRequests}>
@@ -472,6 +517,14 @@ const AppRoutes = () => (
         element={
           <RouteScreen title={ROUTE_TITLES.adminSettings}>
             <OrgSettingsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
+        path='hiring-approvals'
+        element={
+          <RouteScreen title={ROUTE_TITLES.hiringApprovals}>
+            <HiringApprovalsPage />
           </RouteScreen>
         }
       />
