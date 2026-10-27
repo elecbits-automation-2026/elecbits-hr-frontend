@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 
 import type {
   CreateGoalInput,
@@ -17,6 +18,7 @@ import QuarterBoard from '@components/Common/QuarterReports/QuarterBoard.compone
 import PageTabs from '@components/Common/Tabs/PageTabs.component';
 import QuarterReportCard from '@components/Common/QuarterReports/QuarterReportCard.component';
 import { MyPips } from '@components/Common/Pip/PipLists.component';
+import { HR_HIRING_ROUTE } from '@constants/Common/navigation/routes.constants';
 import { GOAL_CATEGORY_LABELS } from '@constants/Common/quarter.constants';
 import { quarterReportsApi } from '@services/api/quarterReports.api';
 import { meApi } from '@services/api/me.api';
@@ -277,12 +279,13 @@ const MyPerformancePage = () => {
                           {GOAL_CATEGORY_LABELS[goal.category].label}
                         </span>
                         {goal.positionId && (
-                          <span
-                            title='Progress follows the position in Hiring'
-                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700'
+                          <Link
+                            to={`${HR_HIRING_ROUTE}?position=${goal.positionId}`}
+                            title='Progress follows the position — work it (JD, scorecard, candidates) in HR → Hiring'
+                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 hover:bg-sky-100'
                           >
-                            hiring
-                          </span>
+                            hiring · open →
+                          </Link>
                         )}
                         {isAtRisk(goal, today) && (
                           <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>

@@ -34,6 +34,14 @@ const AddCandidateDialog = ({
   const [source, setSource] = useState<CandidateSource>('naukri');
   const [referredById, setReferredById] = useState('');
   const [notes, setNotes] = useState('');
+  const [education, setEducation] = useState('');
+  const [currentCompany, setCurrentCompany] = useState('');
+  const [designation, setDesignation] = useState('');
+  const [location, setLocation] = useState('');
+  const [noticeDays, setNoticeDays] = useState('');
+  const [currentCtc, setCurrentCtc] = useState('');
+  const [expectedCtc, setExpectedCtc] = useState('');
+  const [experience, setExperience] = useState('');
   const [consent, setConsent] = useState(false);
   const [cv, setCv] = useState<File | null>(null);
   const [matches, setMatches] = useState<CandidateMatch[]>([]);
@@ -52,6 +60,14 @@ const AddCandidateDialog = ({
         source,
         referredById: source === 'referral' ? referredById : undefined,
         notes: notes.trim() || undefined,
+        education: education.trim(),
+        experienceYears: Number(experience),
+        currentCompany: currentCompany.trim() || undefined,
+        designation: designation.trim() || undefined,
+        location: location.trim(),
+        noticeDays: Number(noticeDays),
+        currentCtc: currentCtc ? Number(currentCtc) : undefined,
+        expectedCtc: expectedCtc ? Number(expectedCtc) : undefined,
         consent: true,
       });
       return cv ? candidatesApi.uploadCv(c.id, cv) : c;
@@ -63,6 +79,12 @@ const AddCandidateDialog = ({
     name.trim() &&
     (email.trim() || phone.trim()) &&
     consent &&
+    education.trim() &&
+    location.trim() &&
+    noticeDays.trim() !== '' &&
+    experience.trim() !== '' &&
+    Number(experience) >= 0 &&
+    Number(experience) <= 60 &&
     (source !== 'referral' || referredById) &&
     matches.length === 0;
 
@@ -89,6 +111,70 @@ const AddCandidateDialog = ({
             onChange={(e) => setPhone(e.target.value)}
             onBlur={check}
             placeholder='Phone'
+            className={input}
+          />
+        </div>
+        <div className='grid grid-cols-[1fr_140px] gap-2'>
+          <input
+            value={education}
+            onChange={(e) => setEducation(e.target.value)}
+            placeholder='Education, e.g. B.Tech ECE, NIT Trichy'
+            className={input}
+          />
+          <input
+            type='number'
+            min={0}
+            max={60}
+            step={0.5}
+            value={experience}
+            onChange={(e) => setExperience(e.target.value)}
+            placeholder='Total yrs exp.'
+            aria-label='Total years of experience'
+            className={input}
+          />
+        </div>
+        <div className='grid grid-cols-2 gap-2'>
+          <input
+            value={currentCompany}
+            onChange={(e) => setCurrentCompany(e.target.value)}
+            placeholder='Current company (blank for freshers)'
+            className={input}
+          />
+          <input
+            value={designation}
+            onChange={(e) => setDesignation(e.target.value)}
+            placeholder='Designation'
+            className={input}
+          />
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder='Location (city)'
+            className={input}
+          />
+          <input
+            type='number'
+            min={0}
+            max={365}
+            value={noticeDays}
+            onChange={(e) => setNoticeDays(e.target.value)}
+            placeholder='Notice period (days)'
+            className={input}
+          />
+          <input
+            type='number'
+            min={0}
+            value={currentCtc}
+            onChange={(e) => setCurrentCtc(e.target.value)}
+            placeholder='Current CTC ₹/yr (optional)'
+            className={input}
+          />
+          <input
+            type='number'
+            min={0}
+            value={expectedCtc}
+            onChange={(e) => setExpectedCtc(e.target.value)}
+            placeholder='Expected CTC ₹/yr (optional)'
             className={input}
           />
         </div>

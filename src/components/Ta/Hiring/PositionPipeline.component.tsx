@@ -57,32 +57,22 @@ const PoolPicker = ({ onPick, onClose }: { onPick: (id: string) => void; onClose
   );
 };
 
-/**
- * One open position's candidates (TA Step D): add someone new or from the
- * talent pool, then move them along — shortlist, interviews, scores.
- */
-export const PositionPipeline = ({ position }: { position: Position }) => {
+/** Add a candidate to a position: someone new, or from the talent pool. */
+export const AddCandidateControls = ({ positionId }: { positionId: string }) => {
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState<'new' | 'pool' | null>(null);
-  const pipeline = useQuery({
-    queryKey: ['pipeline', position.id],
-    queryFn: () => candidatesApi.pipeline(position.id),
-  });
   const apply = useMutation({
-    mutationFn: (candidateId: string) => candidatesApi.apply(position.id, candidateId),
+    mutationFn: (candidateId: string) => candidatesApi.apply(positionId, candidateId),
     onSuccess: () => {
       setAdding(null);
-      queryClient.invalidateQueries({ queryKey: ['pipeline', position.id] });
+      queryClient.invalidateQueries({ queryKey: ['pipeline', positionId] });
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['hiring-requisitions'] });
     },
   });
 
   return (
     <div className='space-y-2'>
-      {pipeline.data?.length === 0 && <p className='text-xs text-slate-400'>No candidates yet.</p>}
-      {pipeline.data?.map((a) => (
-        <ApplicationRow key={a.id} app={a} />
-      ))}
       {apply.error && <p className='text-xs text-red-600'>{apiErrorMessage(apply.error)}</p>}
       {adding === 'pool' && (
         <PoolPicker onPick={(id) => apply.mutate(id)} onClose={() => setAdding(null)} />
@@ -109,11 +99,32 @@ export const PositionPipeline = ({ position }: { position: Position }) => {
 };
 
 /**
+ * One open position's candidates (TA Step D): add someone new or from the
+ * talent pool, then move them along — shortlist, interviews, scores.
+ */
+export const PositionPipeline = ({ position }: { position: Position }) => {
+  const pipeline = useQuery({
+    queryKey: ['pipeline', position.id],
+    queryFn: () => candidatesApi.pipeline(position.id),
+  });
+
+  return (
+    <div className='space-y-2'>
+      {pipeline.data?.length === 0 && <p className='text-xs text-slate-400'>No candidates yet.</p>}
+      {pipeline.data?.map((a) => (
+        <ApplicationRow key={a.id} app={a} />
+      ))}
+      <AddCandidateControls positionId={position.id} />
+    </div>
+  );
+};
+
+/**
  * The line's interview rounds and who conducts them; TA can swap an
  * interviewer (the department head is told). HR rounds left blank go to the
  * position's recruiter.
  */
-export const InterviewerList = ({ req }: { req: Requisition }) => {
+export const InterviewerList = ({ req, canSwap }: { req: Requisition; canSwap: boolean }) => {
   const queryClient = useQueryClient();
   const directory = useQuery({
     queryKey: ['concern-people'],
@@ -167,17 +178,20 @@ export const InterviewerList = ({ req }: { req: Requisition }) => {
               </button>
             </span>
           ) : (
-            <button
-              type='button'
-              onClick={() => {
-                swap.reset();
-                setPick('');
-                setEditing(r.round);
-              }}
-              className={btn}
-            >
-              {r.interviewerId ? 'Swap' : 'Name'}
-            </button>
+            // Only the line's TA RM swaps an interviewer (the dept head is told).
+            canSwap && (
+              <button
+                type='button'
+                onClick={() => {
+                  swap.reset();
+                  setPick('');
+                  setEditing(r.round);
+                }}
+                className={btn}
+              >
+                {r.interviewerId ? 'Swap' : 'Name'}
+              </button>
+            )
           )}
         </div>
       ))}
