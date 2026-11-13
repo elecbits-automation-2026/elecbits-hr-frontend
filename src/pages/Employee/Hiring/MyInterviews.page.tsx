@@ -12,9 +12,12 @@ import { roundScoreOf } from '@constants/Common/scorecardTemplate.constants';
 import { candidatesApi } from '@services/api/candidates.api';
 import { apiErrorMessage } from '@utils/apiError';
 
+/** Shortest evidence the backend accepts per attribute (no "ok"). */
+const EVIDENCE_MIN = 10;
+
 /**
  * Score one round on its sheet, as in the Excel: every attribute 1–4 with the
- * evidence for it, then a recommendation. The round score (out of 100) adds
+ * evidence for it (required), then a recommendation. The round score (out of 100) adds
  * up as you go. Final on submit.
  */
 const ScoreForm = ({ item }: { item: MyInterview }) => {
@@ -30,7 +33,7 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
         scores: item.attributes.map((a) => ({
           attribute: a.name,
           score: scores[a.name]!,
-          evidence: evidence[a.name]?.trim() || undefined,
+          evidence: evidence[a.name]!.trim(),
         })),
         recommendation: recommendation as 'hire' | 'no_hire',
         notes: notes.trim() || undefined,
@@ -38,10 +41,14 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-interviews'] }),
   });
   const given = item.attributes.filter((a) => scores[a.name]);
+  const written = item.attributes.filter(
+    (a) => (evidence[a.name] ?? '').trim().length >= EVIDENCE_MIN,
+  );
   // "Do not hire" ends the candidacy at once, so it must say why (the rejection record).
   const complete =
     item.attributes.length > 0 &&
     given.length === item.attributes.length &&
+    written.length === item.attributes.length &&
     recommendation &&
     (recommendation === 'hire' || notes.trim());
 
@@ -71,9 +78,13 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
                 value={evidence[a.name] ?? ''}
                 onChange={(e) => setEvidence({ ...evidence, [a.name]: e.target.value })}
                 rows={2}
-                placeholder='Comments / evidence'
+                placeholder={`Evidence — what they said or did (required, ${EVIDENCE_MIN}+ characters)`}
                 className='mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-brand-500 focus:outline-none'
               />
+              {scores[a.name] !== undefined &&
+                (evidence[a.name] ?? '').trim().length < EVIDENCE_MIN && (
+                  <p className='text-xs text-amber-700'>Write the evidence for this score.</p>
+                )}
             </div>
             <div className='flex items-start gap-1' role='radiogroup' aria-label={`Score for ${a.name}`}>
               {[1, 2, 3, 4].map((n) => (
@@ -100,7 +111,8 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
         <span className='font-mono font-semibold text-slate-800'>
           {roundScoreOf(given.map((a) => scores[a.name]!))}
         </span>{' '}
-        / 100 so far · {given.length} of {item.attributes.length} attributes scored
+        / 100 so far · {given.length} of {item.attributes.length} attributes scored ·{' '}
+        {written.length} with evidence
         {item.roundWeight !== null && <> · this round weighs {item.roundWeight}% of the total</>}
       </p>
       <div className='flex gap-4 text-sm text-slate-700'>

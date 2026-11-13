@@ -100,9 +100,10 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
 /**
  * One setting: label, description, badges and its editor. Without edit rights
  * the editor renders inside a disabled fieldset and the Save button is gone —
- * the value stays readable.
+ * the value stays readable. `bare` drops the frame and heading — the settings
+ * browser's row already shows them.
  */
-export const SettingCard = ({ setting }: { setting: OrgSetting }) => {
+export const SettingCard = ({ setting, bare = false }: { setting: OrgSetting; bare?: boolean }) => {
   const queryClient = useQueryClient();
   const save = useMutation({
     mutationFn: settingsApi.update,
@@ -135,6 +136,25 @@ export const SettingCard = ({ setting }: { setting: OrgSetting }) => {
         {saveButton}
       </NumberFieldsEditor>
     ));
+
+  if (bare) {
+    return (
+      <div className='rounded-lg bg-slate-50 p-4'>
+        <fieldset disabled={!setting.canEdit} className='min-w-0'>
+          {editor}
+        </fieldset>
+        {!setting.canEdit && <p className='mt-2 text-xs text-slate-400'>View only.</p>}
+        {save.error && <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(save.error)}</p>}
+        <p className='mt-2 text-xs text-slate-400'>
+          {setting.isDefault
+            ? 'Using the built-in default.'
+            : `Last changed ${setting.updatedAt ? new Date(setting.updatedAt).toLocaleString() : ''}${
+                setting.updatedByName ? ` by ${setting.updatedByName}` : ''
+              }`}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className='rounded-xl border border-slate-200 bg-white p-5'>

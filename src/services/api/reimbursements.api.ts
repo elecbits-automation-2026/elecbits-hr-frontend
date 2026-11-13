@@ -6,22 +6,45 @@ import type {
 import { api } from '@utils/axiosInstance';
 
 /**
- * Reimbursement claims: the employee claims, their manager then Payroll
- * approve, and approved claims are paid with the next payslip.
+ * Reimbursement claims: the employee claims, PR then the Admin account
+ * approve (a PR person's own claim: Admin only), and approved claims are paid
+ * by bank transfer from the reimbursement sheet — not on the payslip.
  */
 export const reimbursementsApi = {
   mine: async (): Promise<ReimbursementClaim[]> =>
     (await api.get<ReimbursementClaim[]>('/reimbursements/mine')).data,
-  /** Claims waiting on the caller as their reports' manager. */
-  team: async (): Promise<ReimbursementClaim[]> =>
-    (await api.get<ReimbursementClaim[]>('/reimbursements/team')).data,
-  /** Payroll's queue (pr.payroll, org). */
-  queue: async (statuses?: ReimbursementStatus[]): Promise<ReimbursementClaim[]> =>
+  /** PR / Admin: every claim by status, and `month` = approved in that month. */
+  queue: async (
+    filter: { statuses?: ReimbursementStatus[]; month?: string } = {},
+  ): Promise<ReimbursementClaim[]> =>
     (
       await api.get<ReimbursementClaim[]>('/reimbursements', {
-        params: statuses?.length ? { status: statuses.join(',') } : {},
+        params: {
+          ...(filter.statuses?.length ? { status: filter.statuses.join(',') } : {}),
+          ...(filter.month ? { month: filter.month } : {}),
+        },
       })
     ).data,
+  /** Download the Excel bank file of approved, unpaid claims. */
+  downloadBankFile: async (month?: string): Promise<void> => {
+    const res = await api.get<Blob>('/reimbursements/bank-file', {
+      params: month ? { month } : {},
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reimbursements-${month ?? new Date().toLocaleDateString('en-CA').slice(0, 7)}.xlsx`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+  /** After the transfer: approved claims become paid (all or none). */
+  markPaid: async (input: {
+    claimIds: string[];
+    paidOn: string;
+    reference: string;
+  }): Promise<{ paid: number; total: number }> =>
+    (await api.post<{ paid: number; total: number }>('/reimbursements/mark-paid', input)).data,
   create: async (input: CreateReimbursementInput): Promise<ReimbursementClaim> =>
     (await api.post<ReimbursementClaim>('/reimbursements', input)).data,
   decide: async (
@@ -39,7 +62,7 @@ export const reimbursementsApi = {
         headers: { 'Content-Type': file.type || 'application/octet-stream' },
       })
     ).data,
-  /** Open the receipt in a new tab (claimant, their RM, payroll). */
+  /** Open the receipt in a new tab (claimant, PR, Admin). */
   openReceipt: async (id: string): Promise<void> => {
     const res = await api.get<Blob>(`/reimbursements/${id}/receipt`, { responseType: 'blob' });
     const url = URL.createObjectURL(res.data);

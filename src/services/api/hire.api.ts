@@ -3,6 +3,7 @@ import type {
   CandidateDocStatus,
   CandidateDocument,
   MarkHiredInput,
+  Joiner,
   MarkHiredResult,
 } from '@app-types/api.types';
 import { api } from '@utils/axiosInstance';
@@ -69,6 +70,8 @@ export const hireApi = {
     (await api.post<Application>(`/hiring/applications/${id}/withdraw-offer`, { reason })).data,
   markHired: async (id: string, input: MarkHiredInput): Promise<MarkHiredResult> =>
     (await api.post<MarkHiredResult>(`/hiring/applications/${id}/hire`, input)).data,
+  /** HRBP's handover list: hired, not yet joined (+ the last 30 days' joiners). */
+  joiners: async (): Promise<Joiner[]> => (await api.get<Joiner[]>('/hiring/joiners')).data,
   confirmJoined: async (id: string): Promise<Application> =>
     (await api.post<Application>(`/hiring/applications/${id}/joined`)).data,
   noShow: async (id: string, reason: string): Promise<Application> =>

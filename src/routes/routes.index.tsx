@@ -20,14 +20,11 @@ const AuthPage = lazyRoute(() => import('@pages/Common/Authentication/Auth.page'
 
 const HomePage = lazyRoute(() => import('@pages/Employee/Home/Home.page'));
 const ProfilePage = lazyRoute(() => import('@pages/Employee/Profile/Profile.page'));
-const MyTeamPage = lazyRoute(() => import('@pages/Employee/MyTeam/MyTeam.page'));
+// My team merges the former My team / Team attendance / Team leaves pages.
+const TeamHubPage = lazyRoute(() => import('@pages/Employee/MyTeam/TeamHub.page'));
 const MyAssetsPage = lazyRoute(() => import('@pages/Employee/Assets/MyAssets.page'));
 const MyLeavesPage = lazyRoute(() => import('@pages/Employee/Leaves/MyLeaves.page'));
-const TeamLeavesPage = lazyRoute(() => import('@pages/Employee/Leaves/TeamLeaves.page'));
 const MyAttendancePage = lazyRoute(() => import('@pages/Employee/Attendance/MyAttendance.page'));
-const TeamAttendancePage = lazyRoute(
-  () => import('@pages/Employee/Attendance/TeamAttendance.page'),
-);
 const MyPayslipsPage = lazyRoute(() => import('@pages/Employee/Payslips/MyPayslips.page'));
 const ReimbursementsPage = lazyRoute(
   () => import('@pages/Employee/Reimbursements/Reimbursements.page'),
@@ -42,6 +39,7 @@ const GrievancesPage = lazyRoute(() => import('@pages/Employee/Grievances/Grieva
 const HiringPlanPage = lazyRoute(() => import('@pages/Employee/Hiring/HiringPlan.page'));
 const HiringApprovalsPage = lazyRoute(() => import('@pages/Common/Hiring/HiringApprovals.page'));
 const MyInterviewsPage = lazyRoute(() => import('@pages/Employee/Hiring/MyInterviews.page'));
+const JoinersPage = lazyRoute(() => import('@pages/Employee/Hiring/Joiners.page'));
 const CandidatesPage = lazyRoute(() => import('@pages/Ta/Candidates/Candidates.page'));
 const ConcernFollowUpPage = lazyRoute(
   () => import('@pages/Employee/Concerns/ConcernFollowUp.page'),
@@ -74,6 +72,9 @@ const AdminHomePage = lazyRoute(() => import('@pages/Admin/Home/AdminHome.page')
 const BatchesPage = lazyRoute(() => import('@pages/Admin/Access/Batches.page'));
 const GrantRequestsPage = lazyRoute(() => import('@pages/Admin/Access/GrantRequests.page'));
 const AuditLogPage = lazyRoute(() => import('@pages/Admin/Audit/AuditLog.page'));
+const AdminReimbursementsPage = lazyRoute(
+  () => import('@pages/Admin/Reimbursements/AdminReimbursements.page'),
+);
 const PunchZonesPage = lazyRoute(() => import('@pages/Admin/Zones/PunchZones.page'));
 const OrgSettingsPage = lazyRoute(() => import('@pages/Admin/Settings/OrgSettings.page'));
 
@@ -146,7 +147,7 @@ const AppRoutes = () => (
         path='my-team'
         element={
           <RouteScreen title={ROUTE_TITLES.myTeam}>
-            <MyTeamPage />
+            <TeamHubPage />
           </RouteScreen>
         }
       />
@@ -166,14 +167,8 @@ const AppRoutes = () => (
           </RouteScreen>
         }
       />
-      <Route
-        path='team-leaves'
-        element={
-          <RouteScreen title={ROUTE_TITLES.teamLeaves}>
-            <TeamLeavesPage />
-          </RouteScreen>
-        }
-      />
+      {/* Old team pages live inside My team now — bells and bookmarks still land. */}
+      <Route path='team-leaves' element={<Navigate to='/my-team?tab=leave' replace />} />
       <Route
         path='my-attendance'
         element={
@@ -182,14 +177,7 @@ const AppRoutes = () => (
           </RouteScreen>
         }
       />
-      <Route
-        path='team-attendance'
-        element={
-          <RouteScreen title={ROUTE_TITLES.teamAttendance}>
-            <TeamAttendancePage />
-          </RouteScreen>
-        }
-      />
+      <Route path='team-attendance' element={<Navigate to='/my-team?tab=attendance' replace />} />
       <Route
         path='my-payslips'
         element={
@@ -252,6 +240,14 @@ const AppRoutes = () => (
         element={
           <RouteScreen title={ROUTE_TITLES.myInterviews}>
             <MyInterviewsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
+        path='hiring/joiners'
+        element={
+          <RouteScreen title={ROUTE_TITLES.joiners}>
+            <JoinersPage />
           </RouteScreen>
         }
       />
@@ -525,6 +521,14 @@ const AppRoutes = () => (
         element={
           <RouteScreen title={ROUTE_TITLES.hiringApprovals}>
             <HiringApprovalsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
+        path='reimbursements'
+        element={
+          <RouteScreen title={ROUTE_TITLES.adminReimbursements}>
+            <AdminReimbursementsPage />
           </RouteScreen>
         }
       />

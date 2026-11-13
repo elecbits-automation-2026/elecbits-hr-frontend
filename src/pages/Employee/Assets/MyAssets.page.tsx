@@ -385,7 +385,7 @@ const MyAssetsPage = () => {
   return (
     <div className='w-full max-w-4xl space-y-4'>
       <div>
-        <h1 className='text-2xl font-semibold text-slate-800'>My assets</h1>
+        <h1 className='text-2xl font-semibold text-slate-800'>My equipment</h1>
         <p className='text-sm text-slate-500'>
           Company property in your care, for business use only (Code of Conduct). Everything you
           hold is returned when you leave.

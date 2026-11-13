@@ -9,7 +9,7 @@ const inputClass =
 
 /**
  * The RM opens a PIP: why, measurable targets, the support offered, and a
- * start date. 60 days, a check-in every 2 weeks; HR approves before it runs.
+ * start date. It runs 60 days from the start; the employee and HR are told.
  */
 const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => void }) => {
   const queryClient = useQueryClient();
@@ -42,8 +42,8 @@ const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => vo
   return (
     <div className='space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm'>
       <p className='text-xs text-slate-500'>
-        60 days with a check-in every 2 weeks. HR approves it before it starts; they then
-        acknowledge it.
+        Runs for 60 days from the start date. It starts straight away — the employee and HR
+        get a bell. At the end you record passed, one 30-day extension, or not passed.
       </p>
       <label className='block text-xs font-medium text-slate-600'>
         Why a PIP
@@ -117,7 +117,7 @@ const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => vo
           onClick={() => create.mutate()}
           className='rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-40'
         >
-          Send to HR for approval
+          Start the PIP
         </button>
         <button type='button' onClick={onDone} className='text-xs text-slate-400 hover:text-slate-600'>
           Cancel

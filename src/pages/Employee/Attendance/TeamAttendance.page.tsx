@@ -18,7 +18,7 @@ const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
  * pending queues (regularizations, WFH). Visible only to RMs via nav gating;
  * the backend filters by relationship regardless.
  */
-const TeamAttendancePage = () => {
+const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
   const queryClient = useQueryClient();
   const [month, setMonth] = useState(currentMonth());
   const [view, setView] = useState<'calendar' | 'summary'>('calendar');
@@ -66,7 +66,11 @@ const TeamAttendancePage = () => {
   return (
     <div className='w-full space-y-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
-        <h1 className='text-2xl font-semibold text-slate-800'>Team attendance</h1>
+        {embedded ? (
+          <span className='text-sm text-slate-500'>Your people&rsquo;s days this month</span>
+        ) : (
+          <h1 className='text-2xl font-semibold text-slate-800'>Team attendance</h1>
+        )}
         <div className='flex items-center gap-2'>
           {(['calendar', 'summary'] as const).map((v) => (
             <button

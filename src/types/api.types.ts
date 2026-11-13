@@ -67,6 +67,8 @@ export interface Me {
   hiringApprover: boolean;
   /** Conducts a round on a live application — shows My interviews (UX only). */
   hasInterviews: boolean;
+  /** Own onboarding still open (or about to start), or a report's is — shows Onboarding. */
+  showOnboarding: boolean;
 }
 
 /** PATCH /me body — self-serve identity fields only (decision D3). */
@@ -236,9 +238,11 @@ export interface Payslip {
 
 // ── Reimbursement claims ─────────────────────────────────────────────────────
 
+/** `pending_rm` is history only (the RM step was removed 2026-11-05). */
 export type ReimbursementStatus =
   | 'pending_rm'
   | 'pending_payroll'
+  | 'pending_admin'
   | 'approved'
   | 'paid'
   | 'declined'
@@ -247,6 +251,7 @@ export type ReimbursementStatus =
 export interface ReimbursementClaim {
   id: string;
   employee: { id: string; name: string; employeeCode: string };
+  department: string | null;
   spentOn: string;
   category: 'travel' | 'food' | 'internet_phone' | 'equipment' | 'other';
   description: string;
@@ -255,12 +260,17 @@ export interface ReimbursementClaim {
   /** The uploaded receipt file, if any. */
   receipt: { fileName: string; uploadedAt: string } | null;
   status: ReimbursementStatus;
-  rmDecidedByName: string | null;
-  rmDecidedAt: string | null;
+  /** PR's step. */
   payrollDecidedByName: string | null;
   payrollDecidedAt: string | null;
+  adminDecidedByName: string | null;
+  adminDecidedAt: string | null;
   declineReason: string | null;
-  /** YYYY-MM of the payroll run that paid it. */
+  /** Paid from the reimbursement sheet: transfer date + bank reference. */
+  paidOn: string | null;
+  paymentRef: string | null;
+  paidByName: string | null;
+  /** YYYY-MM of the payroll run that paid it (claims before 2026-11-05). */
   paidInMonth: string | null;
   createdAt: string;
 }
@@ -717,10 +727,20 @@ export interface RequestableBatch {
 export interface AuditEntry {
   id: string;
   actorUserId: string | null;
+  /** Employee name, else the account email; null for system jobs. */
+  actorName: string | null;
   action: string;
   subject: string;
   detail: string | null;
   createdAt: string;
+}
+
+/** One page of the audit log and how many entries match in total. */
+export interface AuditPage {
+  entries: AuditEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 // ── Policies (version-bound acknowledgements) ───────────────────────────────
@@ -809,13 +829,15 @@ export interface PolicyTracker {
 export type OnboardingPhase = 'before_start' | 'week_one' | 'first_30';
 export type OnboardingTaskOwner = 'employee' | 'hr' | 'manager' | 'admin' | 'ops' | 'payroll';
 
-/** An OPS / payroll joiner task (kit issue, salary + bank on record). */
+/** An OPS / payroll joiner task (assets issued, salary + bank on record). */
 export interface OnboardingTeamTask {
   taskId: string;
   title: string;
   done: boolean;
-  /** Done by the system: the kit is all held / salary + bank are on record. */
+  /** Done by the system (payroll: salary + bank are on record). */
   autoDone: boolean;
+  /** What was done — the note given with the tick. */
+  doneNote: string | null;
   employee: {
     id: string;
     name: string;
@@ -838,6 +860,15 @@ export interface OnboardingTask {
   done: boolean;
   doneAt: string | null;
   doneByName: string | null;
+  /** What was done — required with a hand tick (proof). */
+  doneNote: string | null;
+  /** A document step: completes by uploading the file, not by a tick. */
+  needsFile: boolean;
+  file: { fileName: string; sizeBytes: number; uploadedAt: string } | null;
+  /** Completes on its own from the records (account claimed, payroll set up). */
+  auto: boolean;
+  /** May this viewer tick (plain step) or upload (document step) it — its owner only. */
+  canAct: boolean;
 }
 
 export interface OnboardingJourney {
@@ -1367,7 +1398,6 @@ export interface QuarterReport {
   recognitions: number;
   feedback: { appreciation: number; concern: number };
   atRiskGoals: number;
-  pipCandidate: boolean;
   appraisalEligible: boolean;
 }
 
@@ -1414,7 +1444,7 @@ export interface BackgroundJobsOverview {
   runs: BackgroundJobRun[];
 }
 
-// ---- Concerns (disputes, complaints, whistleblower) ----
+// ---- Concerns (disputes, complaints; whistleblower = old cases only) ----
 
 export type ConcernTrack = 'dispute' | 'complaint' | 'whistleblower';
 export type ConcernStatus =
@@ -1431,7 +1461,7 @@ export type ConcernOutcome =
   | 'not_substantiated'
   | 'withdrawn'
   | 'malicious';
-export type ConcernQueueName = 'manager' | 'hr' | 'mrc' | 'vigil';
+export type ConcernQueueName = 'manager' | 'hr' | 'mrc';
 
 export interface ConcernNote {
   id: string;
@@ -1743,18 +1773,8 @@ export interface ImportAssetsResult {
   errors: { row: number; message: string }[];
 }
 
-export interface KitCheck {
-  designation: string | null;
-  items: { categoryId: string; categoryName: string; qty: number; held: number }[];
-}
-
 export interface AssetSetup {
   categories: (AssetCategory & { assetCount: number })[];
-  kits: {
-    designation: string;
-    items: { categoryId: string; categoryName: string; qty: number }[];
-  }[];
-  designations: string[];
 }
 
 export interface AssetRequest {
@@ -1936,6 +1956,8 @@ export interface Exit {
     passes: { id: string; assetCode: string; name: string; returnOn: string }[];
   } | null;
   fnf: FnfPreview | null;
+  /** Claims not paid yet — paid from the reimbursement sheet, not the F&F. */
+  unpaidClaims: { count: number; total: number } | null;
   can: {
     withdraw: boolean;
     acknowledge: boolean;
@@ -2035,12 +2057,11 @@ export interface CreateLoanInput {
   note?: string;
 }
 
-export type PipRating = 'on_track' | 'at_risk' | 'off_track';
-
 export interface Pip {
   id: string;
   employee: { id: string; name: string; employeeCode: string; designation: string | null };
   rm: Ref;
+  /** `pending_hr` is history only — PIPs start active since 2026-11-05. */
   status: 'pending_hr' | 'active' | 'passed' | 'not_passed' | 'cancelled';
   reason: string;
   targets: Array<{ title: string; measure: string }>;
@@ -2048,17 +2069,10 @@ export interface Pip {
   startOn: string;
   endOn: string;
   extended: boolean;
-  hrBy: Ref | null;
-  hrAt: string | null;
-  hrNote: string | null;
-  acknowledgedAt: string | null;
   outcomeNote: string | null;
   outcomeBy: Ref | null;
   outcomeAt: string | null;
-  checkins: Array<{ id: string; on: string; rating: PipRating; note: string; by: Ref }>;
-  /** When the next fortnightly check-in is due (active only). */
-  nextCheckinOn: string | null;
-  can: { decide: boolean; acknowledge: boolean; checkin: boolean; outcome: boolean; cancel: boolean };
+  can: { outcome: boolean; cancel: boolean };
   createdAt: string;
 }
 
@@ -2082,6 +2096,15 @@ export interface Seat {
   employeeName: string;
   acting: boolean;
   startedAt: string;
+}
+
+/** A past holder of a seat (rows are ended, never deleted). */
+export interface PastSeat extends Seat {
+  endedAt: string;
+  /** replaced | vacated | relieved */
+  endedReason: string | null;
+  /** Null when the system ended it (exit day). */
+  endedByName: string | null;
 }
 
 export interface VacantSeat {
@@ -2343,6 +2366,12 @@ export interface RoundScore {
   recommendation: 'hire' | 'no_hire';
   notes: string | null;
   submittedAt: string;
+}
+
+/** HRBP's handover row: a hired candidate with what is still open. */
+export interface Joiner extends Application {
+  recruiterName: string | null;
+  pendingDocuments: string[];
 }
 
 export interface Application {

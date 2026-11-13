@@ -9,14 +9,17 @@ const labelClass = 'block text-xs font-medium text-slate-600';
 
 /**
  * Request remote work for a date range. A reason is MANDATORY (client visit,
- * WFH, field work…) and BOTH the RM and HR must approve — only a fully
- * approved request lets you punch from outside the office zones.
+ * WFH, field work…). The RM alone approves; from the moment it is raised the
+ * person may punch from outside the office zones, and a decline turns those
+ * days absent (learner, 2026-11-05).
  */
 const WfhModal = ({ onClose }: { onClose: () => void }) => {
   const queryClient = useQueryClient();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
+  // Remote work is never for days gone by (the server refuses them too).
+  const today = new Date().toLocaleDateString('en-CA');
 
   const create = useMutation({
     mutationFn: attendanceApi.raiseWfh,
@@ -51,11 +54,11 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
         <div className='grid grid-cols-2 gap-3'>
           <div className='space-y-1'>
             <label className={labelClass}>From</label>
-            <input type='date' required value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
+            <input type='date' required min={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
           </div>
           <div className='space-y-1'>
             <label className={labelClass}>To</label>
-            <input type='date' value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+            <input type='date' min={startDate || today} value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
           </div>
         </div>
         <div className='space-y-1'>
@@ -69,7 +72,8 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
             className={`${inputClass} min-h-16`}
           />
           <p className='text-xs text-slate-400'>
-            Your RM and HR both approve this — the request only counts once both have.
+            You can clock in and out from anywhere as soon as you send this. Your RM approves it —
+            if they decline, those days count as absent.
           </p>
         </div>
 

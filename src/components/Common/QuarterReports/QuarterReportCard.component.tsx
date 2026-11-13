@@ -58,11 +58,6 @@ const QuarterReportCard = ({
           )}
         </span>
         <span className='flex items-center gap-2'>
-          {report.pipCandidate && (
-            <span className='rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
-              PIP candidate
-            </span>
-          )}
           {band ? (
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
               {band.label}

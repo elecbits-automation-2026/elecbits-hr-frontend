@@ -10,6 +10,22 @@ import { apiErrorMessage } from '@utils/apiError';
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
 const labelClass = 'block text-xs font-medium text-slate-600';
 
+/** Sick leave of MORE than this many days needs the certificate up front (backend SICK_CERT_AFTER_DAYS). */
+const SICK_CERT_AFTER_DAYS = 3;
+const CERT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+const CERT_MAX_BYTES = 10 * 1024 * 1024;
+
+/** Mon–Fri days in the range — a quick floor of what the backend will count. */
+const weekdaysBetween = (from: string, to: string): number => {
+  if (!from || !to || to < from) return 0;
+  let n = 0;
+  for (let t = Date.parse(from); t <= Date.parse(to); t += 86_400_000) {
+    const d = new Date(t).getUTCDay();
+    if (d !== 0 && d !== 6) n += 1;
+  }
+  return n;
+};
+
 /**
  * Raise a leave: full days are a range; a half day collapses to one date plus
  * which half. The backend recomputes days and enforces overlap/balance rules —
@@ -25,7 +41,20 @@ const RaiseLeaveModal = ({ types, onClose }: { types: LeaveType[]; onClose: () =
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
+  const [certificate, setCertificate] = useState<File | null>(null);
   const { leaveWindowDays } = usePublicSettings();
+  // Sick leave of more than 3 days: the medical certificate goes with the
+  // request (learner, 2026-11-05); it can't be approved without one.
+  const sickLong =
+    type === 'sick' && !half && weekdaysBetween(startDate, endDate) > SICK_CERT_AFTER_DAYS;
+  const certProblem =
+    certificate === null
+      ? null
+      : !CERT_TYPES.includes(certificate.type)
+        ? 'The certificate must be a PDF, JPG or PNG'
+        : certificate.size > CERT_MAX_BYTES
+          ? 'The certificate must be 10 MB or smaller'
+          : null;
   // Planned leave has to be raised ahead (the backend enforces the same rule).
   const noticeDays =
     type === 'earned' || type === 'vacation_family' ? leaveWindowDays[type] : 0;
@@ -35,7 +64,26 @@ const RaiseLeaveModal = ({ types, onClose }: { types: LeaveType[]; onClose: () =
       : undefined;
 
   const create = useMutation({
-    mutationFn: leavesApi.create,
+    mutationFn: async (input: CreateLeaveRequestInput) => {
+      const leave = await leavesApi.create(input);
+      if (type === 'sick' && certificate) {
+        try {
+          await leavesApi.uploadCertificate(leave.id, certificate);
+        } catch (err) {
+          throw new Error(
+            `The leave was sent but the certificate didn't upload (${apiErrorMessage(err)}). Attach it from Leave — it can't be approved without one.`,
+          );
+        }
+      } else if (leave.certificateNeeded) {
+        throw new Error(
+          'The leave was sent, but it needs a medical certificate before it can be approved — attach it from Leave.',
+        );
+      }
+      return leave;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-leaves'] });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-leaves'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
@@ -148,6 +196,24 @@ const RaiseLeaveModal = ({ types, onClose }: { types: LeaveType[]; onClose: () =
           </p>
         )}
 
+        {type === 'sick' && (
+          <div className='space-y-1'>
+            <label className={labelClass}>
+              Medical certificate{' '}
+              {sickLong
+                ? `(required — sick leave of more than ${SICK_CERT_AFTER_DAYS} days)`
+                : '(optional)'}
+            </label>
+            <input
+              type='file'
+              accept={CERT_TYPES.join(',')}
+              onChange={(e) => setCertificate(e.target.files?.[0] ?? null)}
+              className='block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:text-slate-700 hover:file:bg-slate-200'
+            />
+            {certProblem && <p className='text-xs text-red-600'>{certProblem}</p>}
+          </div>
+        )}
+
         <div className='space-y-1'>
           <label className={labelClass}>Reason (optional)</label>
           <textarea
@@ -169,7 +235,8 @@ const RaiseLeaveModal = ({ types, onClose }: { types: LeaveType[]; onClose: () =
           </button>
           <button
             type='submit'
-            disabled={create.isPending}
+            disabled={create.isPending || certProblem !== null || (sickLong && !certificate)}
+            title={sickLong && !certificate ? 'Attach the medical certificate first' : undefined}
             className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
           >
             {create.isPending ? 'Submitting…' : 'Submit request'}

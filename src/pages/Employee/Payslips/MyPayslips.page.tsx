@@ -195,7 +195,7 @@ const MyPayslipsPage = () => {
 
   return (
     <div className='w-full max-w-3xl space-y-4'>
-      <h1 className='text-2xl font-semibold text-slate-800'>My payslips</h1>
+      <h1 className='text-2xl font-semibold text-slate-800'>Pay</h1>
       <MyLoans />
       {isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {error && <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>}

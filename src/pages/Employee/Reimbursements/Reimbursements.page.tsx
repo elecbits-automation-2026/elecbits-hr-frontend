@@ -17,9 +17,8 @@ const RECEIPT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
 
 /**
- * Own reimbursement claims: raise one, follow it through the manager and
- * Payroll, see the month it was paid in. Managers also see the claims waiting
- * on them here.
+ * Own reimbursement claims: raise one and follow it through PR and Admin to
+ * paid (by bank transfer, not on the payslip). No bells — the status is here.
  */
 const ReimbursementsPage = () => {
   const queryClient = useQueryClient();
@@ -34,7 +33,6 @@ const ReimbursementsPage = () => {
   const [fileKey, setFileKey] = useState(0);
 
   const mine = useQuery({ queryKey: ['my-reimbursements'], queryFn: reimbursementsApi.mine });
-  const team = useQuery({ queryKey: ['team-reimbursements'], queryFn: reimbursementsApi.team });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -80,27 +78,7 @@ const ReimbursementsPage = () => {
 
   return (
     <div className='w-full max-w-3xl space-y-4'>
-      <h1 className='text-2xl font-semibold text-slate-800'>Reimbursements</h1>
-
-      {(team.data?.length ?? 0) > 0 && (
-        <div className='rounded-xl border border-amber-200 bg-amber-50/40 p-5'>
-          <h2 className='text-sm font-semibold text-slate-700'>Waiting on you</h2>
-          <p className='text-xs text-slate-400'>
-            Your people&rsquo;s claims. Approved, they go on to Payroll.
-          </p>
-          <ul className='mt-3 space-y-2'>
-            {team.data!.map((c) => (
-              <ClaimRow
-                key={c.id}
-                claim={c}
-                mode='approver'
-                showPerson
-                invalidate={[['team-reimbursements']]}
-              />
-            ))}
-          </ul>
-        </div>
-      )}
+      <h1 className='text-2xl font-semibold text-slate-800'>Expense claims</h1>
 
       <form
         onSubmit={(e: FormEvent) => {
@@ -181,8 +159,8 @@ const ReimbursementsPage = () => {
         {create.error && <p className='text-sm text-red-600'>{apiErrorMessage(create.error)}</p>}
         <div className='flex items-center justify-between gap-3'>
           <p className='text-xs text-slate-400'>
-            Your manager approves first, then Payroll. Approved claims are paid with your next
-            payslip.
+            PR approves first, then Admin — usually once a month. Approved claims are paid to your
+            bank account separately, not with your payslip.
           </p>
           <button
             type='submit'

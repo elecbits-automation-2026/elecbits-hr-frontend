@@ -12,7 +12,6 @@ import type {
   GatePass,
   ImportAssetRow,
   ImportAssetsResult,
-  KitCheck,
   MyAssetsOverview,
   StockMoveInput,
   StockMovement,
@@ -71,8 +70,6 @@ export const opsApi = {
       note?: string;
     },
   ): Promise<Asset> => (await api.post<Asset>(`/assets/${id}/status`, input)).data,
-  kitCheck: async (employeeId: string): Promise<KitCheck> =>
-    (await api.get<KitCheck>(`/assets/kit-check/${employeeId}`)).data,
 
   // ── Incidents ──
   incidents: async (): Promise<AssetIncident[]> =>
@@ -106,10 +103,6 @@ export const opsApi = {
     }>,
   ): Promise<AssetSetup> =>
     (await api.patch<AssetSetup>(`/asset-setup/categories/${id}`, input)).data,
-  putKit: async (input: {
-    designation: string;
-    items: { categoryId: string; qty: number }[];
-  }): Promise<AssetSetup> => (await api.put<AssetSetup>('/asset-setup/kits', input)).data,
 
   // ── Requests ──
   requestQueue: async (): Promise<AssetRequest[]> =>

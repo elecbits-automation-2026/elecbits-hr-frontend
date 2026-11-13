@@ -262,9 +262,17 @@ const FnfBlock = ({ exit, onChanged }: { exit: Exit; onChanged: () => void }) =>
         </tbody>
       </table>
       <p className='text-xs text-slate-500'>
-        Plus salary up to the last day, reimbursements and awards — all paid in the next monthly
-        payroll run once HR, the manager and OPS have cleared.
+        Plus salary up to the last day and awards — paid in the next monthly payroll run once HR,
+        the manager and OPS have cleared. Reimbursements are paid separately, from the
+        reimbursement sheet.
       </p>
+      {exit.unpaidClaims && exit.unpaidClaims.count > 0 && (
+        <p className='rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800'>
+          {exit.unpaidClaims.count} reimbursement claim{exit.unpaidClaims.count === 1 ? '' : 's'}{' '}
+          ({rupees(exit.unpaidClaims.total)}) not paid yet — PR pays them from Payroll →
+          Reimbursements.
+        </p>
+      )}
       {f.recoveries.length > 0 && (
         <ul className='space-y-1 text-sm'>
           {f.recoveries.map((r) => (

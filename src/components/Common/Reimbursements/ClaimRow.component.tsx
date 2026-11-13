@@ -6,21 +6,33 @@ import { reimbursementsApi } from '@services/api/reimbursements.api';
 import { CATEGORY_LABELS, STATUS_LOOK, inr } from '@constants/Common/reimbursements.constants';
 import { apiErrorMessage } from '@utils/apiError';
 
+/** The status chip's text: paid claims say when (and how, for old ones). */
+const statusText = (claim: ReimbursementClaim) => {
+  if (claim.status === 'paid' && claim.paidOn) return `paid on ${claim.paidOn}`;
+  if (claim.status === 'paid' && claim.paidInMonth) return `paid in ${claim.paidInMonth} payslip`;
+  return STATUS_LOOK[claim.status].label;
+};
+
 /**
  * One claim. `mode` decides the buttons: the claimant can withdraw while it
- * waits; an approver approves or declines (decline needs a reason). A claim
- * without a receipt file can't be approved — the server refuses it too.
+ * waits; an approver approves or declines (decline needs a reason, and is
+ * final). A claim without a receipt file can't be approved — the server
+ * refuses it too. `onSelect` adds a tick box (the sheet's "Mark paid").
  */
 const ClaimRow = ({
   claim,
   mode,
   showPerson = false,
   invalidate,
+  selected,
+  onSelect,
 }: {
   claim: ReimbursementClaim;
   mode: 'mine' | 'approver' | 'view';
   showPerson?: boolean;
   invalidate: string[][];
+  selected?: boolean;
+  onSelect?: (on: boolean) => void;
 }) => {
   const queryClient = useQueryClient();
   const [declining, setDeclining] = useState(false);
@@ -52,20 +64,34 @@ const ClaimRow = ({
   };
   const look = STATUS_LOOK[claim.status];
   const canAttach = mode === 'mine' && claim.status !== 'declined' && claim.status !== 'cancelled';
-  const waiting = claim.status === 'pending_rm' || claim.status === 'pending_payroll';
+  const waiting = claim.status === 'pending_payroll' || claim.status === 'pending_admin';
 
   return (
     <li className='rounded-lg border border-slate-100 bg-white p-3'>
       <div className='flex flex-wrap items-baseline justify-between gap-2'>
-        <span className='font-medium text-slate-800'>
-          {showPerson && <span className='text-slate-500'>{claim.employee.name} · </span>}
-          {claim.description}
+        <span className='flex items-baseline gap-2 font-medium text-slate-800'>
+          {onSelect && (
+            <input
+              type='checkbox'
+              checked={!!selected}
+              onChange={(e) => onSelect(e.target.checked)}
+              aria-label={`Select ${claim.employee.name}'s claim`}
+              className='h-4 w-4 self-center accent-brand-600'
+            />
+          )}
+          <span>
+            {showPerson && (
+              <span className='text-slate-500'>
+                {claim.employee.name}
+                {claim.department ? ` (${claim.department})` : ''} ·{' '}
+              </span>
+            )}
+            {claim.description}
+          </span>
         </span>
         <span className='flex items-center gap-2'>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${look.cls}`}>
-            {claim.status === 'paid' && claim.paidInMonth
-              ? `paid in ${claim.paidInMonth}`
-              : look.label}
+            {statusText(claim)}
           </span>
           <span className='font-semibold tabular-nums text-slate-800'>{inr(claim.amount)}</span>
         </span>
@@ -73,8 +99,9 @@ const ClaimRow = ({
       <p className='mt-0.5 text-xs text-slate-400'>
         {CATEGORY_LABELS[claim.category]} · spent {claim.spentOn}
         {claim.receiptNote ? ` · receipt: ${claim.receiptNote}` : ''}
-        {claim.rmDecidedByName ? ` · manager: ${claim.rmDecidedByName}` : ''}
-        {claim.payrollDecidedByName ? ` · payroll: ${claim.payrollDecidedByName}` : ''}
+        {claim.payrollDecidedByName ? ` · PR: ${claim.payrollDecidedByName}` : ''}
+        {claim.adminDecidedByName ? ` · Admin: ${claim.adminDecidedByName}` : ''}
+        {claim.paymentRef ? ` · ref ${claim.paymentRef}` : ''}
       </p>
       {(claim.receipt || canAttach || waiting) && (
         <div className='mt-1 flex flex-wrap items-center gap-2 text-xs'>
@@ -169,7 +196,7 @@ const ClaimRow = ({
             onClick={() => decide.mutate('decline')}
             className='rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-40'
           >
-            Decline
+            Decline for good
           </button>
           <button
             type='button'

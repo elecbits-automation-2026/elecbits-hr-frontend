@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { EmployeeWithClaim, Level } from '@app-types/api.types';
+import type { Employee, EmployeeWithClaim, Level } from '@app-types/api.types';
+import { ROLE_INFO, roleLabel } from '@constants/Common/access/modules.constants';
 import { accessApi } from '@services/api/access.api';
 import { attendanceApi } from '@services/api/attendance.api';
 import { departmentsApi } from '@services/api/departments.api';
@@ -18,10 +19,13 @@ const labelClass = 'block text-xs font-medium text-slate-600';
  * carries the SINGLE-USE invite token — without it the record cannot be
  * claimed, and this is the only moment the token is ever shown.
  */
+const claimUrl = (token: string) => `${window.location.origin}/auth?claim=${token}`;
+
+const inviteLink = (employee: EmployeeWithClaim) =>
+  employee.claim ? claimUrl(employee.claim.token) : `${window.location.origin}/auth`;
+
 const inviteText = (employee: EmployeeWithClaim) => {
-  const link = employee.claim
-    ? `${window.location.origin}/auth?claim=${employee.claim.token}`
-    : `${window.location.origin}/auth`;
+  const link = inviteLink(employee);
   const expiry = employee.claim
     ? ` The link expires on ${new Date(employee.claim.expiresAt).toLocaleDateString()}.`
     : '';
@@ -52,7 +56,7 @@ const InviteEmployeePage = () => {
   const [departmentId, setDepartmentId] = useState('');
   const [designation, setDesignation] = useState('');
   const [invited, setInvited] = useState<EmployeeWithClaim | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'text' | 'link' | null>(null);
 
   const { data: employees } = useQuery({ queryKey: ['employees'], queryFn: employeesApi.list });
   const { data: batches } = useQuery({ queryKey: ['batches'], queryFn: accessApi.listBatches });
@@ -92,12 +96,12 @@ const InviteEmployeePage = () => {
     });
   };
 
-  const copyInvite = async () => {
+  const copy = async (what: 'text' | 'link') => {
     if (!invited) return;
     try {
-      await navigator.clipboard.writeText(inviteText(invited));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(what === 'link' ? inviteLink(invited) : inviteText(invited));
+      setCopied(what);
+      setTimeout(() => setCopied(null), 2000);
     } catch {
       // Clipboard can be unavailable (permissions); the text stays selectable.
     }
@@ -128,18 +132,25 @@ const InviteEmployeePage = () => {
           <p className='mt-1 text-xs text-slate-400'>
             Status: {invited.status} — becomes active when they claim their record.
             {invited.claim &&
-              ' The invite link below is shown once — copy it now. A new one can be issued from HR → People.'}
+              ' The invite link below is shown once — copy it now. If it expires, issue a new one under "Waiting to claim" on this page.'}
           </p>
           <pre className='mt-4 whitespace-pre-wrap rounded-md bg-slate-50 p-3 text-xs text-slate-600'>
             {inviteText(invited)}
           </pre>
-          <div className='mt-3 flex gap-2'>
+          <div className='mt-3 flex flex-wrap gap-2'>
             <button
               type='button'
-              onClick={copyInvite}
+              onClick={() => void copy('link')}
               className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500'
             >
-              {copied ? 'Copied!' : 'Copy invite text'}
+              {copied === 'link' ? 'Copied!' : 'Copy link'}
+            </button>
+            <button
+              type='button'
+              onClick={() => void copy('text')}
+              className='rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50'
+            >
+              {copied === 'text' ? 'Copied!' : 'Copy invite message'}
             </button>
             <button
               type='button'
@@ -280,9 +291,9 @@ const InviteEmployeePage = () => {
         </div>
 
         <div className='space-y-1'>
-          <label className={labelClass}>Access batches to grant</label>
+          <label className={labelClass}>Roles to give</label>
           <p className='text-xs text-slate-400'>
-            The baseline Employee batch is attached automatically.
+            Everyone (basic) is given automatically.
           </p>
           <div className='mt-1 space-y-1.5'>
             {grantableBatches.map((b) => (
@@ -293,14 +304,16 @@ const InviteEmployeePage = () => {
                   onChange={() => toggleBatch(b.id)}
                   className='rounded border-slate-300'
                 />
-                {b.name}
-                {b.description && (
-                  <span className='text-xs text-slate-400'>— {b.description}</span>
+                {roleLabel(b.name)}
+                {(ROLE_INFO[b.name]?.blurb ?? b.description) && (
+                  <span className='text-xs text-slate-400'>
+                    — {ROLE_INFO[b.name]?.blurb ?? b.description}
+                  </span>
                 )}
               </label>
             ))}
             {grantableBatches.length === 0 && (
-              <p className='text-xs text-slate-400'>No extra batches defined yet.</p>
+              <p className='text-xs text-slate-400'>No other roles yet.</p>
             )}
           </div>
         </div>
@@ -319,6 +332,75 @@ const InviteEmployeePage = () => {
           </button>
         </div>
       </form>
+
+      <WaitingToClaim people={(employees ?? []).filter((e) => e.status === 'invited')} />
+    </div>
+  );
+};
+
+/**
+ * Invited records nobody has claimed yet. "New link" replaces the old link
+ * (the old one stops working) — for an expired or lost invite.
+ */
+const WaitingToClaim = ({ people }: { people: Employee[] }) => {
+  const [issued, setIssued] = useState<{ id: string; link: string; expiresAt: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const reissue = useMutation({
+    mutationFn: employeesApi.issueClaimLink,
+    onSuccess: ({ token, expiresAt }, id) => {
+      setCopied(false);
+      setIssued({ id, link: claimUrl(token), expiresAt });
+    },
+  });
+  if (people.length === 0) return null;
+  const copyLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+    } catch {
+      // Clipboard unavailable — the link stays selectable below.
+    }
+  };
+  return (
+    <div className='space-y-2 rounded-xl border border-slate-200 bg-white p-5'>
+      <h2 className='text-sm font-semibold text-slate-700'>Waiting to claim ({people.length})</h2>
+      <p className='text-xs text-slate-400'>
+        A new link replaces the old one, which stops working.
+      </p>
+      {reissue.error && <p className='text-sm text-red-600'>{apiErrorMessage(reissue.error)}</p>}
+      <ul className='divide-y divide-slate-100'>
+        {people.map((p) => (
+          <li key={p.id} className='space-y-2 py-2 text-sm'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <span className='font-medium text-slate-800'>{p.name}</span>
+              <span className='text-xs text-slate-400'>{p.email}</span>
+              <button
+                type='button'
+                disabled={reissue.isPending}
+                onClick={() => reissue.mutate(p.id)}
+                className='ml-auto rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50'
+              >
+                New link
+              </button>
+            </div>
+            {issued?.id === p.id && (
+              <div className='flex flex-wrap items-center gap-2 rounded-md bg-slate-50 p-2'>
+                <code className='min-w-0 flex-1 break-all text-xs text-slate-600'>{issued.link}</code>
+                <button
+                  type='button'
+                  onClick={() => void copyLink(issued.link)}
+                  className='rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-500'
+                >
+                  {copied ? 'Copied!' : 'Copy link'}
+                </button>
+                <span className='w-full text-xs text-slate-400'>
+                  Expires {new Date(issued.expiresAt).toLocaleDateString()}
+                </span>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

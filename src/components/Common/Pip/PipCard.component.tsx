@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { Pip, PipRating } from '@app-types/api.types';
+import type { Pip } from '@app-types/api.types';
 import { pipApi } from '@services/api/pip.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -11,12 +11,6 @@ const PIP_STATUS: Record<Pip['status'], { label: string; cls: string }> = {
   passed: { label: 'passed', cls: 'bg-green-50 text-green-700' },
   not_passed: { label: 'not passed', cls: 'bg-red-50 text-red-700' },
   cancelled: { label: 'withdrawn', cls: 'bg-slate-100 text-slate-500' },
-};
-
-const RATING: Record<PipRating, { label: string; cls: string }> = {
-  on_track: { label: 'on track', cls: 'text-green-700' },
-  at_risk: { label: 'at risk', cls: 'text-amber-700' },
-  off_track: { label: 'off track', cls: 'text-red-700' },
 };
 
 const day = (d: string) =>
@@ -31,17 +25,15 @@ const inputClass =
 const btn = 'rounded-md px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40';
 
 /**
- * One PIP: targets, support, check-ins, and whatever the viewer may do next
- * (the server's `can`): HR approves, the employee acknowledges, the RM logs
- * a check-in every two weeks and records the outcome at the end.
+ * One PIP: why, targets, support, and whatever the viewer may do next (the
+ * server's `can`): once the 60 days are over the RM records the outcome; the
+ * RM or HR may withdraw it while it runs. No approval, acknowledgement or
+ * check-ins (learner, 2026-11-05).
  */
 const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }) => {
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
-  const [rating, setRating] = useState<PipRating>('on_track');
-  const [panel, setPanel] = useState<'none' | 'checkin' | 'outcome' | 'cancel' | 'decline'>(
-    'none',
-  );
+  const [panel, setPanel] = useState<'none' | 'outcome' | 'cancel'>('none');
   const done = () => {
     setNote('');
     setPanel('none');
@@ -63,11 +55,6 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
           {day(pip.startOn)} → {day(pip.endOn)}
           {pip.extended ? ' (extended 30 days)' : ''} · RM {pip.rm.name}
         </span>
-        {pip.status === 'active' && pip.nextCheckinOn && (
-          <span className='ml-auto text-xs text-slate-500'>
-            Next check-in {day(pip.nextCheckinOn)}
-          </span>
-        )}
       </div>
 
       <div>
@@ -89,33 +76,6 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
         <p className='whitespace-pre-line text-slate-700'>{pip.support}</p>
       </div>
 
-      <p className='text-xs text-slate-500'>
-        {pip.hrBy ? `HR: ${pip.hrBy.name}${pip.hrNote ? ` — ${pip.hrNote}` : ''}` : 'HR has not approved yet'}
-        {' · '}
-        {pip.acknowledgedAt
-          ? `acknowledged ${day(pip.acknowledgedAt)}`
-          : 'not acknowledged by the employee yet'}
-      </p>
-
-      {pip.checkins.length > 0 && (
-        <div>
-          <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-            Check-ins
-          </p>
-          <ul className='space-y-1'>
-            {pip.checkins.map((c) => (
-              <li key={c.id} className='text-slate-700'>
-                <span className='text-xs text-slate-400'>{day(c.on)} · </span>
-                <span className={`text-xs font-medium ${RATING[c.rating].cls}`}>
-                  {RATING[c.rating].label}
-                </span>{' '}
-                — {c.note}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {pip.outcomeNote && (
         <p className='rounded-md bg-slate-50 p-2 text-slate-700'>
           Outcome{pip.outcomeBy ? ` (${pip.outcomeBy.name})` : ''}: {pip.outcomeNote}
@@ -124,46 +84,8 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
 
       {act.error && <p className='text-xs text-red-600'>{apiErrorMessage(act.error)}</p>}
 
-      {panel === 'none' && (
+      {panel === 'none' && (pip.can.outcome || pip.can.cancel) && (
         <div className='flex flex-wrap gap-2'>
-          {pip.can.decide && (
-            <>
-              <button
-                type='button'
-                disabled={act.isPending}
-                onClick={() => act.mutate(() => pipApi.decide(pip.id, { approve: true }))}
-                className={`${btn} bg-green-600 hover:bg-green-500`}
-              >
-                Approve PIP
-              </button>
-              <button
-                type='button'
-                onClick={() => setPanel('decline')}
-                className='text-xs text-red-600 hover:underline'
-              >
-                Send back
-              </button>
-            </>
-          )}
-          {pip.can.acknowledge && (
-            <button
-              type='button'
-              disabled={act.isPending}
-              onClick={() => act.mutate(() => pipApi.acknowledge(pip.id))}
-              className={`${btn} bg-brand-600 hover:bg-brand-500`}
-            >
-              I have read this plan
-            </button>
-          )}
-          {pip.can.checkin && (
-            <button
-              type='button'
-              onClick={() => setPanel('checkin')}
-              className={`${btn} bg-brand-600 hover:bg-brand-500`}
-            >
-              Log a check-in
-            </button>
-          )}
           {pip.can.outcome && (
             <button
               type='button'
@@ -187,50 +109,27 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
 
       {panel !== 'none' && (
         <div className='space-y-2 rounded-md bg-slate-50 p-3'>
-          {panel === 'checkin' && (
-            <select
-              value={rating}
-              onChange={(e) => setRating(e.target.value as PipRating)}
-              className={inputClass}
-            >
-              <option value='on_track'>On track</option>
-              <option value='at_risk'>At risk</option>
-              <option value='off_track'>Off track</option>
-            </select>
-          )}
           <textarea
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={
-              panel === 'checkin'
-                ? 'Progress against each target since the last check-in'
-                : panel === 'outcome'
-                  ? 'How the plan went (the employee sees this)'
-                  : panel === 'decline'
-                    ? 'What should change before HR approves'
-                    : 'Why it is being withdrawn'
+              panel === 'outcome'
+                ? 'How the plan went (the employee sees this)'
+                : 'Why it is being withdrawn'
             }
             className={inputClass}
           />
           <div className='flex flex-wrap gap-2'>
-            {panel === 'checkin' && (
-              <button
-                type='button'
-                disabled={!noteOk || act.isPending}
-                onClick={() => act.mutate(() => pipApi.checkin(pip.id, { rating, note: note.trim() }))}
-                className={`${btn} bg-brand-600 hover:bg-brand-500`}
-              >
-                Save check-in
-              </button>
-            )}
             {panel === 'outcome' && (
               <>
                 <button
                   type='button'
                   disabled={!noteOk || act.isPending}
                   onClick={() =>
-                    act.mutate(() => pipApi.outcome(pip.id, { outcome: 'passed', note: note.trim() }))
+                    act.mutate(() =>
+                      pipApi.outcome(pip.id, { outcome: 'passed', note: note.trim() }),
+                    )
                   }
                   className={`${btn} bg-green-600 hover:bg-green-500`}
                 >
@@ -241,7 +140,9 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
                     type='button'
                     disabled={!noteOk || act.isPending}
                     onClick={() =>
-                      act.mutate(() => pipApi.outcome(pip.id, { outcome: 'extend', note: note.trim() }))
+                      act.mutate(() =>
+                        pipApi.outcome(pip.id, { outcome: 'extend', note: note.trim() }),
+                      )
                     }
                     className={`${btn} bg-amber-600 hover:bg-amber-500`}
                   >
@@ -261,23 +162,6 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
                   Not passed
                 </button>
               </>
-            )}
-            {panel === 'decline' && (
-              <button
-                type='button'
-                disabled={act.isPending}
-                onClick={() =>
-                  act.mutate(() =>
-                    pipApi.decide(pip.id, {
-                      approve: false,
-                      ...(note.trim() ? { note: note.trim() } : {}),
-                    }),
-                  )
-                }
-                className={`${btn} bg-red-600 hover:bg-red-500`}
-              >
-                Send back
-              </button>
             )}
             {panel === 'cancel' && (
               <button

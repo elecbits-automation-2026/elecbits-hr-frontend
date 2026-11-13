@@ -55,7 +55,7 @@ const CaseList = ({
 );
 
 /**
- * Concerns: raise one (dispute / complaint / whistleblower; sexual harassment
+ * Concerns: raise one (dispute / complaint; sexual harassment
  * points to the Internal Committee), follow your own, and — for the people
  * who handle them — one tab per queue the backend says you hold. `embedded`
  * drops the page title when it sits inside the Grievances page.

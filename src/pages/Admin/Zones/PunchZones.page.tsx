@@ -20,6 +20,8 @@ const PunchZonesPage = () => {
   const [radiusM, setRadiusM] = useState('250');
   const [workStart, setWorkStart] = useState('');
   const [workEnd, setWorkEnd] = useState('');
+  // Removing asks once: the zone a row is waiting to be confirmed for.
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   const zones = useQuery({ queryKey: ['punch-zones'], queryFn: attendanceApi.listZones });
 
@@ -134,14 +136,33 @@ const PunchZonesPage = () => {
                 {z.workStart ? `${z.workStart}–${z.workEnd}` : 'default hours'}
               </span>
             </span>
-            <button
-              type='button'
-              disabled={removeZone.isPending}
-              onClick={() => removeZone.mutate(z.id)}
-              className='text-xs text-slate-400 hover:text-red-600'
-            >
-              Remove
-            </button>
+            {confirming === z.id ? (
+              <span className='flex items-center gap-2 text-xs'>
+                <span className='text-slate-500'>Remove {z.name}?</span>
+                <button
+                  type='button'
+                  disabled={removeZone.isPending}
+                  onClick={() => removeZone.mutate(z.id, { onSettled: () => setConfirming(null) })}
+                  className='font-medium text-red-600 hover:text-red-700 disabled:opacity-50'
+                >
+                  Yes, remove
+                </button>
+                <button type='button' onClick={() => setConfirming(null)} className='text-slate-400 hover:text-slate-600'>
+                  Keep
+                </button>
+              </span>
+            ) : (
+              <button
+                type='button'
+                onClick={() => {
+                  removeZone.reset();
+                  setConfirming(z.id);
+                }}
+                className='text-xs text-slate-400 hover:text-red-600'
+              >
+                Remove
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -83,7 +83,15 @@ const LeaveQueueTable = ({
                 {l.employee.employeeCode}
               </span>
             </td>
-            <td className='py-2 pr-3'>{leaveTypeLabel(l.type)}</td>
+            <td className='py-2 pr-3'>
+              {leaveTypeLabel(l.type)}
+              {l.type === 'sick' && l.certificate && (
+                <span className='block text-xs text-slate-400'>certificate attached</span>
+              )}
+              {l.type === 'sick' && !l.certificate && l.certificateNeeded && (
+                <span className='block text-xs text-amber-700'>certificate missing</span>
+              )}
+            </td>
             <td className='py-2 pr-3 whitespace-nowrap'>{dateRange(l)}</td>
             <td className='py-2 pr-3'>{l.days}</td>
             <td className='max-w-48 py-2 pr-3 text-slate-500'>{l.reason ?? '—'}</td>
@@ -125,7 +133,13 @@ const LeaveQueueTable = ({
                   <div className='flex gap-2'>
                     <button
                       type='button'
-                      disabled={deciding}
+                      // Sick leave over 3 days needs its certificate first (server-enforced).
+                      disabled={deciding || (l.certificateNeeded && !l.certificate)}
+                      title={
+                        l.certificateNeeded && !l.certificate
+                          ? 'Waiting for the medical certificate'
+                          : undefined
+                      }
                       onClick={() => onDecide(l.id, 'approve')}
                       className='rounded-md bg-brand-600 px-2 py-1 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-50'
                     >

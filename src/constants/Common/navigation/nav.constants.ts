@@ -7,6 +7,7 @@ import {
   ADMIN_PUNCH_ZONES_ROUTE,
   ADMIN_SETTINGS_ROUTE,
   ADMIN_HIRING_APPROVALS_ROUTE,
+  ADMIN_REIMBURSEMENTS_ROUTE,
   ADMIN_ROUTE,
   HOME_ROUTE,
   HR_ASSETS_ROUTE,
@@ -31,6 +32,7 @@ import {
   GRIEVANCES_ROUTE,
   HIRING_APPROVALS_ROUTE,
   HIRING_INTERVIEWS_ROUTE,
+  HIRING_JOINERS_ROUTE,
   HIRING_PLAN_ROUTE,
   ONBOARDING_ROUTE,
   PERFORMANCE_ROUTE,
@@ -43,9 +45,6 @@ import {
   REIMBURSEMENTS_ROUTE,
   MY_TEAM_ROUTE,
   PROFILE_ROUTE,
-  RESIGNATION_ROUTE,
-  TEAM_ATTENDANCE_ROUTE,
-  TEAM_LEAVES_ROUTE,
 } from './routes.constants';
 
 export interface NavItem {
@@ -53,7 +52,19 @@ export interface NavItem {
   to: string;
   /** Match the active state exactly (home) instead of by prefix. */
   end?: boolean;
+  /** The employee menu's heading this item sits under. */
+  group?: NavGroupKey;
 }
+
+/** Employee menu headings, in order (learner, 2026-11-05). */
+export type NavGroupKey = 'me' | 'work' | 'team' | 'company' | 'hiring';
+export const NAV_GROUP_LABEL: Record<NavGroupKey, string | null> = {
+  me: null,
+  work: 'Work',
+  team: 'My team',
+  company: 'Company',
+  hiring: 'Hiring',
+};
 
 /** An HR item is visible only to holders of its portal's batch (§1) — or any of several. */
 export type HrPortal = 'HRBP' | 'TA' | 'PR' | 'OPS';
@@ -69,38 +80,45 @@ export interface HrNavItem extends NavItem {
  * utils/sections.ts — the same helper the route guard uses.
  */
 export const EMPLOYEE_NAV: NavItem[] = [
-  { label: 'Home', to: HOME_ROUTE, end: true },
-  { label: 'My profile', to: PROFILE_ROUTE },
-  { label: 'My team', to: MY_TEAM_ROUTE },
-  { label: 'My assets', to: MY_ASSETS_ROUTE },
-  { label: 'My leaves', to: MY_LEAVES_ROUTE },
-  { label: 'My attendance', to: MY_ATTENDANCE_ROUTE },
-  { label: 'My payslips', to: MY_PAYSLIPS_ROUTE },
-  { label: 'Reimbursements', to: REIMBURSEMENTS_ROUTE },
-  { label: 'Policies', to: POLICIES_ROUTE },
-  { label: 'Onboarding', to: ONBOARDING_ROUTE },
-  { label: 'Recognition', to: RECOGNITION_ROUTE },
-  { label: 'My growth', to: GROWTH_ROUTE },
-  { label: 'My performance', to: PERFORMANCE_ROUTE },
-  { label: 'Grievances', to: GRIEVANCES_ROUTE },
+  // Me (no heading)
+  { label: 'Home', to: HOME_ROUTE, end: true, group: 'me' },
+  { label: 'My profile', to: PROFILE_ROUTE, group: 'me' },
+  { label: 'Attendance', to: MY_ATTENDANCE_ROUTE, group: 'me' },
+  { label: 'Leave', to: MY_LEAVES_ROUTE, group: 'me' },
+  { label: 'Pay', to: MY_PAYSLIPS_ROUTE, group: 'me' },
+  { label: 'Expense claims', to: REIMBURSEMENTS_ROUTE, group: 'me' },
+  { label: 'My equipment', to: MY_ASSETS_ROUTE, group: 'me' },
+  // Shown only while it applies (me.showOnboarding) — PortalShell filters it.
+  { label: 'Onboarding', to: ONBOARDING_ROUTE, group: 'me' },
+  // Work
+  { label: 'Goals & updates', to: PERFORMANCE_ROUTE, group: 'work' },
+  { label: 'Career path', to: GROWTH_ROUTE, group: 'work' },
+  { label: 'Awards', to: RECOGNITION_ROUTE, group: 'work' },
+  // My team (RMs only — me.hasReports): People / Attendance / Leave tabs. The
+  // old Team attendance and Team leaves pages are tabs inside it now.
+  { label: 'My team', to: MY_TEAM_ROUTE, group: 'team' },
+  // Company
+  { label: 'Policies', to: POLICIES_ROUTE, group: 'company' },
+  { label: 'Concerns & open door', to: GRIEVANCES_ROUTE, group: 'company' },
   // Hiring items show only to seat holders — PortalShell filters them.
-  { label: 'Hiring plan', to: HIRING_PLAN_ROUTE },
-  { label: 'Hiring approvals', to: HIRING_APPROVALS_ROUTE },
-  { label: 'My interviews', to: HIRING_INTERVIEWS_ROUTE },
-  // Team items show only when me.hasReports — PortalShell filters them (UX
-  // only; the backend returns empty team lists for non-RMs regardless).
-  { label: 'Team leaves', to: TEAM_LEAVES_ROUTE },
-  { label: 'Team attendance', to: TEAM_ATTENDANCE_ROUTE },
-  { label: 'Resignation', to: RESIGNATION_ROUTE },
+  { label: 'Hiring plan', to: HIRING_PLAN_ROUTE, group: 'hiring' },
+  { label: 'Hiring approvals', to: HIRING_APPROVALS_ROUTE, group: 'hiring' },
+  { label: 'My interviews', to: HIRING_INTERVIEWS_ROUTE, group: 'hiring' },
+  { label: 'Joiners', to: HIRING_JOINERS_ROUTE, group: 'hiring' },
+  // Resign lives on My profile now (a link at the bottom), not in the menu.
 ];
 
 /** Employee items that only make sense for an RM (filtered by hasReports). */
-export const RM_ONLY_ROUTES: string[] = [MY_TEAM_ROUTE, TEAM_LEAVES_ROUTE, TEAM_ATTENDANCE_ROUTE];
+export const RM_ONLY_ROUTES: string[] = [MY_TEAM_ROUTE];
+/** Shown only while onboarding applies to me or my joiners (me.showOnboarding). */
+export const ONBOARDING_ROUTES: string[] = [ONBOARDING_ROUTE];
 
 /** Hiring items: the plan for department heads, approvals for hiring approvers. */
 export const HEAD_ONLY_ROUTES: string[] = [HIRING_PLAN_ROUTE];
 export const HIRING_APPROVER_ROUTES: string[] = [HIRING_APPROVALS_ROUTE];
 export const INTERVIEWER_ROUTES: string[] = [HIRING_INTERVIEWS_ROUTE];
+/** The HRBP handover list — HRBP-batch holders only. */
+export const HRBP_ONLY_ROUTES: string[] = [HIRING_JOINERS_ROUTE];
 
 export const HR_NAV: HrNavItem[] = [
   { label: 'People', to: HR_PEOPLE_ROUTE, portal: 'HRBP' },
@@ -127,10 +145,11 @@ export const HR_NAV: HrNavItem[] = [
 export const ADMIN_NAV: NavItem[] = [
   { label: 'Overview', to: ADMIN_ROUTE, end: true },
   { label: 'Invite employee', to: ADMIN_INVITE_ROUTE },
-  { label: 'Access batches', to: ADMIN_BATCHES_ROUTE },
+  { label: 'Roles & access', to: ADMIN_BATCHES_ROUTE },
   { label: 'Seats', to: ADMIN_SEATS_ROUTE },
-  { label: 'Grant requests', to: ADMIN_GRANT_REQUESTS_ROUTE },
+  { label: 'Access requests', to: ADMIN_GRANT_REQUESTS_ROUTE },
   { label: 'Hiring approvals', to: ADMIN_HIRING_APPROVALS_ROUTE },
+  { label: 'Reimbursements', to: ADMIN_REIMBURSEMENTS_ROUTE },
   { label: 'Punch zones', to: ADMIN_PUNCH_ZONES_ROUTE },
   { label: 'Org settings', to: ADMIN_SETTINGS_ROUTE },
   { label: 'Audit log', to: ADMIN_AUDIT_ROUTE },

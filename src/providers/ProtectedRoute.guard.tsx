@@ -1,12 +1,12 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { AUTH_ROUTE, HOME_ROUTE } from '@constants/Common/navigation/routes.constants';
-import type { AppSection } from '@constants/Common/auth/portal.constants';
+import { APP_SECTION, type AppSection } from '@constants/Common/auth/portal.constants';
 import { meApi } from '@services/api/me.api';
 import { authService } from '@services/auth.service';
-import { canEnterSection } from '@utils/sections';
+import { canEnterSection, hrRedirectFor } from '@utils/sections';
 
 /**
  * Route guard. Signed out -> the login screen.
@@ -24,6 +24,7 @@ const ProtectedRoute = ({
   section: AppSection;
 }) => {
   const signedIn = authService.isSignedIn();
+  const { pathname } = useLocation();
   const { data: me, isLoading, error } = useQuery({
     queryKey: ['me'],
     queryFn: meApi.get,
@@ -39,6 +40,12 @@ const ProtectedRoute = ({
 
   // Same helper the sidebar uses — visibility and access can never drift.
   if (!canEnterSection(me, section)) return <Navigate to={HOME_ROUTE} replace />;
+  // Inside HR, each page belongs to a portal batch: typing a URL must not
+  // open another batch's page (e.g. OPS opening TA's Candidates).
+  if (section === APP_SECTION.hr) {
+    const to = hrRedirectFor(me, pathname);
+    if (to) return <Navigate to={to} replace />;
+  }
   return <>{children}</>;
 };
 

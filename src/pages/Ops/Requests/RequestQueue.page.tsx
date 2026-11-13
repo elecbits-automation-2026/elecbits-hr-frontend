@@ -214,7 +214,7 @@ const RequestQueuePage = () => {
         <div>
           <h1 className='text-2xl font-semibold text-slate-800'>Asset requests</h1>
           <p className='text-sm text-slate-500'>
-            What people have asked OPS for. Anyone holding the OPS batch can pick one up.
+            What people have asked OPS for. Anyone with the Operations / assets team role can pick one up.
           </p>
         </div>
         <label className='flex items-center gap-2 text-sm text-slate-600'>

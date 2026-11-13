@@ -103,7 +103,6 @@ const PersonSheet = ({
   days,
   onClose,
   onNote,
-  canStartPip = false,
 }: {
   member: SheetPerson;
   /** This month's classified days (team or org attendance query; may be empty). */
@@ -111,8 +110,6 @@ const PersonSheet = ({
   onClose: () => void;
   /** Omitted where the feedback modal isn't wired — the button hides. */
   onNote?: (m: SheetPerson) => void;
-  /** My team (the RM): may open a PIP. HR approves it elsewhere. */
-  canStartPip?: boolean;
 }) => {
   const today = todayStr();
 
@@ -270,7 +267,7 @@ const PersonSheet = ({
             {g && g.goals.length === 0 && (
               <p className='text-sm text-slate-500'>
                 No goals written for this quarter — a quarter with nothing written can&apos;t be
-                reviewed at the end of it. Set them from <b>My performance</b>.
+                reviewed at the end of it. Set them from <b>Goals &amp; updates</b>.
               </p>
             )}
             {g && g.goals.length > 0 && (
@@ -456,11 +453,8 @@ const PersonSheet = ({
               )}
             </Card>
             <Card title='PIP'>
-              <PersonPips
-                employeeId={member.id}
-                canStart={canStartPip}
-                pipCandidate={latestReport?.pipCandidate ? latestReport.cycleName : null}
-              />
+              {/* The server says whether the viewer may start one (RM, or HR when no RM). */}
+              <PersonPips employeeId={member.id} />
             </Card>
           </div>
 

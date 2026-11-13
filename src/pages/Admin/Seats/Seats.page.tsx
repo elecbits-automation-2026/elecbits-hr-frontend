@@ -170,6 +170,63 @@ const SlotRow = ({ slot, onAssign }: { slot: Slot; onAssign: (s: Slot) => void }
   );
 };
 
+const ENDED_LABEL: Record<string, string> = {
+  replaced: 'Replaced',
+  vacated: 'Vacated',
+  relieved: 'Left the company',
+};
+
+const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN');
+
+/** Past holders, most recently ended first — seat rows are ended, never deleted. */
+const SeatHistory = () => {
+  const history = useQuery({ queryKey: ['seats', 'history'], queryFn: seatsApi.history });
+  if (history.isLoading) return <p className='text-sm text-slate-500'>Loading history…</p>;
+  if (history.error) return <p className='text-sm text-red-600'>{apiErrorMessage(history.error)}</p>;
+  const rows = history.data ?? [];
+  return (
+    <div className='space-y-2'>
+      <h2 className='text-sm font-semibold uppercase tracking-wide text-slate-500'>History</h2>
+      {rows.length === 0 ? (
+        <p className='text-sm text-slate-500'>No seat has changed hands yet.</p>
+      ) : (
+        <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white'>
+          <table className='w-full text-sm'>
+            <thead className='bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500'>
+              <tr>
+                <th className='px-4 py-2'>Seat</th>
+                <th className='px-4 py-2'>Held by</th>
+                <th className='px-4 py-2'>From – to</th>
+                <th className='px-4 py-2'>Ended</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((s) => (
+                <tr key={s.id} className='border-t border-slate-100'>
+                  <td className='px-4 py-2 text-slate-800'>
+                    {s.seat === 'dept_head' ? `${s.departmentName ?? 'Department'} head` : SEAT_LABEL[s.seat]}
+                  </td>
+                  <td className='px-4 py-2'>
+                    {s.employeeName}
+                    {s.acting && <span className='ml-1 text-xs text-amber-700'>(acting)</span>}
+                  </td>
+                  <td className='px-4 py-2 text-xs text-slate-500'>
+                    {day(s.startedAt)} – {day(s.endedAt)}
+                  </td>
+                  <td className='px-4 py-2 text-xs text-slate-500'>
+                    {ENDED_LABEL[s.endedReason ?? ''] ?? s.endedReason ?? 'Ended'}
+                    {s.endedByName && ` by ${s.endedByName}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const toSlot = (v: VacantSeat): Slot => ({ ...v, holder: null });
 const heldSlot = (s: Seat): Slot => ({
   seat: s.seat,
@@ -240,6 +297,8 @@ const SeatsPage = () => {
 
       {table('Company seat', company)}
       {table('Department', departments)}
+
+      <SeatHistory />
 
       {assigning && (
         <AssignDialog

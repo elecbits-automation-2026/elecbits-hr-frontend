@@ -2,11 +2,12 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Employee } from '@app-types/api.types';
+import { ROLE_INFO, roleLabel } from '@constants/Common/access/modules.constants';
 import { accessApi } from '@services/api/access.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 /**
- * HR asks Admin for extra access for ONE person (§5.5): pick the batches,
+ * HR asks Admin for extra access for ONE person (§5.5): pick the roles,
  * explain the role. Admin approves, approves part of it, or declines; the
  * bell reports the outcome to you and to the person.
  */
@@ -77,7 +78,7 @@ const RequestAccessModal = ({ employee, onClose }: { employee: Employee; onClose
         ) : (
           <>
             <div className='space-y-1.5'>
-              <p className='text-xs font-medium text-slate-600'>Access to propose</p>
+              <p className='text-xs font-medium text-slate-600'>Roles to ask for</p>
               {options.error && (
                 <p className='text-sm text-red-600'>{apiErrorMessage(options.error)}</p>
               )}
@@ -90,9 +91,11 @@ const RequestAccessModal = ({ employee, onClose }: { employee: Employee; onClose
                     className='mt-0.5 h-4 w-4'
                   />
                   <span>
-                    {b.name}
-                    {b.description && (
-                      <span className='block text-xs text-slate-400'>{b.description}</span>
+                    {roleLabel(b.name)}
+                    {(ROLE_INFO[b.name]?.blurb ?? b.description) && (
+                      <span className='block text-xs text-slate-400'>
+                        {ROLE_INFO[b.name]?.blurb ?? b.description}
+                      </span>
                     )}
                   </span>
                 </label>

@@ -1,5 +1,5 @@
 import type {
-  AuditEntry,
+  AuditPage,
   Batch,
   BatchHolder,
   GrantRequest,
@@ -46,6 +46,7 @@ export const accessApi = {
   ): Promise<GrantRequest> =>
     (await api.post<GrantRequest>(`/grant-requests/${id}/decision`, input)).data,
 
-  listAuditLog: async (): Promise<AuditEntry[]> =>
-    (await api.get<AuditEntry[]>('/audit-log')).data,
+  listAuditLog: async (
+    params: { q?: string; page?: number; pageSize?: number } = {},
+  ): Promise<AuditPage> => (await api.get<AuditPage>('/audit-log', { params })).data,
 };

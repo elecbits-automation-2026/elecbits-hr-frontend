@@ -197,7 +197,7 @@ const HiringApprovalsPage = () => {
           <h2 className='text-lg font-semibold text-slate-800'>Give to a TA RM</h2>
           {taRms.data?.length === 0 && (
             <p className='text-sm text-amber-700'>
-              Nobody qualifies yet: a TA RM holds the TA batch and has someone reporting to them.
+              Nobody qualifies yet: a TA RM has the Hiring team role and someone reporting to them.
             </p>
           )}
           {toGive.map((r) => (

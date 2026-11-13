@@ -1,27 +1,24 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { OnboardingQueueRow, OnboardingTask } from '@app-types/api.types';
+import type { OnboardingQueueRow } from '@app-types/api.types';
 import OnboardingChecklist from '@components/Common/Onboarding/OnboardingChecklist.component';
 import { employeesApi } from '@services/api/employees.api';
 import { onboardingApi } from '@services/api/onboarding.api';
 import { apiErrorMessage } from '@utils/apiError';
 
-/** HR drill-in: the full checklist; HR may tick any non-policy step. */
+/** HR drill-in: the full checklist; HR acts on the HR steps only (owners tick their own). */
 const JourneyModal = ({ row, onClose }: { row: OnboardingQueueRow; onClose: () => void }) => {
   const queryClient = useQueryClient();
   const journey = useQuery({
     queryKey: ['hr-onboarding-journey', row.employee.id],
     queryFn: () => onboardingApi.forEmployee(row.employee.id),
   });
-  const toggle = useMutation({
-    mutationFn: (task: OnboardingTask) => onboardingApi.toggleTask(task.id),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['hr-onboarding-journey', row.employee.id] });
-      queryClient.invalidateQueries({ queryKey: ['hr-onboarding'] });
-      queryClient.invalidateQueries({ queryKey: ['my-onboarding'] });
-    },
-  });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['hr-onboarding-journey', row.employee.id] });
+    queryClient.invalidateQueries({ queryKey: ['hr-onboarding'] });
+    queryClient.invalidateQueries({ queryKey: ['my-onboarding'] });
+  };
 
   return (
     <div className='fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4'>
@@ -40,21 +37,17 @@ const JourneyModal = ({ row, onClose }: { row: OnboardingQueueRow; onClose: () =
           </button>
         </div>
         <p className='mt-1 text-xs text-slate-400'>
-          Started {row.startedOn} · due {row.dueOn}. You can tick any step except the
-          policy-linked ones — those need the person's own acknowledgement.
+          Started {row.startedOn} · due {row.dueOn}. Each step is done by its owner: you tick the
+          HR steps (with a note of what was done) and upload the signed offer letter; the joiner
+          uploads their documents and acknowledges the Code of Conduct; their manager ticks the
+          manager steps (you do, if they have no manager of their own); OPS and payroll do theirs.
+          You can open every uploaded document with View.
         </p>
         <div className='mt-4'>
           {journey.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
           {journey.error && <p className='text-sm text-red-600'>{apiErrorMessage(journey.error)}</p>}
-          {toggle.error && <p className='text-sm text-red-600'>{apiErrorMessage(toggle.error)}</p>}
           {journey.data && (
-            <OnboardingChecklist
-              journey={journey.data}
-              ownerLabels={false}
-              canTick={(t) => !t.policyCode}
-              onToggle={(t) => toggle.mutate(t)}
-              ticking={toggle.isPending}
-            />
+            <OnboardingChecklist journey={journey.data} onChanged={refresh} />
           )}
         </div>
       </div>

@@ -1,6 +1,6 @@
 import type { Concern, ConcernOutcome, ConcernStatus, ConcernTrack } from '@app-types/api.types';
 
-/** The four ways in — plain words first, the policy behind them second. */
+/** The ways in — plain words first, the policy behind them second. */
 export const TRACK_CHOICES: {
   key: ConcernTrack | 'posh';
   title: string;
@@ -18,17 +18,13 @@ export const TRACK_CHOICES: {
     blurb:
       'Discrimination, harassment (not sexual), bullying, retaliation, or a refused accommodation — about you or something you witnessed. Handled by HR.',
   },
-  {
-    key: 'whistleblower',
-    title: 'Report misconduct or fraud',
-    blurb:
-      'Fraud, corruption, breaking the law or the code of conduct, misuse of company assets, safety risks. Goes only to the whistleblower (vigil) team — not routine HR.',
-  },
-  {
-    key: 'posh',
-    title: 'Sexual harassment',
-    blurb: 'Handled only by the Internal Committee under the POSH policy — not through this form.',
-  },
+  // POSH is commented out for now (learner, 2026-11-05): sexual harassment is
+  // reported straight to the RM or management, outside the software.
+  // {
+  //   key: 'posh',
+  //   title: 'Sexual harassment',
+  //   blurb: 'Handled only by the Internal Committee under the POSH policy — not through this form.',
+  // },
 ];
 
 export const TRACK_LABELS: Record<ConcernTrack, string> = {
@@ -57,17 +53,8 @@ export const CATEGORIES: Record<ConcernTrack, Record<string, string>> = {
     accommodation: 'A refused accommodation',
     other: 'Something else',
   },
-  whistleblower: {
-    fraud: 'Fraud',
-    corruption: 'Bribery or corruption',
-    violation_of_law: 'Breaking the law',
-    code_of_conduct: 'Code of conduct breach',
-    misuse_of_assets: 'Misuse of company assets or data',
-    audit_controls: 'Accounts or audit controls',
-    health_safety: 'Health or safety risk',
-    retaliation: 'Retaliation against a whistleblower',
-    other: 'Something else',
-  },
+  // The whistleblower section was removed (2026-11-05); old cases only.
+  whistleblower: {},
 };
 
 export const STATUS_LABELS: Record<ConcernStatus, string> = {

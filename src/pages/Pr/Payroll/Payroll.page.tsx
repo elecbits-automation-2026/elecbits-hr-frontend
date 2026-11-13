@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
@@ -11,10 +12,10 @@ import { SettingsList } from '@components/Common/Settings/SettingsList.component
 import CompensationPanel from '@components/Pr/CompensationPanel.component';
 import CorrectionModal from '@components/Pr/CorrectionModal.component';
 import CorrectionsPanel from '@components/Pr/CorrectionsPanel.component';
-import ReimbursementQueue from '@components/Pr/ReimbursementQueue.component';
 import TdsCalculator from '@components/Pr/TdsCalculator.component';
 import LoansPanel from '@components/Pr/LoansPanel.component';
 import JoinerTasks from '@components/Common/Onboarding/JoinerTasks.component';
+import ReimbursementDesk from '@components/Common/Reimbursements/ReimbursementDesk.component';
 import { payrollApi } from '@services/api/payroll.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -116,7 +117,12 @@ const TAB_LABELS = {
 
 const PayrollPage = () => {
   const queryClient = useQueryClient();
-  const [view, setView] = useState<keyof typeof TAB_LABELS>('runs');
+  // ?tab=reimbursements opens a tab directly (the monthly reimbursement bell).
+  const [params] = useSearchParams();
+  const asked = params.get('tab');
+  const [view, setView] = useState<keyof typeof TAB_LABELS>(
+    asked && asked in TAB_LABELS ? (asked as keyof typeof TAB_LABELS) : 'runs',
+  );
   const [month, setMonth] = useState(currentMonth());
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<Array<{ id: string; name: string }>>([]);
@@ -249,7 +255,7 @@ const PayrollPage = () => {
 
       {view === 'tds' && <TdsCalculator />}
       {view === 'compensation' && <CompensationPanel />}
-      {view === 'reimbursements' && <ReimbursementQueue />}
+      {view === 'reimbursements' && <ReimbursementDesk role='pr' />}
       {view === 'loans' && <LoansPanel />}
       {(view === 'runs' || view === 'compensation') && <JoinerTasks owner='payroll' />}
       {view === 'settings' && (
@@ -429,7 +435,7 @@ const PayrollPage = () => {
                   <th className='py-2 pr-3 text-right font-medium'>CNPS</th>
                   <th
                     className='py-2 pr-3 text-right font-medium'
-                    title='Approved reimbursement claims — read-only; decided in the Reimbursements tab'
+                    title='Claims paid on payslips before Nov 2026 — read-only; claims are now paid from the Reimbursements tab'
                   >
                     Reimb
                   </th>

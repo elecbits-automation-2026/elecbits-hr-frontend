@@ -10,7 +10,7 @@ import { apiErrorMessage } from '@utils/apiError';
  * caller as reporting manager or leave approver. The nav item only shows for
  * RMs, but the backend filters by relationship regardless.
  */
-const TeamLeavesPage = () => {
+const TeamLeavesPage = ({ embedded = false }: { embedded?: boolean }) => {
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ['team-leaves'],
@@ -34,7 +34,8 @@ const TeamLeavesPage = () => {
 
   return (
     <div className='w-full space-y-4'>
-      <h1 className='text-2xl font-semibold text-slate-800'>Team leaves</h1>
+      {/* Inside My team → Leave the tab is the heading. */}
+      {!embedded && <h1 className='text-2xl font-semibold text-slate-800'>Team leaves</h1>}
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         {isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
         {error && <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>}
