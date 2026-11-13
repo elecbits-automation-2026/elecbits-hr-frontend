@@ -7,8 +7,7 @@ import { holdsPortal } from '@utils/sections';
 
 /**
  * Person sheet, OPS only: what they hold (read-only — changes happen in
- * Assets) and their designation's joiner kit against it. Renders nothing for
- * anyone without the OPS batch.
+ * Assets). Renders nothing for anyone without the OPS batch.
  */
 const PersonAssets = ({ employeeId }: { employeeId: string }) => {
   const me = useQuery({ queryKey: ['me'], queryFn: meApi.get, staleTime: 60_000 });
@@ -16,11 +15,6 @@ const PersonAssets = ({ employeeId }: { employeeId: string }) => {
   const held = useQuery({
     queryKey: ['ops-assets-of', employeeId],
     queryFn: () => opsApi.listAssets(employeeId),
-    enabled: isOps,
-  });
-  const kit = useQuery({
-    queryKey: ['ops-kit-check', employeeId],
-    queryFn: () => opsApi.kitCheck(employeeId),
     enabled: isOps,
   });
   if (!isOps) return null;
@@ -45,21 +39,6 @@ const PersonAssets = ({ employeeId }: { employeeId: string }) => {
           </li>
         ))}
       </ul>
-      {kit.data && kit.data.items.length > 0 && (
-        <div className='mt-3 border-t border-slate-100 pt-2'>
-          <p className='text-xs font-medium text-slate-500'>Joiner kit · {kit.data.designation}</p>
-          <ul className='mt-1 flex flex-wrap gap-1.5'>
-            {kit.data.items.map((i) => (
-              <li
-                key={i.categoryId}
-                className={`${chipClass} ${i.held >= i.qty ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-800'}`}
-              >
-                {i.held >= i.qty ? '✓' : '○'} {i.categoryName} {Math.min(i.held, i.qty)}/{i.qty}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </section>
   );
 };

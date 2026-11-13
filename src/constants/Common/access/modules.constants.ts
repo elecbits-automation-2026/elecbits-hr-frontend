@@ -1,129 +1,198 @@
 import type { Action, Scope } from '@app-types/api.types';
 
 /**
- * What each grantable module unlocks, in plain words, for the batch composer.
- * Keys mirror the backend's seeded module tree (scripts/seed-modules.ts). A
- * module marked `notBuilt` exists in the tree but no screen uses it yet.
+ * Every grantable area in plain words for the Roles & access screens
+ * (learner, 2026-11-05: "pretty technical — the users are more Admin and HR").
+ * Keys mirror the backend's seeded module tree (scripts/seed-modules.ts); the
+ * key never shows on screen. `hidden` = in the tree but no screen uses it yet,
+ * so it is only shown when a role already has it.
  */
-export const MODULE_INFO: Record<string, { group: string; unlocks: string; notBuilt?: boolean }> = {
+export const MODULE_INFO: Record<
+  string,
+  { label: string; group: string; unlocks: string; hidden?: boolean }
+> = {
   'hrbp.people': {
+    label: 'Employee records',
     group: 'HR',
     unlocks:
-      'People roster and person sheets (read); add employees and CSV import (create); edit records, deactivate, goals, R&R final approval, people settings (update).',
+      'View: everyone’s profile. Add: new employees, one by one or from a sheet. Edit: change records, deactivate people, set goals, final approval on awards, people settings.',
   },
-  'hrbp.org': { group: 'HR', unlocks: 'Departments and the org chart.' },
-  'hrbp.policies': {
+  'hrbp.org': {
+    label: 'Departments & org chart',
     group: 'HR',
-    unlocks: 'Policy library management, retire/restore, and the acknowledgement tracker.',
+    unlocks: 'View: the department list and org chart (everyone has this). Add / Edit: create and change departments.',
+  },
+  'hrbp.policies': {
+    label: 'Policies',
+    group: 'HR',
+    unlocks: 'Upload, update and retire policies; see who has acknowledged them.',
   },
   'hrbp.leaves': {
+    label: 'Leave approvals',
     group: 'HR',
-    unlocks:
-      'HR leave queue and the HR approval slot (update), leave balances on person sheets, leave settings.',
+    unlocks: 'View: leave requests and balances. Edit: HR’s approval step on leave, and leave settings.',
   },
   'hrbp.attendance': {
+    label: 'Attendance',
     group: 'HR',
     unlocks:
-      'Attendance view, HR marks and the HR slot on remote work for the people the scope reaches; holidays and attendance settings need org scope.',
+      'View: attendance and remote-work requests. Edit: mark days. Holidays and attendance settings need “Whole company”.',
   },
-  'hrbp.exits': { group: 'HR', unlocks: 'Exits and their clearances.' },
+  'hrbp.exits': {
+    label: 'Resignations & exits',
+    group: 'HR',
+    unlocks: 'Resignations, exits and HR’s exit clearance.',
+  },
   'hrbp.grievances': {
+    label: 'Concerns & open door',
     group: 'HR',
     unlocks:
-      'Concerns: level-2 disputes and conduct complaints for the people the scope reaches (anonymous complaints need org scope); publish open-door slots (update).',
-  },
-  'hrbp.vigil': {
-    group: 'HR',
-    unlocks:
-      'Whistleblower (vigil) reports — kept apart from routine HR; plain HR cannot see them. Org scope.',
+      'Disputes passed up to HR and conduct complaints (anonymous ones need “Whole company”). Edit: offer open-door slots.',
   },
   'ta.hiring': {
+    label: 'Hiring',
     group: 'Hiring',
     unlocks:
-      'Talent acquisition: every hiring line, JDs and scorecards, candidates and the talent pool, interview pipelines, offers. Org scope.',
+      'Every hiring line, JDs and scorecards, candidates and the talent pool, interviews and offers.',
   },
   'pr.payroll': {
+    label: 'Payroll runs & payslips',
     group: 'Payroll',
     unlocks:
-      'Payroll runs and payslips (generate, edit drafts, finalize, mark paid), corrections, the payroll step on reimbursement claims, payroll settings, attendance CSV export. Org scope only.',
+      'Build, check and finalise the monthly payroll; payslips and corrections; the payroll step on expense claims and the bank file; payroll settings. Remove: delete a draft run.',
   },
   'pr.payroll.compensation': {
+    label: 'Salaries (CTC)',
     group: 'Payroll',
-    unlocks:
-      'Salary/CTC records and the TDS calculator. Not included in pr.payroll — grant it separately.',
+    unlocks: 'Salary / CTC records and the TDS calculator. Not part of “Payroll runs” — give it separately.',
   },
   'pr.payroll.bank_details': {
+    label: 'Employee bank details',
     group: 'Payroll',
-    unlocks:
-      'Bank name, account number and IFSC on the compensation screen (read / update). Not included in compensation — grant it separately.',
+    unlocks: 'Bank name, account number and IFSC. Not part of “Salaries” — give it separately.',
   },
-  'pr.payroll.compliance': { group: 'Payroll', unlocks: 'Statutory compliance.', notBuilt: true },
+  'pr.payroll.compliance': {
+    label: 'Compliance',
+    group: 'Payroll',
+    unlocks: 'Statutory compliance — not built yet.',
+    hidden: true,
+  },
   'ops.assets': {
+    label: 'Asset register',
     group: 'Operations',
     unlocks:
-      'The asset register: add / import, issue and lend, take back, hand over, move zones, statuses, incidents; told when lent items come back or run late. Org scope.',
+      'Add and import assets, issue and lend them, take them back, move them between locations, record damage or loss.',
   },
   'ops.asset_requests': {
+    label: 'Asset requests',
     group: 'Operations',
-    unlocks: 'The asset request queue: pick up, decline, fulfil (hand over / take back).',
+    unlocks: 'Pick up what people ask OPS for, decline, hand over or take back.',
   },
   'ops.gate_passes': {
+    label: 'Gate passes',
     group: 'Operations',
-    unlocks: 'Gate passes: approve (the item may leave), decline, mark back; overdue alerts.',
+    unlocks: 'Approve lab items leaving the office, decline, mark them back; late alerts.',
   },
   'ops.locations': {
+    label: 'Asset categories',
     group: 'Operations',
-    unlocks:
-      'OPS setup: asset categories (lent / gate pass) and joiner kits. Locations themselves are the punch zones. Org scope.',
+    unlocks: 'Set up asset categories (lent items, gate pass needed).',
   },
   'ops.stock': {
+    label: 'Stock',
     group: 'Operations',
-    unlocks: 'Consumable stock per zone: items, stock in, issue, transfer, adjust. Org scope.',
+    unlocks: 'Consumables per location: items, stock in, issue, move, adjust.',
   },
-  'access.batches': { group: 'Admin', unlocks: 'Access batches and the Admin invite.' },
-  'access.requests': { group: 'Admin', unlocks: 'The grant-request queue and decisions.' },
-  'access.audit': { group: 'Admin', unlocks: 'The audit log.' },
-  'access.settings': { group: 'Admin', unlocks: 'Every org setting, across all areas.' },
+  'access.batches': {
+    label: 'Roles & access',
+    group: 'Admin',
+    unlocks: 'Create and change roles, give or take them away, invite employees.',
+  },
+  'access.requests': {
+    label: 'Access requests',
+    group: 'Admin',
+    unlocks: 'Approve or decline HR’s requests for someone’s access.',
+  },
+  'access.audit': { label: 'Audit log', group: 'Admin', unlocks: 'The history of every change.' },
+  'access.settings': {
+    label: 'All settings',
+    group: 'Admin',
+    unlocks: 'Change every setting in every area.',
+  },
 };
 
 export const MODULE_GROUPS = ['HR', 'Payroll', 'Operations', 'Hiring', 'Admin', 'Other'] as const;
 
+/** An area's name on screen: our label, else the seeded name, else the key. */
+export const moduleLabel = (key: string, seededName?: string) =>
+  MODULE_INFO[key]?.label ?? seededName ?? key;
+
 /**
- * Rights levels are an app-layer convenience (§4.1) — presets that tick the
- * action boxes. Any subset is a legal grant row, e.g. "editor minus create".
+ * The built-in roles keep their stored names (the portal menus gate on them),
+ * shown under a friendlier name and line. Custom roles show as named.
  */
-export const RIGHTS_PRESETS: Record<string, Action[]> = {
-  viewer: ['read'],
-  contributor: ['create', 'read'],
-  editor: ['create', 'read', 'update'],
-  manager: ['create', 'read', 'update', 'delete'],
+export const ROLE_INFO: Record<string, { label: string; blurb: string }> = {
+  Employee: {
+    label: 'Everyone (basic)',
+    blurb: 'Every employee has this: their own profile, leave, attendance and pay.',
+  },
+  HRBP: { label: 'HR team', blurb: 'Employee records, leave, attendance, policies, concerns and exits.' },
+  TA: { label: 'Hiring team', blurb: 'Hiring lines, JDs and scorecards, candidates, interviews and offers.' },
+  PR: { label: 'Payroll team', blurb: 'Monthly payroll, payslips, salaries, bank details and expense claims.' },
+  OPS: {
+    label: 'Operations / assets team',
+    blurb: 'The asset register, asset requests, gate passes and stock.',
+  },
 };
+export const roleLabel = (name: string) => ROLE_INFO[name]?.label ?? name;
 
-/** The preset a set of ticked actions matches exactly, or null (custom). */
-export const presetFor = (actions: Action[]): string | null => {
-  const ticked = [...actions].sort().join(',');
-  for (const [name, preset] of Object.entries(RIGHTS_PRESETS)) {
-    if ([...preset].sort().join(',') === ticked) return name;
-  }
-  return null;
+export const ACTION_ORDER: Action[] = ['read', 'create', 'update', 'delete'];
+export const ACTION_LABELS: Record<Action, string> = {
+  read: 'View',
+  create: 'Add',
+  update: 'Edit',
+  delete: 'Remove',
 };
 
 /**
- * Every scope is enforced (refinement plan, Phase 3): it decides WHOSE rows a
- * grant reaches. Several scopes on one module add up.
+ * Access levels: shortcuts that tick the action boxes (§4.1). Any other mix is
+ * still a legal grant — it shows as "Custom".
+ */
+export const ACCESS_LEVELS: { key: string; label: string; actions: Action[] }[] = [
+  { key: 'view', label: 'View only', actions: ['read'] },
+  { key: 'view_add', label: 'View & add', actions: ['create', 'read'] },
+  { key: 'edit', label: 'View, add & edit', actions: ['create', 'read', 'update'] },
+  { key: 'full', label: 'Full control', actions: ['create', 'read', 'update', 'delete'] },
+];
+
+/** The level a set of ticked actions matches exactly, or null (custom). */
+export const levelFor = (actions: Action[]): string | null => {
+  const ticked = [...actions].sort().join(',');
+  return ACCESS_LEVELS.find((l) => [...l.actions].sort().join(',') === ticked)?.key ?? null;
+};
+
+/** "View, add, edit" — the ticked actions in reading order. */
+export const actionsText = (actions: Action[]) => {
+  const words = ACTION_ORDER.filter((a) => actions.includes(a)).map((a) => ACTION_LABELS[a]);
+  return words.map((w, i) => (i === 0 ? w : w.toLowerCase())).join(', ');
+};
+
+/**
+ * "For whom" — every scope is enforced (refinement plan, Phase 3): it decides
+ * WHOSE records the access reaches. Several on one area add up.
  */
 export const SCOPE_ORDER: Scope[] = ['org', 'dept', 'team', 'team_direct', 'me'];
 export const SCOPE_LABELS: Record<Scope, string> = {
-  org: 'org — whole company',
-  dept: 'dept — their department',
-  team: 'team — everyone below them',
-  team_direct: 'team_direct — their direct reports',
-  me: 'me — only themselves',
+  org: 'Whole company',
+  dept: 'Their department',
+  team: 'Everyone under them',
+  team_direct: 'Their direct reports',
+  me: 'Only themselves',
 };
 
 /**
- * Company-wide operations and configuration: only an org grant opens them; a
- * narrower one gives no access at all (holidays under hrbp.attendance too).
+ * Company-wide operations and configuration: only "Whole company" opens them;
+ * a narrower one gives no access at all (holidays under attendance too).
  */
 export const ORG_ONLY_MODULES = new Set([
   'pr.payroll',

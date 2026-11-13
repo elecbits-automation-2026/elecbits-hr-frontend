@@ -68,7 +68,7 @@ const todayChip = (
  * away this week, and jump-offs to the queues. Approvals stay on the Team
  * pages; exceptions stay on Home; this page is about the PEOPLE.
  */
-const MyTeamPage = () => {
+const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   const month = currentMonth();
   const today = todayStr();
   const weekEnd = plusDays(today, 7);
@@ -123,7 +123,7 @@ const MyTeamPage = () => {
   return (
     <div className='w-full space-y-4'>
       <div>
-        <h1 className='text-2xl font-semibold text-slate-800'>My team</h1>
+        {!embedded && <h1 className='text-2xl font-semibold text-slate-800'>My team</h1>}
         <p className='text-sm text-slate-500'>
           {members.length} {members.length === 1 ? 'person' : 'people'} route to you — direct
           reports and leave-approver assignees.
@@ -242,7 +242,6 @@ const MyTeamPage = () => {
               ?.days ?? []
           }
           onClose={() => setPerson(null)}
-          canStartPip
           onNote={(m) => {
             setPerson(null);
             noteDraft(m);

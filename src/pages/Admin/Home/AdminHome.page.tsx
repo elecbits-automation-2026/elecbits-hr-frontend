@@ -62,8 +62,8 @@ const SETUP_STEPS = [
     detail: 'Holidays never count as working days anywhere (leave, attendance, payroll).',
   },
   {
-    step: 'Review the access batches',
-    detail: 'HRBP and PR are seeded; duplicate and trim them for tailored roles before handing them out.',
+    step: 'Review the roles',
+    detail: 'HR team, Payroll team, Hiring team and Operations team come built in; duplicate and trim one for a tailored role before giving it out.',
   },
   {
     step: 'Invite people top-down',
@@ -77,7 +77,7 @@ const SETUP_STEPS = [
 
 const RULES = [
   'This account is the administration, not a person — it has no attendance, leave or payslips of its own.',
-  'Nobody edits their own access — not even this account. Batch edits apply to every holder instantly and are audited.',
+  'Nobody edits their own access — not even this account. Changing a role changes it for everyone in it, straight away, and is audited.',
   'Claim links are single-use and expire after the invite-link validity in Org settings (7 days by default); a lost link is reissued from HR → People, which kills the old one.',
   'Every grant, approval and payroll action writes an append-only audit row — salary amounts are never recorded there.',
 ];
@@ -95,7 +95,7 @@ const AdminHomePage = () => (
     <Group title='People & onboarding'>
       <TaskCard
         task='Bring someone on board'
-        how='Choose their manager, level, base location and access batches; you get a one-time claim link to send them.'
+        how='Choose their manager, level, base location and roles; you get a one-time claim link to send them.'
         to={ADMIN_INVITE_ROUTE}
         cta='Invite employee'
       />
@@ -116,9 +116,9 @@ const AdminHomePage = () => (
     <Group title='Access & security'>
       <TaskCard
         task='Give, take away or tailor a role'
-        how='Assign or revoke a batch on its card; changes hit the holder on their very next request. For a tailored role, duplicate the closest batch and tick or untick single actions.'
+        how='Give or take away a role on its card; it applies the next time the person uses the app. For a tailored role, duplicate the closest one and change its access.'
         to={ADMIN_BATCHES_ROUTE}
-        cta='Access batches'
+        cta='Roles & access'
       />
       <TaskCard
         task='See who did what, when'

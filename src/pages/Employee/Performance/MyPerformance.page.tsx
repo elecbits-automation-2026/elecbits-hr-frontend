@@ -189,7 +189,7 @@ const MyPerformancePage = () => {
   return (
     <div className='w-full space-y-4'>
       <div className='flex flex-wrap items-baseline justify-between gap-2'>
-        <h1 className='text-2xl font-semibold text-slate-800'>My performance</h1>
+        <h1 className='text-2xl font-semibold text-slate-800'>Goals &amp; updates</h1>
         <span className='text-sm text-slate-400'>
           {g.cycle.name} · {g.cycle.startDate} → {g.cycle.endDate}
         </span>
@@ -198,7 +198,7 @@ const MyPerformancePage = () => {
       {hasTeam && (
         <PageTabs
           tabs={[
-            { key: 'mine', label: 'Mine' },
+            { key: 'mine', label: 'Me' },
             { key: 'team', label: 'My team', count: lateCount },
           ]}
           active={view}
@@ -423,7 +423,9 @@ const MyPerformancePage = () => {
           )}
           <div className='mt-2 flex items-center justify-between gap-3'>
             <p className='text-xs text-slate-400'>
-              One entry per day — submitting again replaces (and rescores) today&apos;s.
+              {todays
+                ? 'You already sent today’s update — saving again overwrites it (and rescores it).'
+                : 'One entry per day.'}
             </p>
             <button
               type='button'
@@ -431,7 +433,7 @@ const MyPerformancePage = () => {
               onClick={() => submit.mutate(draft.trim())}
               className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
             >
-              {submit.isPending ? 'Saving…' : todays ? 'Replace today’s update' : 'Submit update'}
+              {submit.isPending ? 'Saving…' : todays ? 'Update today’s entry' : 'Submit update'}
             </button>
           </div>
           {submit.error && (

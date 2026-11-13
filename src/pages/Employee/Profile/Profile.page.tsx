@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Me, PersonRef, UpdateMeInput } from '@app-types/api.types';
+import { RESIGNATION_ROUTE } from '@constants/Common/navigation/routes.constants';
 import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -394,7 +396,10 @@ const ProfilePage = () => {
         {exit.error && <p className='text-sm text-red-600'>{apiErrorMessage(exit.error)}</p>}
         {exit.data === null && (
           <p className='text-sm text-slate-500'>
-            No exit on record — start one from the Resignation page if you are leaving.
+            No exit on record.{' '}
+            <Link to={RESIGNATION_ROUTE} className='text-brand-600 hover:underline'>
+              Resign →
+            </Link>
           </p>
         )}
         {exit.data && (
@@ -419,7 +424,11 @@ const ProfilePage = () => {
               </>,
             )}
             <p className='text-sm text-slate-500'>
-              Details, clearances and the exit interview are on the Resignation page.
+              Details, clearances and the exit interview are on the{' '}
+              <Link to={RESIGNATION_ROUTE} className='text-brand-600 hover:underline'>
+                Resignation page
+              </Link>
+              .
             </p>
           </>
         )}
@@ -466,6 +475,14 @@ const ProfilePage = () => {
           </div>
         )}
       </form>
+
+      {/* Resign lives here now, not in the main menu (learner, 2026-11-05). */}
+      <p className='text-right text-xs text-slate-400'>
+        Leaving Elecbits?{' '}
+        <Link to={RESIGNATION_ROUTE} className='text-slate-500 underline hover:text-slate-700'>
+          Resign
+        </Link>
+      </p>
     </div>
   );
 };

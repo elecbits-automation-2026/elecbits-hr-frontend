@@ -114,12 +114,12 @@ const MyGrowthPage = () => {
 
   return (
     <div className='w-full space-y-4'>
-      <h1 className='text-2xl font-semibold text-slate-800'>My growth</h1>
+      <h1 className='text-2xl font-semibold text-slate-800'>Career path</h1>
 
       {hasTeam && (
         <PageTabs
           tabs={[
-            { key: 'mine', label: 'Mine' },
+            { key: 'mine', label: 'Me' },
             { key: 'team', label: 'My team', count: dueCount },
           ]}
           active={view}

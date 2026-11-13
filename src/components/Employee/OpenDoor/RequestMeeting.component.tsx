@@ -53,7 +53,7 @@ const RequestMeeting = ({ concernId, onSent }: { concernId: string; onSent: () =
   return (
     <div className='space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3'>
       <p className='text-xs text-slate-500'>
-        Whoever handles your case will offer a time or reply. You&rsquo;ll see it under Grievances →
+        Whoever handles your case will offer a time or reply. You&rsquo;ll see it under Concerns &amp; open door →
         Requests.
       </p>
       <div className='grid gap-2 sm:grid-cols-2'>

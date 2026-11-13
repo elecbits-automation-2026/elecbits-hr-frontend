@@ -17,7 +17,13 @@ export const leaveSlots = (l: LeaveRequest): string => {
 };
 
 export const wfhSlots = (w: WfhRequest): string => {
-  const rm = w.rmApprovedByName ?? (w.rmApprovedBy ? 'approved' : 'pending');
-  const hr = w.hrApprovedByName ?? (w.hrApprovedBy ? 'approved' : 'pending');
-  return `RM: ${rm} · HR: ${hr}`;
+  // Self-governed (nobody above them): approved as raised, neither slot used.
+  if (w.status === 'approved' && !w.rmApprovedBy && !w.hrApprovedBy) {
+    return 'Self-approved — no RM above';
+  }
+  // RM only since 2026-11-05 (HR decides only for someone with no RM).
+  const by = w.rmApprovedByName ?? w.hrApprovedByName;
+  if (w.status === 'approved') return by ? `Approved by ${by}` : 'Approved';
+  if (w.status === 'declined' || w.status === 'cancelled') return '';
+  return 'Waiting for the RM';
 };

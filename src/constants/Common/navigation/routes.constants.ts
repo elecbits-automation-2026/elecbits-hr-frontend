@@ -12,7 +12,8 @@ export const PROFILE_ROUTE = '/profile';
 export const MY_TEAM_ROUTE = '/my-team';
 export const MY_ASSETS_ROUTE = '/my-assets';
 export const MY_LEAVES_ROUTE = '/my-leaves';
-export const TEAM_LEAVES_ROUTE = '/team-leaves';
+/** Tabs of My team now (the old /team-leaves URL redirects here). */
+export const TEAM_LEAVES_ROUTE = '/my-team?tab=leave';
 export const MY_ATTENDANCE_ROUTE = '/my-attendance';
 export const MY_PAYSLIPS_ROUTE = '/my-payslips';
 export const REIMBURSEMENTS_ROUTE = '/reimbursements';
@@ -21,7 +22,8 @@ export const ONBOARDING_ROUTE = '/onboarding';
 export const RECOGNITION_ROUTE = '/recognition';
 export const GROWTH_ROUTE = '/growth';
 export const PERFORMANCE_ROUTE = '/performance';
-export const TEAM_ATTENDANCE_ROUTE = '/team-attendance';
+/** A tab of My team now (the old /team-attendance URL redirects here). */
+export const TEAM_ATTENDANCE_ROUTE = '/my-team?tab=attendance';
 export const RESIGNATION_ROUTE = '/resignation';
 /** Concerns + open door + session requests, one page with tabs (?tab=). */
 export const GRIEVANCES_ROUTE = '/grievances';
@@ -32,6 +34,8 @@ export const OPEN_DOOR_ROUTE = '/open-door';
 export const HIRING_PLAN_ROUTE = '/hiring/plan';
 export const HIRING_APPROVALS_ROUTE = '/hiring/approvals';
 export const HIRING_INTERVIEWS_ROUTE = '/hiring/interviews';
+/** HRBP's handover list of people TA hired (workflow deck step 16). */
+export const HIRING_JOINERS_ROUTE = '/hiring/joiners';
 
 // HR console — the four HR sections (HRBP / TA / PR / OPS batches)
 export const HR_ROUTE = '/hr';
@@ -64,3 +68,4 @@ export const ADMIN_AUDIT_ROUTE = '/admin/audit-log';
 export const ADMIN_PUNCH_ZONES_ROUTE = '/admin/punch-zones';
 export const ADMIN_SETTINGS_ROUTE = '/admin/settings';
 export const ADMIN_HIRING_APPROVALS_ROUTE = '/admin/hiring-approvals';
+export const ADMIN_REIMBURSEMENTS_ROUTE = '/admin/reimbursements';

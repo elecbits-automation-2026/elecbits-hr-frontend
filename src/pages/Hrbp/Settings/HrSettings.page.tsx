@@ -1,4 +1,4 @@
-import { SettingsList } from '@components/Common/Settings/SettingsList.component';
+import { SettingsBrowser } from '@components/Common/Settings/SettingsBrowser.component';
 
 /**
  * HR settings: the attendance, leave and people knobs HR owns. Each section
@@ -7,7 +7,7 @@ import { SettingsList } from '@components/Common/Settings/SettingsList.component
  * Payroll settings live on the Payroll page; Admin sees everything.
  */
 const HrSettingsPage = () => (
-  <div className='w-full max-w-4xl space-y-6'>
+  <div className='w-full max-w-6xl space-y-6'>
     <div>
       <h1 className='text-2xl font-semibold text-slate-800'>HR settings</h1>
       <p className='mt-1 text-sm text-slate-500'>
@@ -15,9 +15,7 @@ const HrSettingsPage = () => (
         changed; every change is recorded in the audit log.
       </p>
     </div>
-    <SettingsList area='attendance' title='Attendance' hideWhenEmpty />
-    <SettingsList area='leaves' title='Leaves' hideWhenEmpty />
-    <SettingsList area='people' title='People & growth' hideWhenEmpty />
+    <SettingsBrowser areas={['people', 'leaves', 'attendance']} />
   </div>
 );
 

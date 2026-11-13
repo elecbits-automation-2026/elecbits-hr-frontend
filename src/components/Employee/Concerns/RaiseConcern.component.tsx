@@ -5,7 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ConcernTrack, CreatedConcern } from '@app-types/api.types';
 import { CATEGORIES, TRACK_CHOICES } from '@constants/Common/concerns.constants';
 import { CONCERNS_FOLLOW_UP_ROUTE } from '@constants/Common/navigation/routes.constants';
-import { usePublicSettings } from '@hooks/Common/usePublicSettings.hook';
+// POSH panel commented out for now (2026-11-05) — see below.
+// import { usePublicSettings } from '@hooks/Common/usePublicSettings.hook';
 import { concernsApi } from '@services/api/concerns.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -55,11 +56,11 @@ const FollowUpKeyCard = ({ created, onDone }: { created: CreatedConcern; onDone:
 /**
  * Raise a concern. Pick the track by what happened; sexual harassment shows
  * the Internal Committee contact and sends nothing. Disputes are always
- * named; complaints and whistleblower reports may be anonymous.
+ * named; complaints may be anonymous.
  */
 const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => {
   const queryClient = useQueryClient();
-  const { icContact } = usePublicSettings();
+  // const { icContact } = usePublicSettings();
   const [track, setTrack] = useState<ConcernTrack | 'posh' | null>(null);
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
@@ -151,6 +152,8 @@ const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => 
         ))}
       </div>
 
+      {/* POSH is commented out for now (learner, 2026-11-05): sexual harassment
+          is reported straight to the RM or management, outside the software.
       {track === 'posh' && (
         <div className='rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-slate-700'>
           <h2 className='font-semibold text-rose-800'>Contact the Internal Committee</h2>
@@ -162,7 +165,7 @@ const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => 
             {icContact ? icContact : 'Ask HR for the Internal Committee contact details.'}
           </p>
         </div>
-      )}
+      )} */}
 
       {track !== null && track !== 'posh' && (
         <form
@@ -281,9 +284,7 @@ const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => 
                 ? aboutMyManager
                   ? 'HR acknowledges and decides first.'
                   : 'Your manager decides first; you can escalate to HR, then the committee.'
-                : track === 'complaint'
-                  ? 'HR acknowledges, investigates and tells you the outcome.'
-                  : 'Only the whistleblower (vigil) team can see this.'}{' '}
+                : 'HR acknowledges, investigates and tells you the outcome.'}{' '}
               The person it&rsquo;s about never sees it.
             </p>
             <button

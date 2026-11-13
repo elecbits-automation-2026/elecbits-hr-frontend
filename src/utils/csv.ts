@@ -1,5 +1,19 @@
-/** Minimal RFC-4180 parser: quoted fields, escaped quotes, commas and newlines inside quotes. */
+/**
+ * The separator a file uses: Excel saves with `;` or tabs in some locales, so
+ * pick whichever of `,` `;` tab appears most in the first line (outside quotes).
+ */
+const detectSeparator = (text: string): string => {
+  const firstLine = (text.split(/\r?\n/, 1)[0] ?? '').replace(/"[^"]*"/g, '');
+  const count = (sep: string) => firstLine.split(sep).length - 1;
+  return [',', ';', '\t'].reduce((best, sep) => (count(sep) > count(best) ? sep : best), ',');
+};
+
+/**
+ * Minimal RFC-4180 parser: quoted fields, escaped quotes, separators and
+ * newlines inside quotes. The separator (`,` `;` or tab) is detected.
+ */
 export const parseCsv = (text: string): string[][] => {
+  const sep = detectSeparator(text);
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = '';
@@ -13,7 +27,7 @@ export const parseCsv = (text: string): string[][] => {
       } else if (c === '"') quoted = false;
       else cell += c;
     } else if (c === '"') quoted = true;
-    else if (c === ',') {
+    else if (c === sep) {
       row.push(cell);
       cell = '';
     } else if (c === '\n' || c === '\r') {

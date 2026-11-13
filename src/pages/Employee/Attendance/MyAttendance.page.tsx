@@ -106,7 +106,7 @@ const MyAttendancePage = () => {
   return (
     <div className='w-full space-y-4'>
       <div className='flex items-center justify-between'>
-        <h1 className='text-2xl font-semibold text-slate-800'>My attendance</h1>
+        <h1 className='text-2xl font-semibold text-slate-800'>Attendance</h1>
         <div className='flex gap-2'>
           {/* Self-service regularization disabled (user decision) — a missed
               day is fixed by HRBP/Admin and then reads "regularized" here.

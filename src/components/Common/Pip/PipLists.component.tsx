@@ -10,52 +10,45 @@ import { apiErrorMessage } from '@utils/apiError';
 const OPEN = new Set(['pending_hr', 'active']);
 
 /**
- * One person's PIPs on their sheet. The RM (`canStart`) may open one when
- * none is running; a poor quarter score only rings the RM — never auto-starts.
+ * One person's PIPs on their sheet. Their RM (or HR, when they have no RM)
+ * may open one when none is running — the server says who — always their own
+ * decision, never suggested by a score.
  */
-export const PersonPips = ({
-  employeeId,
-  canStart,
-  pipCandidate,
-}: {
-  employeeId: string;
-  canStart: boolean;
-  pipCandidate: string | null;
-}) => {
+export const PersonPips = ({ employeeId }: { employeeId: string }) => {
   const pips = useQuery({
     queryKey: ['pips', employeeId],
     queryFn: () => pipApi.list(employeeId),
   });
+  const may = useQuery({
+    queryKey: ['pips', 'can-start', employeeId],
+    queryFn: () => pipApi.canStart(employeeId),
+  });
+  const canStart = may.data === true;
   const [starting, setStarting] = useState(false);
   if (pips.error) return <p className='text-sm text-slate-400'>{apiErrorMessage(pips.error)}</p>;
   const list = pips.data ?? [];
   const open = list.some((p) => OPEN.has(p.status));
   return (
     <div className='space-y-3'>
-      {pipCandidate && !open && (
-        <p className='text-sm text-red-700'>
-          {pipCandidate} closed under 50 — consider a performance improvement plan.
-        </p>
-      )}
-      {list.length === 0 && !starting && <p className='text-sm text-slate-500'>No PIP.</p>}
-      {list.map((p) => (
-        <PipCard key={p.id} pip={p} />
-      ))}
       {canStart && !open && !starting && (
         <button
           type='button'
           onClick={() => setStarting(true)}
-          className='text-xs font-medium text-brand-700 hover:underline'
+          className='rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
         >
           Start a PIP
         </button>
       )}
       {starting && <StartPip employeeId={employeeId} onDone={() => setStarting(false)} />}
+      {list.length === 0 && !starting && <p className='text-sm text-slate-500'>No PIP.</p>}
+      {list.map((p) => (
+        <PipCard key={p.id} pip={p} />
+      ))}
     </div>
   );
 };
 
-/** My performance: the employee's own plan, to read and acknowledge. */
+/** My performance: the employee's own plan, to read. */
 export const MyPips = () => {
   const me = useAuthStore((s) => s.user?.employeeId);
   const pips = useQuery({ queryKey: ['pips', 'mine'], queryFn: () => pipApi.list(me) });
@@ -73,37 +66,22 @@ export const MyPips = () => {
   );
 };
 
-/** HR: plans waiting for approval, and the ones running. */
+/** HR: the plans running for the people they reach (for information — RMs run them). */
 export const PipQueue = () => {
   const pips = useQuery({ queryKey: ['pips', 'queue'], queryFn: () => pipApi.list() });
-  const list = pips.data ?? [];
-  const waiting = list.filter((p) => p.status === 'pending_hr');
-  const running = list.filter((p) => p.status === 'active');
+  const running = (pips.data ?? []).filter((p) => p.status === 'active');
   return (
     <section className='space-y-3 rounded-xl border border-slate-200 bg-white p-5'>
-      <h2 className='text-sm font-semibold text-slate-700'>Performance improvement plans</h2>
+      <h2 className='text-sm font-semibold text-slate-700'>
+        Running performance improvement plans
+      </h2>
       {pips.error && <p className='text-sm text-red-600'>{apiErrorMessage(pips.error)}</p>}
-      {waiting.length === 0 && running.length === 0 && (
-        <p className='text-sm text-slate-500'>No PIP is waiting or running.</p>
+      {pips.data && running.length === 0 && (
+        <p className='text-sm text-slate-500'>No PIP is running.</p>
       )}
-      {waiting.length > 0 && (
-        <>
-          <p className='text-xs font-semibold uppercase tracking-wide text-amber-700'>
-            Waiting for your approval
-          </p>
-          {waiting.map((p) => (
-            <PipCard key={p.id} pip={p} showPerson />
-          ))}
-        </>
-      )}
-      {running.length > 0 && (
-        <>
-          <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Running</p>
-          {running.map((p) => (
-            <PipCard key={p.id} pip={p} showPerson />
-          ))}
-        </>
-      )}
+      {running.map((p) => (
+        <PipCard key={p.id} pip={p} showPerson />
+      ))}
     </section>
   );
 };

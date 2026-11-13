@@ -188,7 +188,7 @@ const HomePage = () => {
           />
           <QuickAction
             to={MY_PAYSLIPS_ROUTE}
-            title='My payslips'
+            title='Pay'
             hint='Published payslips, month by month'
           />
           <QuickAction

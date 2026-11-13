@@ -1,8 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { DecideLeaveInput } from '@app-types/api.types';
-import ApprovalActions from '@components/Common/Attendance/ApprovalActions.component';
 import MonthCalendar from '@components/Common/Attendance/MonthCalendar.component';
 import { attendanceApi } from '@services/api/attendance.api';
 import { departmentsApi } from '@services/api/departments.api';
@@ -51,18 +49,6 @@ const AttendancePage = () => {
     },
   });
 
-  const decideRemote = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: DecideLeaveInput }) =>
-      attendanceApi.decideWfh(id, input),
-    // onSettled + both surfaces: deciding here must refresh the RM team queue
-    // too, and a 409 conflict must clear the stale row (review finding M11).
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['wfh-queue'] });
-      queryClient.invalidateQueries({ queryKey: ['team-wfh'] });
-      queryClient.invalidateQueries({ queryKey: ['org-attendance'] });
-      queryClient.invalidateQueries({ queryKey: ['team-attendance'] });
-    },
-  });
   const holidays = useQuery({
     queryKey: ['holidays', year],
     queryFn: () => attendanceApi.holidays(year),
@@ -275,12 +261,13 @@ const AttendancePage = () => {
       </div>
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
-        <h2 className='mb-3 text-sm font-semibold text-slate-700'>
+        <h2 className='text-sm font-semibold text-slate-700'>
           Pending remote-work requests ({(remoteQueue.data ?? []).length})
         </h2>
-        {decideRemote.error && (
-          <p className='mb-2 text-sm text-red-600'>{apiErrorMessage(decideRemote.error)}</p>
-        )}
+        <p className='mb-3 text-xs text-slate-400'>
+          For your information — each person&rsquo;s RM approves remote work. They can clock in
+          from anywhere while it waits; if the RM declines, those days count as absent.
+        </p>
         {remoteQueue.data && remoteQueue.data.length === 0 && (
           <p className='text-sm text-slate-500'>Nothing pending.</p>
         )}
@@ -295,18 +282,7 @@ const AttendancePage = () => {
               {w.reason && <span className='ml-1 text-slate-500'>({w.reason})</span>}
               <span className='ml-2 text-xs text-slate-400'>{wfhSlots(w)}</span>
             </span>
-            {w.hrApprovedBy ? (
-              // The HR slot is already filled — nothing left to do here.
-              <span className='text-xs text-slate-400'>HR approved — awaiting RM</span>
-            ) : (
-              <ApprovalActions
-                disabled={decideRemote.isPending}
-                onApprove={() => decideRemote.mutate({ id: w.id, input: { decision: 'approve' } })}
-                onDecline={(reason) =>
-                  decideRemote.mutate({ id: w.id, input: { decision: 'decline', reason } })
-                }
-              />
-            )}
+            <span className='text-xs text-slate-400'>Waiting for the RM</span>
           </div>
         ))}
       </div>

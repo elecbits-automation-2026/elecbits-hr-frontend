@@ -1,5 +1,5 @@
 import BackgroundJobs from '@components/Admin/BackgroundJobs.component';
-import { SettingsList } from '@components/Common/Settings/SettingsList.component';
+import { SettingsBrowser } from '@components/Common/Settings/SettingsBrowser.component';
 
 /**
  * Org settings (Admin): every org-tunable setting from the backend registry,
@@ -10,16 +10,16 @@ import { SettingsList } from '@components/Common/Settings/SettingsList.component
  * code and is deliberately not here.
  */
 const OrgSettingsPage = () => (
-  <div className='w-full max-w-4xl space-y-4'>
-    <h1 className='text-2xl font-semibold text-slate-800'>Org settings</h1>
-    <p className='text-sm text-slate-500'>
-      Org-wide knobs. Each one uses its built-in default until you change it; every change is
-      recorded in the audit log. Payroll and HR can also edit their own sections from their
-      consoles. Settings marked <b>Not wired yet</b> are stored but have no effect until their
-      feature starts reading them.
-    </p>
-    <BackgroundJobs />
-    <SettingsList groupByArea />
+  <div className='w-full max-w-6xl space-y-4'>
+    <div>
+      <h1 className='text-2xl font-semibold text-slate-800'>Org settings</h1>
+      <p className='text-sm text-slate-500'>
+        Pick an area, or search. Each setting uses its built-in default until changed
+        (<b>changed</b> marks the ones that aren&rsquo;t); every change is recorded in the audit
+        log. Payroll and HR can also edit their own areas from their consoles.
+      </p>
+    </div>
+    <SettingsBrowser extra={[{ key: 'jobs', title: 'Background jobs', node: <BackgroundJobs /> }]} />
   </div>
 );
 

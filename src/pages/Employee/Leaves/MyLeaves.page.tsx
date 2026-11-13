@@ -80,7 +80,7 @@ const MyLeavesPage = () => {
   return (
     <div className='w-full space-y-4'>
       <div className='flex items-center justify-between'>
-        <h1 className='text-2xl font-semibold text-slate-800'>My leaves</h1>
+        <h1 className='text-2xl font-semibold text-slate-800'>Leave</h1>
         <button
           type='button'
           onClick={() => setShowModal(true)}

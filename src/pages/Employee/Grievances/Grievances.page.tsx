@@ -28,7 +28,7 @@ const GrievancesPage = () => {
   return (
     <div className='w-full max-w-4xl space-y-4'>
       <div>
-        <h1 className='text-2xl font-semibold text-slate-800'>Grievances</h1>
+        <h1 className='text-2xl font-semibold text-slate-800'>Concerns &amp; open door</h1>
         <p className='text-sm text-slate-500'>
           Raise a concern formally, or talk to someone — book an open-door slot or ask for a time.
         </p>

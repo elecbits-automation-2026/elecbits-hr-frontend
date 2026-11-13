@@ -238,7 +238,9 @@ export const MyProbation = () => {
           ? `Confirmed${r.decidedAt ? ` on ${day(r.decidedAt)}` : ''}.`
           : r.status === 'ended'
             ? 'Your probation was ended — see Exit for the next steps.'
-            : `Your probation ends on ${day(r.dueOn)}. Your manager and HR review it then.`}
+            : r.dueOn < new Date().toLocaleDateString('en-CA')
+              ? `Your probation ended on ${day(r.dueOn)} and is waiting for review — it confirms by itself on ${day(r.autoConfirmOn)} if nobody decides first.`
+              : `Your probation ends on ${day(r.dueOn)}. Your manager and HR review it then.`}
       </p>
       {r.can.letter && (
         <button

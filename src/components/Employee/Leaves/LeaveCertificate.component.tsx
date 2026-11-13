@@ -56,7 +56,7 @@ const LeaveCertificate = ({ leave }: { leave: LeaveRequest }) => {
         <span className='flex flex-wrap items-center gap-2'>
           {leave.certificateNeeded && (
             <span className='rounded-full bg-amber-50 px-2 py-0.5 text-amber-800'>
-              Certificate needed — otherwise unpaid in your F&F
+              Certificate needed — the leave can’t be approved without it
             </span>
           )}
           <button

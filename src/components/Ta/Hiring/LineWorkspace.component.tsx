@@ -197,8 +197,8 @@ const Positions = ({
                     </label>
                     {team.isSuccess && reports.length === 0 && recruiterId !== meId && (
                       <p className='text-xs text-amber-700'>
-                        None of your reports is in the TA batch — keep it yourself, or Admin
-                        adds them in Access batches.
+                        None of your reports has the Hiring team role — keep it yourself, or Admin
+                        gives them the role in Roles &amp; access.
                       </p>
                     )}
                     {assign.error && (

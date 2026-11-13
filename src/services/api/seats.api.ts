@@ -1,9 +1,10 @@
-import type { Seat, SeatKind, SeatsOverview } from '@app-types/api.types';
+import type { PastSeat, Seat, SeatKind, SeatsOverview } from '@app-types/api.types';
 import { api } from '@utils/axiosInstance';
 
-/** Seats: dept head (per department) and VP — assigned by HR. */
+/** Seats: dept head (per department) and VP — assigned by the Admin account. */
 export const seatsApi = {
   overview: async (): Promise<SeatsOverview> => (await api.get<SeatsOverview>('/seats')).data,
+  history: async (): Promise<PastSeat[]> => (await api.get<PastSeat[]>('/seats/history')).data,
   assign: async (input: {
     seat: SeatKind;
     departmentId?: string;

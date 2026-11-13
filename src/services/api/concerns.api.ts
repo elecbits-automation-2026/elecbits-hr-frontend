@@ -10,8 +10,8 @@ import type {
 import { api } from '@utils/axiosInstance';
 
 /**
- * Concerns — disputes (three levels), conduct complaints and whistleblower
- * reports. Who may see or act on a case is decided per case by the backend;
+ * Concerns — disputes (three levels) and conduct complaints. Who may see or
+ * act on a case is decided per case by the backend;
  * every action returns the case as the caller now sees it.
  */
 export const concernsApi = {

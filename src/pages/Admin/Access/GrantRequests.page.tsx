@@ -1,14 +1,22 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { GrantRequest, GrantRequestItem } from '@app-types/api.types';
+import type { Action, GrantRequest, GrantRequestItem, Scope } from '@app-types/api.types';
+import {
+  SCOPE_LABELS,
+  actionsText,
+  moduleLabel,
+  roleLabel,
+} from '@constants/Common/access/modules.constants';
 import { accessApi } from '@services/api/access.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 const itemLabel = (i: GrantRequestItem): string =>
   i.kind === 'batch'
-    ? `${i.batchName ?? 'Batch'} batch`
-    : `${i.moduleKey} · ${i.action} · ${i.scope}`;
+    ? `${i.batchName ? roleLabel(i.batchName) : 'A'} role`
+    : `${moduleLabel(i.moduleKey ?? '')}: ${actionsText([i.action as Action])} · ${
+        SCOPE_LABELS[i.scope as Scope]?.toLowerCase() ?? i.scope
+      }`;
 const itemKey = (i: GrantRequestItem): string =>
   i.kind === 'batch' ? `b:${i.batchId}` : `g:${i.moduleKey}:${i.action}:${i.scope}`;
 
@@ -118,7 +126,7 @@ const PendingCard = ({ request }: { request: GrantRequest }) => {
 };
 
 /**
- * Grant requests (Admin): HR asks for extra access for one person; you
+ * Access requests (Admin; was "Grant requests"): HR asks for extra access for one person; you
  * approve as asked, approve part of it, or decline with a reason. Approved
  * access applies on the person's next request. Nobody decides a request
  * that involves them.
@@ -130,10 +138,10 @@ const GrantRequestsPage = () => {
 
   return (
     <div className='w-full max-w-3xl space-y-4'>
-      <h1 className='text-2xl font-semibold text-slate-800'>Grant requests</h1>
+      <h1 className='text-2xl font-semibold text-slate-800'>Access requests</h1>
       <p className='text-sm text-slate-500'>
-        HR asks for extra access for one person at a time. Approve as asked, untick items to approve
-        part of it, or decline with a reason. Approved access applies immediately.
+        HR asks for a role for one person at a time. Approve as asked, untick roles to approve part
+        of it, or decline with a reason. Approved access applies straight away.
       </p>
 
       {requests.error && <p className='text-sm text-red-600'>{apiErrorMessage(requests.error)}</p>}

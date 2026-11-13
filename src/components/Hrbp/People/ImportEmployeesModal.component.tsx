@@ -27,6 +27,10 @@ const HEADER_FIELDS: Record<string, keyof ImportEmployeeRow> = {
 
 /** CSV text -> import rows, or a message saying what's wrong with the header. */
 const toRows = (text: string): { rows: ImportEmployeeRow[] } | { error: string } => {
+  // "Unicode text" (UTF-16) from Excel reads as text full of NUL characters.
+  if (text.includes('\u0000')) {
+    return { error: 'This file is saved as Unicode text \u2014 in Excel choose Save as \u2192 "CSV UTF-8".' };
+  }
   const [header, ...body] = parseCsv(text.replace(/^\uFEFF/, ''));
   if (!header) return { error: 'The file is empty.' };
   const fields = header.map((h) => HEADER_FIELDS[h.toLowerCase().replace(/[\s_-]/g, '')]);
@@ -34,8 +38,10 @@ const toRows = (text: string): { rows: ImportEmployeeRow[] } | { error: string }
     (f) => !fields.includes(f),
   );
   if (missing.length > 0) {
+    // Show what was actually read \u2014 usually a title line above the header.
+    const read = header.join(' | ').slice(0, 160);
     return {
-      error: `The header row is missing: ${missing.join(', ')}. Download the template to compare.`,
+      error: `The header row is missing: ${missing.join(', ')}. The first line read was \u201C${read}\u201D \u2014 it must be the column names. Download the template to compare.`,
     };
   }
   if (body.length === 0) return { error: 'The file has a header but no people.' };
@@ -130,7 +136,7 @@ const ImportEmployeesModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-3'>
             <p className='text-sm text-slate-700'>
               Imported {created.length} {created.length === 1 ? 'person' : 'people'}. Each is
-              invited with only the Employee batch. Their claim links are shown once — download them
+              invited with only the Everyone (basic) role. Their claim links are shown once — download them
               now and send each person their own.
             </p>
             <ul className='max-h-56 overflow-y-auto rounded-md border border-slate-200 text-sm'>

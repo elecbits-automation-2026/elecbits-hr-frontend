@@ -73,7 +73,11 @@ const CategoryRow = ({ cat, onSaved }: { cat?: Category; onSaved: (s: AssetSetup
       <td className='py-2 pr-2'>
         <select
           value={d.kind}
-          onChange={(e) => setD({ ...d, kind: e.target.value as Draft['kind'] })}
+          // Gate passes are for lent items only — never laptops or other issued kit.
+          onChange={(e) => {
+            const kind = e.target.value as Draft['kind'];
+            setD({ ...d, kind, requiresGatePass: kind === 'lab' && d.requiresGatePass });
+          }}
           className={inputClass}
         >
           <option value='equipment'>Issued</option>
@@ -81,9 +85,13 @@ const CategoryRow = ({ cat, onSaved }: { cat?: Category; onSaved: (s: AssetSetup
         </select>
       </td>
       <td className='py-2 pr-2'>
-        <label className='flex items-center gap-2 pt-2 text-sm text-slate-600'>
+        <label
+          className='flex items-center gap-2 pt-2 text-sm text-slate-600'
+          title={d.kind === 'lab' ? undefined : 'Only lent items can go out on a gate pass'}
+        >
           <input
             type='checkbox'
+            disabled={d.kind !== 'lab'}
             checked={d.requiresGatePass}
             onChange={(e) => setD({ ...d, requiresGatePass: e.target.checked })}
           />
@@ -113,110 +121,10 @@ const CategoryRow = ({ cat, onSaved }: { cat?: Category; onSaved: (s: AssetSetup
   );
 };
 
-/** What one designation should be handed when they join. */
-const KitEditor = ({ setup, onSaved }: { setup: AssetSetup; onSaved: (s: AssetSetup) => void }) => {
-  const [designation, setDesignation] = useState('');
-  const existing = setup.kits.find(
-    (k) => k.designation.toLowerCase() === designation.toLowerCase(),
-  );
-  const [lines, setLines] = useState<Record<string, number>>({});
-  const pick = (d: string) => {
-    setDesignation(d);
-    const kit = setup.kits.find((k) => k.designation.toLowerCase() === d.toLowerCase());
-    setLines(Object.fromEntries((kit?.items ?? []).map((i) => [i.categoryId, i.qty])));
-  };
-  const save = useMutation({
-    mutationFn: () =>
-      opsApi.putKit({
-        designation: designation.trim(),
-        items: Object.entries(lines)
-          .filter(([, q]) => q > 0)
-          .map(([categoryId, qty]) => ({ categoryId, qty })),
-      }),
-    onSuccess: onSaved,
-  });
-  const designations = [
-    ...new Set([...setup.designations, ...setup.kits.map((k) => k.designation)]),
-  ].sort();
-
-  return (
-    <div className='space-y-3'>
-      {setup.kits.length > 0 && (
-        <ul className='space-y-1 text-sm'>
-          {setup.kits.map((k) => (
-            <li key={k.designation}>
-              <button
-                type='button'
-                onClick={() => pick(k.designation)}
-                className='text-left hover:underline'
-              >
-                <b className='text-slate-700'>{k.designation}</b>
-                <span className='text-slate-500'>
-                  {' '}
-                  —{' '}
-                  {k.items
-                    .map((i) => `${i.qty > 1 ? `${i.qty}× ` : ''}${i.categoryName}`)
-                    .join(', ')}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className='flex flex-wrap gap-2'>
-        <input
-          list='ops-designations'
-          value={designation}
-          onChange={(e) => pick(e.target.value)}
-          placeholder='Designation, e.g. Hardware Engineer'
-          className={`${inputClass} max-w-sm`}
-        />
-        <datalist id='ops-designations'>
-          {designations.map((d) => (
-            <option key={d} value={d} />
-          ))}
-        </datalist>
-      </div>
-      {designation.trim() && (
-        <div className='space-y-2'>
-          <div className='grid gap-2 sm:grid-cols-3'>
-            {setup.categories.map((c) => (
-              <label
-                key={c.id}
-                className='flex items-center justify-between gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-sm'
-              >
-                <span className='text-slate-700'>{c.name}</span>
-                <input
-                  type='number'
-                  min={0}
-                  max={20}
-                  value={lines[c.id] ?? 0}
-                  onChange={(e) => setLines({ ...lines, [c.id]: Number(e.target.value) })}
-                  className='w-16 rounded border border-slate-300 px-2 py-1 text-right text-sm'
-                />
-              </label>
-            ))}
-          </div>
-          {save.error && <p className='text-sm text-red-600'>{apiErrorMessage(save.error)}</p>}
-          <div className='flex justify-end'>
-            <button
-              type='button'
-              disabled={save.isPending}
-              onClick={() => save.mutate()}
-              className={primaryBtn}
-            >
-              {existing ? `Save kit for ${designation}` : `Create kit for ${designation}`}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 /**
  * OPS setup: asset categories (lent or issued, and whether they may leave on
- * a gate pass), joiner kits by designation, and the return-reminder setting.
+ * a gate pass). There are no joiner kits by designation any more — OPS
+ * decides each joiner's assets when the system tells them about the joiner.
  * Locations are the punch zones Admin manages.
  */
 const OpsSetupPage = () => {
@@ -232,8 +140,8 @@ const OpsSetupPage = () => {
       <div>
         <h1 className='text-2xl font-semibold text-slate-800'>OPS setup</h1>
         <p className='text-sm text-slate-500'>
-          Locations are the punch zones (Admin → Punch zones). Here: what kinds of assets exist,
-          what each role gets when they join, and how overdue returns are chased.
+          Locations are the punch zones (Admin → Punch zones). Here: what kinds of assets exist.
+          When someone joins, you get a bell and decide which assets to give them.
         </p>
       </div>
       {setup.error && <p className='text-sm text-red-600'>{apiErrorMessage(setup.error)}</p>}
@@ -269,17 +177,6 @@ const OpsSetupPage = () => {
               </tbody>
             </table>
           </div>
-        </section>
-      )}
-
-      {setup.data && (
-        <section className='space-y-2 rounded-xl border border-slate-200 bg-white p-4'>
-          <h2 className='text-sm font-semibold text-slate-700'>Joiner kits</h2>
-          <p className='text-xs text-slate-500'>
-            What a designation should be given on day one. It shows as a checklist on the person's
-            sheet — nothing is issued automatically.
-          </p>
-          <KitEditor setup={setup.data} onSaved={saved} />
         </section>
       )}
     </div>
