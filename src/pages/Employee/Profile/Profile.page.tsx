@@ -328,6 +328,7 @@ const ProfilePage = () => {
                 <Fact label='Salary currency' value={salary.data.salaryCurrency} />
                 <Fact label='Salary mode' value={dash(salary.data.salaryMode)} />
                 <Fact label='PAN number' value={dash(salary.data.panNumber)} />
+                <Fact label='UAN' value={dash(salary.data.uanNumber)} />
                 <Fact label='Provident fund account' value={dash(salary.data.providentFundAccount)} />
                 <Fact label='Employee advance account' value={dash(salary.data.employeeAdvanceAccount)} />
                 <Fact

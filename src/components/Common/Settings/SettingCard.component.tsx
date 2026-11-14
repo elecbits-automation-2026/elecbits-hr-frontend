@@ -11,6 +11,7 @@ import {
   NumberEditor,
   NumberFieldsEditor,
   OrderedLeaveTypesEditor,
+  PayslipHeaderEditor,
   PeopleListEditor,
   PtStatesEditor,
   ToggleFieldsEditor,
@@ -48,9 +49,12 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
     </WorkHoursEditor>
   ),
   'payroll.payslipHeader': (v, onSave, btn) => (
-    <TextFieldsEditor value={v as Record<string, string>} onSave={onSave}>
+    <PayslipHeaderEditor
+      value={v as { companyName: string; address: string; logo: string | null }}
+      onSave={onSave}
+    >
       {btn}
-    </TextFieldsEditor>
+    </PayslipHeaderEditor>
   ),
   'concerns.icContact': (v, onSave, btn) => (
     <TextFieldsEditor value={v as Record<string, string>} onSave={onSave}>

@@ -124,6 +124,12 @@ const DayDetail = ({ day, isToday }: { day: AttendanceDay; isToday: boolean }) =
             : 'office',
       ]);
     }
+    // How far each punch's location can be trusted (the browser's error radius).
+    const acc = [
+      day.checkInAccuracyM !== null ? `in ±${day.checkInAccuracyM} m` : null,
+      day.checkOutAccuracyM !== null ? `out ±${day.checkOutAccuracyM} m` : null,
+    ].filter(Boolean);
+    if (acc.length) rows.push(['Location accuracy', acc.join(' · ')]);
   }
 
   const valueClass = (timing?: string) =>

@@ -812,3 +812,106 @@ export const DepartmentEditor = ({
     </form>
   );
 };
+
+/** Same cap as the backend registry (LOGO_MAX_BYTES). */
+const LOGO_MAX_BYTES = 60 * 1024;
+
+type PayslipHeader = { companyName: string; address: string; logo: string | null };
+
+/**
+ * Payslip header: company name, address and an optional logo (PNG / JPEG up
+ * to 60 KB), kept as a data URL in the setting. The backend re-checks the
+ * real file type and size.
+ */
+export const PayslipHeaderEditor = ({ value, onSave, children }: EditorProps<PayslipHeader>) => {
+  const [draft, setDraft] = useState<PayslipHeader>({ ...value, logo: value.logo ?? null });
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  const pickLogo = (file: File | undefined) => {
+    setLogoError(null);
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      setLogoError('Choose a PNG or JPEG image.');
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      setLogoError(`The logo must be under ${LOGO_MAX_BYTES / 1024} KB — this one is ${Math.ceil(file.size / 1024)} KB.`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setDraft((d) => ({ ...d, logo: String(reader.result) }));
+    reader.onerror = () => setLogoError('Could not read that file.');
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <form
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        onSave({
+          companyName: draft.companyName.trim(),
+          address: draft.address.trim(),
+          logo: draft.logo,
+        });
+      }}
+      className='space-y-3'
+    >
+      <div className='flex flex-wrap gap-2'>
+        <label className='min-w-[16rem] flex-1 text-xs text-slate-500'>
+          {FIELD_LABELS.companyName ?? 'Company name'}
+          <input
+            type='text'
+            value={draft.companyName}
+            onChange={(e) => setDraft({ ...draft, companyName: e.target.value })}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className='min-w-[16rem] flex-1 text-xs text-slate-500'>
+          {FIELD_LABELS.address ?? 'Address'}
+          <input
+            type='text'
+            value={draft.address}
+            onChange={(e) => setDraft({ ...draft, address: e.target.value })}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+      </div>
+      <div className='flex flex-wrap items-center gap-3'>
+        <span className='text-xs text-slate-500'>Logo</span>
+        {draft.logo ? (
+          <img
+            src={draft.logo}
+            alt='Payslip logo'
+            className='h-12 w-12 rounded-md border border-slate-200 bg-white object-contain p-1'
+          />
+        ) : (
+          <span className='text-xs text-slate-400'>None</span>
+        )}
+        <label className='cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50'>
+          {draft.logo ? 'Replace' : 'Upload'}
+          <input
+            type='file'
+            accept='image/png,image/jpeg'
+            className='hidden'
+            onChange={(e) => {
+              pickLogo(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+        </label>
+        {draft.logo && (
+          <button
+            type='button'
+            onClick={() => setDraft({ ...draft, logo: null })}
+            className='text-xs text-slate-500 hover:text-red-600'
+          >
+            Remove
+          </button>
+        )}
+        <span className='text-xs text-slate-400'>PNG or JPEG, up to 60 KB; a square logo looks best.</span>
+      </div>
+      {logoError && <p className='text-xs text-red-600'>{logoError}</p>}
+      {children}
+    </form>
+  );
+};
