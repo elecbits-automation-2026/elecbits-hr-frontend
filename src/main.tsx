@@ -21,3 +21,11 @@ createRoot(container).render(
     <App />
   </StrictMode>,
 );
+
+// Installable on phones (public/sw.js caches nothing). Production builds only,
+// so the dev server's hot reload is never behind a service worker.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+  });
+}

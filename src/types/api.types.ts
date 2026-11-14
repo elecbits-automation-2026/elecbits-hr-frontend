@@ -97,6 +97,7 @@ export interface EmployeeSalary {
   salaryCurrency: string;
   salaryMode: string | null;
   panNumber: string | null;
+  uanNumber: string | null;
   providentFundAccount: string | null;
   employeeAdvanceAccount: string | null;
   bankName: string | null;
@@ -127,6 +128,7 @@ export interface UpdateEmployeeSalaryInput {
   salaryCurrency?: string;
   salaryMode?: string | null;
   panNumber?: string | null;
+  uanNumber?: string | null;
   providentFundAccount?: string | null;
   employeeAdvanceAccount?: string | null;
   bankName?: string | null;
@@ -532,6 +534,9 @@ export interface AttendanceDay {
   leaveType: string | null;
   checkInTiming: CheckInTiming | null;
   checkOutTiming: CheckOutTiming | null;
+  /** The punch fixes' accuracy in metres; null without a fix. */
+  checkInAccuracyM: number | null;
+  checkOutAccuracyM: number | null;
 }
 
 export interface AttendanceSummary {

@@ -33,6 +33,16 @@ export const settingSummary = (key: string, value: unknown): string => {
   } else if (key === 'attendance.workHours' && value && typeof value === 'object') {
     const v = value as { workStart?: string; workEnd?: string; graceMinutes?: number };
     text = `${v.workStart ?? '—'}–${v.workEnd ?? '—'}, grace ${v.graceMinutes ?? 0} min`;
+  } else if (key === 'payroll.payslipHeader' && value && typeof value === 'object') {
+    // Never print the logo's data URL — just whether there is one.
+    const v = value as { companyName?: string; address?: string; logo?: string | null };
+    text = [v.companyName ?? '—', v.address, v.logo ? 'with logo' : 'no logo']
+      .filter(Boolean)
+      .join(' · ');
+  } else if (key === 'attendance.maxLocationErrorM' && typeof value === 'number') {
+    text = value === 0 ? 'Any accuracy accepted' : `Within ${value} m`;
+  } else if (key === 'payroll.reimbursementDigestDay' && typeof value === 'number') {
+    text = `Day ${value} of each month`;
   } else if (key === 'payroll.autoCoverLeaveTypes' && Array.isArray(value)) {
     text = value.length ? value.map((t) => LEAVE_TYPE_LABELS[t as string] ?? t).join(', then ') : 'No auto-cover';
   } else if (Array.isArray(value)) {

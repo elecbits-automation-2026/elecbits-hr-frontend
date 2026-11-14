@@ -51,11 +51,16 @@ const Chip = ({ status }: { status: ApprovalStatus }) => (
  * Denied / unavailable / slow resolves to undefined — the punch is still
  * ATTEMPTED, but the server's geo policy rejects it (403 OUT_OF_OFFICE_RANGE,
  * naming the nearest zone and the distance) unless an approved remote
- * request covers the day.
+ * request covers the day. The accuracy goes too: a fix vaguer than the
+ * org's limit comes back 422 LOCATION_TOO_VAGUE ("turn on GPS"). Phones
+ * cold-starting GPS need a few seconds more, so the window is 8 s (it ends
+ * early once the fix is within 30 m).
  */
-const getPosition = async (): Promise<{ lat: number; lng: number } | undefined> => {
-  const fix = await bestPosition();
-  return fix ? { lat: fix.lat, lng: fix.lng } : undefined;
+const getPosition = async (): Promise<
+  { lat: number; lng: number; accuracyM: number } | undefined
+> => {
+  const fix = await bestPosition(8000);
+  return fix ? { lat: fix.lat, lng: fix.lng, accuracyM: fix.accuracyM } : undefined;
 };
 
 /** Own attendance: punch buttons, classified month calendar, reg/WFH requests. */

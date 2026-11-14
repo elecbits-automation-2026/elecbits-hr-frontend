@@ -18,9 +18,10 @@ export const attendanceApi = {
   // Geo policy: inside the office radius punches clean; inside the flag
   // radius it records remote (flagged); beyond that the backend rejects the
   // punch unless an approved remote-work request covers today.
-  checkIn: async (coords?: { lat: number; lng: number }) =>
+  // `accuracyM` lets the server refuse a fix too vague to judge (LOCATION_TOO_VAGUE).
+  checkIn: async (coords?: { lat: number; lng: number; accuracyM?: number }) =>
     (await api.post('/attendance/check-in', coords ?? {})).data,
-  checkOut: async (coords?: { lat: number; lng: number }) =>
+  checkOut: async (coords?: { lat: number; lng: number; accuracyM?: number }) =>
     (await api.post('/attendance/check-out', coords ?? {})).data,
   me: async (month?: string): Promise<MyAttendance> =>
     (await api.get<MyAttendance>('/attendance/me', { params: { month } })).data,

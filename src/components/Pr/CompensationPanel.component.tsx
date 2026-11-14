@@ -21,6 +21,7 @@ interface Draft {
   variablePay: string;
   salaryMode: string;
   panNumber: string;
+  uanNumber: string;
   providentFundAccount: string;
   payrollCostCenter: string;
   bankName: string;
@@ -38,6 +39,7 @@ const EMPTY: Draft = {
   variablePay: '',
   salaryMode: 'Bank',
   panNumber: '',
+  uanNumber: '',
   providentFundAccount: '',
   payrollCostCenter: '',
   bankName: '',
@@ -90,6 +92,7 @@ const CompensationPanel = () => {
       variablePay: record.variablePay ?? '',
       salaryMode: record.salaryMode ?? 'Bank',
       panNumber: record.panNumber ?? '',
+      uanNumber: record.uanNumber ?? '',
       providentFundAccount: record.providentFundAccount ?? '',
       payrollCostCenter: record.payrollCostCenter ?? '',
       bankName: record.bankName ?? '',
@@ -117,6 +120,7 @@ const CompensationPanel = () => {
         variablePay: v(form.variablePay),
         salaryMode: v(form.salaryMode),
         panNumber: v(form.panNumber),
+        uanNumber: v(form.uanNumber.replace(/\s/g, '')),
         providentFundAccount: v(form.providentFundAccount),
         payrollCostCenter: v(form.payrollCostCenter),
         ...(bankHidden
@@ -298,7 +302,18 @@ const CompensationPanel = () => {
                 <input value={form.panNumber} onChange={(e) => set('panNumber', e.target.value)} className={inputClass} />
               </div>
               <div className='space-y-1'>
-                <label className={labelClass}>PF account (UAN)</label>
+                <label className={labelClass}>UAN</label>
+                <input
+                  value={form.uanNumber}
+                  onChange={(e) => set('uanNumber', e.target.value)}
+                  className={inputClass}
+                  inputMode='numeric'
+                  maxLength={14}
+                  placeholder='12 digits'
+                />
+              </div>
+              <div className='space-y-1'>
+                <label className={labelClass}>PF account number</label>
                 <input value={form.providentFundAccount} onChange={(e) => set('providentFundAccount', e.target.value)} className={inputClass} />
               </div>
             </div>

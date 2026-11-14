@@ -4,22 +4,30 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import type { MyPayslip } from '@app-types/api.types';
 import { payrollApi } from '@services/api/payroll.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { payslipLines } from '@utils/payslipLines';
 import MyLoans from '@components/Employee/Payslips/MyLoans.component';
 
 const money = (n: number, currency: string) =>
   `${currency} ${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
+const amount = (n: number) =>
+  n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const Line = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
-  <div className='flex justify-between py-1 text-sm'>
-    <span className='text-slate-500'>{label}</span>
+  <div className='flex justify-between gap-3 py-1 text-sm'>
+    <span className={strong ? 'font-semibold text-slate-800' : 'text-slate-500'}>{label}</span>
     <span className={strong ? 'font-semibold text-slate-800' : 'text-slate-700'}>{value}</span>
   </div>
 );
 
-/** One payslip, expandable to the full earning/deduction breakdown. */
+/**
+ * One payslip, expandable to the standard layout — the same Earnings |
+ * Deductions split, totals and net pay as the PDF (utils/payslipLines).
+ */
 const PayslipCard = ({ slip }: { slip: MyPayslip }) => {
   const [open, setOpen] = useState(false);
   const download = useMutation({ mutationFn: () => payrollApi.downloadMyPayslip(slip.id) });
+  const lines = payslipLines(slip);
   return (
     <div className='rounded-xl border border-slate-200 bg-white'>
       <button
@@ -43,123 +51,92 @@ const PayslipCard = ({ slip }: { slip: MyPayslip }) => {
         </span>
       </button>
       {open && (
-        <div className='grid grid-cols-1 gap-6 border-t border-slate-100 px-5 py-4 sm:grid-cols-2'>
-          <div className='flex items-center justify-end gap-3 sm:col-span-2'>
-            {download.error && (
-              <span className='text-xs text-red-600'>{apiErrorMessage(download.error)}</span>
-            )}
-            <button
-              type='button'
-              disabled={download.isPending}
-              onClick={() => download.mutate()}
-              className='rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50'
-            >
-              {download.isPending ? 'Preparing…' : 'Download PDF'}
-            </button>
+        <div className='grid grid-cols-1 gap-4 border-t border-slate-100 px-5 py-4 sm:grid-cols-2'>
+          <div className='flex flex-wrap items-center justify-between gap-3 sm:col-span-2'>
+            <div className='flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500'>
+              <span>
+                Working days <b className='text-slate-700'>{slip.workingDays}</b>
+              </span>
+              <span>
+                Days paid <b className='text-slate-700'>{Math.max(0, 30 - slip.lopDays)}</b> of
+                30
+              </span>
+              <span>
+                Loss of pay <b className='text-slate-700'>{slip.lopDays}</b> days
+              </span>
+              {slip.autoElDays > 0 && (
+                <span>
+                  Covered by earned leave <b className='text-slate-700'>{slip.autoElDays}</b>{' '}
+                  days
+                </span>
+              )}
+            </div>
+            <div className='flex items-center gap-3'>
+              {download.error && (
+                <span className='text-xs text-red-600'>{apiErrorMessage(download.error)}</span>
+              )}
+              <button
+                type='button'
+                disabled={download.isPending}
+                onClick={() => download.mutate()}
+                className='rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50'
+              >
+                {download.isPending ? 'Preparing…' : 'Download PDF'}
+              </button>
+            </div>
           </div>
-          <div>
-            <p className='mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400'>
-              Earnings
-            </p>
-            <Line label={`Basic (${slip.basicPercent}%)`} value={money(slip.basic, slip.currency)} />
-            <Line label={`HRA (${slip.hraPercent}%)`} value={money(slip.hra, slip.currency)} />
-            <Line label='LTA' value={money(slip.lta, slip.currency)} />
-            <Line label='Special allowance' value={money(slip.specialAllowance, slip.currency)} />
-            <Line label='Monthly CTC' value={money(slip.monthlyGross, slip.currency)} />
-            {slip.autoElDays > 0 && (
-              <Line label='Absence covered by earned leave' value={`${slip.autoElDays} days`} />
-            )}
-            {slip.lopDays > 0 && (
-              <Line
-                label={`Loss of pay (${slip.lopDays} of 30 days)`}
-                value={`− ${money(slip.lopAmount, slip.currency)}`}
-              />
-            )}
-            <Line
-              label='Salary for the month'
-              value={money(slip.earningsTotal, slip.currency)}
-              strong
-            />
-            {(slip.reimbursement > 0 ||
-              slip.performanceBonus > 0 ||
-              slip.recognitionBonus > 0 ||
-              slip.otherBonus > 0 ||
-              slip.leaveEncashment > 0 ||
-              slip.advance > 0 ||
-              slip.corrections.length > 0) && (
-              <>
-                {slip.reimbursement > 0 && (
-                  <Line
-                    label='Reimbursement'
-                    value={`+ ${money(slip.reimbursement, slip.currency)}`}
-                  />
-                )}
-                {slip.reimbursementClaims.map((c) => (
-                  <p key={c.id} className='-mt-1 pb-1 pl-3 text-xs text-slate-400'>
-                    {c.spentOn} · {c.description} · {money(c.amount, slip.currency)}
-                  </p>
-                ))}
-                {slip.performanceBonus > 0 && (
-                  <Line
-                    label='Performance bonus'
-                    value={`+ ${money(slip.performanceBonus, slip.currency)}`}
-                  />
-                )}
-                {slip.recognitionBonus > 0 && (
-                  <Line
-                    label='Recognition awards (last month)'
-                    value={`+ ${money(slip.recognitionBonus, slip.currency)}`}
-                  />
-                )}
-                {slip.otherBonus > 0 && (
-                  <Line label='Other bonus' value={`+ ${money(slip.otherBonus, slip.currency)}`} />
-                )}
-                {slip.leaveEncashment > 0 && (
-                  <Line
-                    label='Leave encashment'
-                    value={`+ ${money(slip.leaveEncashment, slip.currency)}`}
-                  />
-                )}
-                {slip.advance > 0 && (
-                  <Line label='Advance' value={`+ ${money(slip.advance, slip.currency)}`} />
-                )}
-                {slip.corrections.map((c) => (
-                  <div key={c.id}>
-                    <Line
-                      label={`Correction to ${c.sourceMonth}`}
-                      value={`${c.amount < 0 ? '−' : '+'} ${money(Math.abs(c.amount), slip.currency)}`}
-                    />
-                    <p className='-mt-1 pb-1 text-xs text-slate-400'>{c.reason}</p>
+          {(
+            [
+              ['Earnings', lines.earnings, 'Total earnings', lines.totalEarnings],
+              ['Deductions', lines.deductions, 'Total deductions', lines.totalDeductions],
+            ] as const
+          ).map(([title, rows, totalLabel, total]) => (
+            <div key={title} className='flex flex-col rounded-lg border border-slate-200'>
+              <div className='flex justify-between rounded-t-lg bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                <span>{title}</span>
+                <span>{slip.currency}</span>
+              </div>
+              <div className='flex-1 px-3 py-1'>
+                {rows.map((r) => (
+                  <div key={r.label + (r.note ?? '')}>
+                    <Line label={r.label} value={amount(r.value)} />
+                    {r.note && <p className='-mt-1 pb-1 text-xs text-slate-400'>{r.note}</p>}
+                    {r.label === 'Reimbursement' &&
+                      slip.reimbursementClaims.map((c) => (
+                        <p key={c.id} className='-mt-1 pb-1 pl-3 text-xs text-slate-400'>
+                          {c.spentOn} · {c.description} · {money(c.amount, slip.currency)}
+                        </p>
+                      ))}
                   </div>
                 ))}
-              </>
-            )}
+              </div>
+              <div className='rounded-b-lg border-t border-slate-200 bg-slate-50 px-3'>
+                <Line label={totalLabel} value={amount(total)} strong />
+              </div>
+            </div>
+          ))}
+          <div className='flex flex-wrap items-baseline justify-between gap-2 rounded-lg border-l-4 border-brand-600 bg-blue-50 px-4 py-3 sm:col-span-2'>
+            <span className='font-semibold text-slate-800'>Net pay for {slip.month}</span>
+            <span className='text-xl font-semibold text-brand-600'>
+              {money(slip.finalPay, slip.currency)}
+            </span>
           </div>
-          <div>
-            <p className='mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400'>
-              Deductions
-            </p>
-            <Line label='Provident fund (employee)' value={money(slip.pf, slip.currency)} />
-            <Line label='Provident fund (employer)' value={money(slip.pfEmployer, slip.currency)} />
-            <Line label='TDS' value={money(slip.tds, slip.currency)} />
-            <Line label='Professional tax' value={money(slip.professionalTax, slip.currency)} />
-            {slip.healthInsurance > 0 && (
-              <Line label='Health insurance' value={money(slip.healthInsurance, slip.currency)} />
-            )}
-            {slip.cnpsEmployer > 0 && (
-              <Line label='CNPS' value={money(slip.cnpsEmployer, slip.currency)} />
-            )}
-            <Line label='Other deduction' value={money(slip.otherDeduction, slip.currency)} />
-            <Line label='Total deductions' value={money(slip.deductionsTotal, slip.currency)} />
-            <Line label='Net pay' value={money(slip.netPay, slip.currency)} />
-            {slip.loanEmi > 0 && (
-              <Line
-                label={slip.exitId ? 'Loan / advance balance' : 'Loan / advance EMI'}
-                value={`− ${money(slip.loanEmi, slip.currency)}`}
-              />
-            )}
-            <Line label='Final pay' value={money(slip.finalPay, slip.currency)} strong />
-          </div>
+          {(slip.lopDays > 0 || slip.pf > 0) && (
+            <div className='space-y-1 text-xs text-slate-400 sm:col-span-2'>
+              {slip.lopDays > 0 && (
+                <p>
+                  Monthly CTC {money(slip.monthlyGross, slip.currency)} less loss of pay{' '}
+                  {money(slip.lopAmount, slip.currency)} ({slip.lopDays} of 30 days).
+                </p>
+              )}
+              {slip.pf > 0 && (
+                <p>
+                  Your CTC includes the employer’s PF share, so it shows under Earnings and is
+                  deposited to your PF account under Deductions.
+                </p>
+              )}
+            </div>
+          )}
           {slip.correctedBy.some((c) => c.status !== 'cancelled') && (
             <div className='rounded-lg bg-amber-50 p-3 text-xs text-amber-800 sm:col-span-2'>
               <p className='font-medium'>This payslip was corrected afterwards</p>
