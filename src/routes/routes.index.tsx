@@ -34,6 +34,7 @@ const MyOnboardingPage = lazyRoute(() => import('@pages/Employee/Onboarding/MyOn
 const RecognitionPage = lazyRoute(() => import('@pages/Employee/Recognition/Recognition.page'));
 const MyGrowthPage = lazyRoute(() => import('@pages/Employee/Growth/MyGrowth.page'));
 const MyPerformancePage = lazyRoute(() => import('@pages/Employee/Performance/MyPerformance.page'));
+const DailyKpiPage = lazyRoute(() => import('@pages/Employee/DailyKpi/DailyKpi.page'));
 const ResignationPage = lazyRoute(() => import('@pages/Employee/Exit/Resignation.page'));
 const GrievancesPage = lazyRoute(() => import('@pages/Employee/Grievances/Grievances.page'));
 const HiringPlanPage = lazyRoute(() => import('@pages/Employee/Hiring/HiringPlan.page'));
@@ -48,6 +49,7 @@ const ConcernFollowUpPage = lazyRoute(
 const PeoplePage = lazyRoute(() => import('@pages/Hrbp/People/People.page'));
 const OrgStructurePage = lazyRoute(() => import('@pages/Hrbp/OrgStructure/OrgStructure.page'));
 const DepartmentsPage = lazyRoute(() => import('@pages/Hrbp/Departments/Departments.page'));
+const TrainingsPage = lazyRoute(() => import('@pages/Hrbp/Trainings/Trainings.page'));
 const SeatsPage = lazyRoute(() => import('@pages/Admin/Seats/Seats.page'));
 const ExitsPage = lazyRoute(() => import('@pages/Hrbp/Exits/Exits.page'));
 const HrLeavesPage = lazyRoute(() => import('@pages/Hrbp/Leaves/Leaves.page'));
@@ -284,6 +286,14 @@ const AppRoutes = () => (
         }
       />
       <Route
+        path='daily-kpi'
+        element={
+          <RouteScreen title={ROUTE_TITLES.dailyKpi}>
+            <DailyKpiPage />
+          </RouteScreen>
+        }
+      />
+      <Route
         path='performance'
         element={
           <RouteScreen title={ROUTE_TITLES.performance}>
@@ -332,6 +342,14 @@ const AppRoutes = () => (
         element={
           <RouteScreen title={ROUTE_TITLES.hrDepartments}>
             <DepartmentsPage />
+          </RouteScreen>
+        }
+      />
+      <Route
+        path='trainings'
+        element={
+          <RouteScreen title={ROUTE_TITLES.hrTrainings}>
+            <TrainingsPage />
           </RouteScreen>
         }
       />

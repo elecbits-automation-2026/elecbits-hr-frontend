@@ -21,7 +21,7 @@ const Heading = ({ children }: { children: React.ReactNode }) => (
  * text around the recruiter's role-specific parts, and the office footer.
  */
 export const JdPage = ({ c, roleTitle }: { c: Partial<JdContent>; roleTitle: string }) => (
-  <article className='jd-page mx-auto w-full max-w-[794px] bg-[#f8faff] text-slate-800 shadow-lg print:shadow-none'>
+  <article className='jd-page light-island mx-auto w-full max-w-[794px] bg-[#f8faff] text-slate-800 shadow-lg print:shadow-none'>
     <header>
       <div className='flex h-14 items-center bg-[#000080] px-8'>
         <span className='text-xl font-bold tracking-tight text-white'>Elecbits</span>

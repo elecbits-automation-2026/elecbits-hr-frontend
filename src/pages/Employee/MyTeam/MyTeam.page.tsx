@@ -2,9 +2,16 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import type { AttendanceDay, EmployeeAttendance, TeamMember } from '@app-types/api.types';
+import type {
+  AttendanceDay,
+  DailyKpiRow,
+  EmployeeAttendance,
+  TeamMember,
+} from '@app-types/api.types';
 import FeedbackModal, { type FeedbackDraft } from '@components/Employee/Home/FeedbackModal.component';
 import PersonSheet from '@components/Employee/MyTeam/PersonSheet.component';
+import TalkNext from '@components/Employee/MyTeam/TalkNext.component';
+import { rankTalkNext } from '@components/Employee/MyTeam/talkNext';
 import TeamExits from '@components/Employee/MyTeam/TeamExits.component';
 import { ProbationReviews } from '@components/Common/Probation/Probation.component';
 import {
@@ -12,8 +19,11 @@ import {
   TEAM_LEAVES_ROUTE,
 } from '@constants/Common/navigation/routes.constants';
 import { attendanceApi } from '@services/api/attendance.api';
+import { careerApi } from '@services/api/career.api';
+import { dailyKpiApi } from '@services/api/dailyKpi.api';
 import { leavesApi } from '@services/api/leaves.api';
 import { meApi } from '@services/api/me.api';
+import { trainingsApi } from '@services/api/trainings.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
@@ -62,6 +72,66 @@ const todayChip = (
   }
 };
 
+/** Credit per classified day: full 1, half 0.5; days that do not count are null. */
+const credit = (d: AttendanceDay): number | null => {
+  switch (d.status) {
+    case 'present':
+    case 'wfh':
+      return 1;
+    case 'half_day':
+    case 'half_leave':
+      return 0.5;
+    case 'absent':
+      return 0;
+    default:
+      return null; // week off, holiday, full leave, not yet
+  }
+};
+
+/**
+ * Attendance % this month up to today: credit over the days that count —
+ * week offs, holidays and approved full-day leave are left out; today counts
+ * once marked. Null with no countable day yet.
+ */
+const attendancePct = (days: AttendanceDay[], today: string) => {
+  const counted = days
+    .filter((d) => d.date <= today)
+    .map(credit)
+    .filter((c): c is number => c !== null);
+  if (counted.length === 0) return null;
+  const got = counted.reduce((n, c) => n + c, 0);
+  return { pct: Math.round((got / counted.length) * 100), got, of: counted.length };
+};
+
+const pctClass = (pct: number) =>
+  pct >= 90 ? 'text-emerald-700' : pct >= 75 ? 'text-amber-700' : 'text-red-700';
+
+const AttendanceCell = ({ days, today }: { days: AttendanceDay[]; today: string }) => {
+  const a = attendancePct(days, today);
+  if (!a) return <span className='text-slate-400'>—</span>;
+  return (
+    <span className={pctClass(a.pct)} title={`${a.got} of ${a.of} working days this month`}>
+      {a.pct}%
+    </span>
+  );
+};
+
+/** Updates on the last 7 working days, red when under the department target. */
+const UpdatesCell = ({ row }: { row: DailyKpiRow | undefined }) => {
+  if (!row) return <span className='text-slate-400'>—</span>;
+  const u = row.recentUpdates;
+  if (u.workingDays === 0) return <span className='text-slate-400'>new</span>;
+  const below = (u.done / u.workingDays) * 100 < row.targets.updatesOnTimePct;
+  return (
+    <span
+      className={below ? 'text-red-700' : 'text-slate-700'}
+      title={`Target ${row.targets.updatesOnTimePct}% of working days`}
+    >
+      {u.done}/{u.workingDays}
+    </span>
+  );
+};
+
 /**
  * The manager's roster (design doc §2.2): everyone in the caller's chain —
  * reports and approver-only assignees — with their live state today, who's
@@ -82,15 +152,29 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   });
   const teamLeaves = useQuery({ queryKey: ['team-leaves'], queryFn: leavesApi.listTeam });
   const teamWfh = useQuery({ queryKey: ['team-wfh'], queryFn: attendanceApi.teamWfh });
+  // The same day-against-the-record numbers as Daily KPI → My team (today).
+  const kpi = useQuery({
+    queryKey: ['daily-kpi', 'team', today],
+    queryFn: () => dailyKpiApi.team(today),
+  });
+  const career = useQuery({ queryKey: ['career-team'], queryFn: careerApi.team });
+  const trainings = useQuery({ queryKey: ['trainings-team'], queryFn: trainingsApi.team });
 
   if (team.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
   if (team.error) return <p className='text-sm text-red-600'>{apiErrorMessage(team.error)}</p>;
 
   const members = team.data ?? [];
+  const monthFor = (id: string): AttendanceDay[] =>
+    (attendance.data ?? []).find((m: EmployeeAttendance) => m.employee.id === id)?.days ?? [];
   const dayFor = (id: string): AttendanceDay | undefined =>
-    (attendance.data ?? [])
-      .find((m: EmployeeAttendance) => m.employee.id === id)
-      ?.days.find((d) => d.date === today);
+    monthFor(id).find((d) => d.date === today);
+  const kpiFor = (id: string) => kpi.data?.rows.find((r) => r.employee.id === id);
+  const ranked = rankTalkNext(
+    members,
+    kpi.data?.rows ?? [],
+    career.data ?? [],
+    trainings.data ?? [],
+  );
 
   const awayThisWeek = [
     ...(teamLeaves.data ?? [])
@@ -147,8 +231,12 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
         </div>
       )}
 
-      <div className='overflow-hidden rounded-xl border border-slate-200 bg-white'>
-        <table className='w-full text-left text-sm'>
+      {members.length > 0 && kpi.data && career.data && (
+        <TalkNext ranked={ranked} onOpen={setPerson} />
+      )}
+
+      <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white'>
+        <table className='w-full min-w-[52rem] text-left text-sm'>
           <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
             <tr>
               <th className='px-4 py-3'>Person</th>
@@ -156,6 +244,18 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
               <th className='px-4 py-3'>Base</th>
               <th className='px-4 py-3'>Contact</th>
               <th className='px-4 py-3'>Today</th>
+              <th
+                className='px-4 py-3'
+                title='Days present this month, up to today. Week offs, holidays and approved leave are left out; a half day counts 0.5.'
+              >
+                Attendance
+              </th>
+              <th
+                className='px-4 py-3'
+                title='Work updates on the last 7 working days before today (leave, holidays and days before joining left out).'
+              >
+                Updates
+              </th>
               <th className='px-4 py-3'></th>
             </tr>
           </thead>
@@ -194,6 +294,12 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
                       {chip.label}
                     </span>
                   </td>
+                  <td className='px-4 py-3 tabular-nums'>
+                    <AttendanceCell days={monthFor(m.id)} today={today} />
+                  </td>
+                  <td className='px-4 py-3 tabular-nums'>
+                    <UpdatesCell row={kpiFor(m.id)} />
+                  </td>
                   <td className='px-4 py-3 text-right text-xs whitespace-nowrap'>
                     <Link
                       to={TEAM_ATTENDANCE_ROUTE}
@@ -225,7 +331,7 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
             })}
             {members.length === 0 && (
               <tr>
-                <td colSpan={6} className='px-4 py-8 text-center text-slate-400'>
+                <td colSpan={8} className='px-4 py-8 text-center text-slate-400'>
                   Nobody routes to you yet.
                 </td>
               </tr>

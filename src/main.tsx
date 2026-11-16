@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 
 import App from './App';
 
+import { watchSystemTheme } from '@utils/theme';
+
 import './index.css';
 
 /*
@@ -15,6 +17,9 @@ const container = document.getElementById('root');
 if (!container) {
   throw new Error('Root element #root is missing from index.html');
 }
+
+// 'System' theme follows the OS live (index.html set the first paint).
+watchSystemTheme();
 
 createRoot(container).render(
   <StrictMode>

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import MonthCalendar from '@components/Common/Attendance/MonthCalendar.component';
 import { attendanceApi } from '@services/api/attendance.api';
-import { departmentsApi } from '@services/api/departments.api';
+import { departmentsApi, homeUnits } from '@services/api/departments.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { downloadText } from '@utils/csv';
 import { wfhSlots } from '@utils/approvals';
@@ -118,7 +118,7 @@ const AttendancePage = () => {
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
           >
             <option value=''>All departments</option>
-            {(departments.data ?? []).map((d) => (
+            {homeUnits(departments.data).map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
               </option>

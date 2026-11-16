@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { CreateEmployeeInput, Employee, EmploymentType, Level } from '@app-types/api.types';
 import { attendanceApi } from '@services/api/attendance.api';
-import { departmentsApi } from '@services/api/departments.api';
+import { departmentsApi, homeUnits } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -208,7 +208,7 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
               className={inputClass}
             >
               {!form.departmentId && <option value=''>Not set</option>}
-              {(departments ?? []).map((d) => (
+              {homeUnits(departments).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>

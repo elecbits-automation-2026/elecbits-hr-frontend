@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { AwardCatalogEntry } from '@app-types/api.types';
 import { attendanceApi } from '@services/api/attendance.api';
 import { concernsApi } from '@services/api/concerns.api';
-import { departmentsApi } from '@services/api/departments.api';
+import { departmentsApi, homeUnits } from '@services/api/departments.api';
 
 import { FIELD_LABELS, LEAVE_TYPE_LABELS, SATURDAY_LABELS } from './settingLabels';
 
@@ -802,13 +802,176 @@ export const DepartmentEditor = ({
         className={`${inputClass} min-w-[16rem]`}
       >
         <option value=''>Not set</option>
-        {departments.data?.map((d) => (
+        {homeUnits(departments.data).map((d) => (
           <option key={d.id} value={d.id}>
             {d.name}
           </option>
         ))}
       </select>
       {children}
+    </form>
+  );
+};
+
+export type DepartmentTargets = {
+  updatesOnTimePct: number;
+  attainmentPct: number;
+  departments: Array<{
+    departmentId: string;
+    kpi: string;
+    updatesOnTimePct: number | null;
+    attainmentPct: number | null;
+  }>;
+};
+
+const pctOrNull = (s: string): number | null => (s.trim() === '' ? null : Number(s));
+
+/**
+ * Department KPI targets (`performance.departmentTargets`): the company
+ * targets, then one optional row per department — its KPI line and its own
+ * targets (blank = the company's).
+ */
+export const DepartmentTargetsEditor = ({
+  value,
+  onSave,
+  children,
+}: EditorProps<DepartmentTargets>) => {
+  const departments = useQuery({ queryKey: ['departments'], queryFn: departmentsApi.list });
+  const [updates, setUpdates] = useState(String(value.updatesOnTimePct));
+  const [attainment, setAttainment] = useState(String(value.attainmentPct));
+  const [rows, setRows] = useState(
+    value.departments.map((d) => ({
+      departmentId: d.departmentId,
+      kpi: d.kpi,
+      updates: d.updatesOnTimePct === null ? '' : String(d.updatesOnTimePct),
+      attainment: d.attainmentPct === null ? '' : String(d.attainmentPct),
+    })),
+  );
+  const [adding, setAdding] = useState('');
+  const units = homeUnits(departments.data);
+  const nameOf = (id: string) => units.find((d) => d.id === id)?.name ?? 'Removed department';
+  const free = units.filter((d) => !rows.some((r) => r.departmentId === d.id));
+  const setRow = (i: number, patch: Partial<(typeof rows)[number]>) =>
+    setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+
+  return (
+    <form
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        onSave({
+          updatesOnTimePct: Number(updates),
+          attainmentPct: Number(attainment),
+          departments: rows.map((r) => ({
+            departmentId: r.departmentId,
+            kpi: r.kpi.trim(),
+            updatesOnTimePct: pctOrNull(r.updates),
+            attainmentPct: pctOrNull(r.attainment),
+          })),
+        });
+      }}
+      className='space-y-3'
+    >
+      <div className='flex flex-wrap gap-4'>
+        <label className='space-y-1 text-xs text-slate-600'>
+          <span className='block'>Company: updates on time (%)</span>
+          <input
+            type='number'
+            min={0}
+            max={100}
+            required
+            value={updates}
+            onChange={(e) => setUpdates(e.target.value)}
+            className={`${inputClass} w-28`}
+          />
+        </label>
+        <label className='space-y-1 text-xs text-slate-600'>
+          <span className='block'>Company: goal attainment (%)</span>
+          <input
+            type='number'
+            min={0}
+            max={100}
+            required
+            value={attainment}
+            onChange={(e) => setAttainment(e.target.value)}
+            className={`${inputClass} w-28`}
+          />
+        </label>
+      </div>
+      {rows.length > 0 && (
+        <div className='space-y-2'>
+          {rows.map((r, i) => (
+            <div
+              key={r.departmentId}
+              className='grid gap-2 rounded-md border border-slate-200 p-2 md:grid-cols-[10rem_1fr_6rem_6rem_auto]'
+            >
+              <span className='self-center text-sm font-medium text-slate-700'>
+                {nameOf(r.departmentId)}
+              </span>
+              <input
+                value={r.kpi}
+                maxLength={300}
+                onChange={(e) => setRow(i, { kpi: e.target.value })}
+                placeholder='What this department is measured on'
+                className={inputClass}
+              />
+              <input
+                type='number'
+                min={0}
+                max={100}
+                value={r.updates}
+                onChange={(e) => setRow(i, { updates: e.target.value })}
+                placeholder='Updates %'
+                title='Updates on time % (blank = company)'
+                className={inputClass}
+              />
+              <input
+                type='number'
+                min={0}
+                max={100}
+                value={r.attainment}
+                onChange={(e) => setRow(i, { attainment: e.target.value })}
+                placeholder='Goals %'
+                title='Goal attainment % (blank = company)'
+                className={inputClass}
+              />
+              <button
+                type='button'
+                onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                className='text-xs text-red-600 hover:underline'
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <p className='text-xs text-slate-500'>A blank target uses the company target.</p>
+        </div>
+      )}
+      <div className='flex flex-wrap items-center gap-2'>
+        <select
+          value={adding}
+          onChange={(e) => setAdding(e.target.value)}
+          className={`${inputClass} min-w-[14rem]`}
+        >
+          <option value=''>Add a department…</option>
+          {free.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type='button'
+          disabled={!adding}
+          onClick={() => {
+            setRows([...rows, { departmentId: adding, kpi: '', updates: '', attainment: '' }]);
+            setAdding('');
+          }}
+          className='rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50'
+        >
+          Add
+        </button>
+        {children}
+      </div>
     </form>
   );
 };

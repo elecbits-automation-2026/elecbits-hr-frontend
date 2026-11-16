@@ -33,6 +33,12 @@ export const settingSummary = (key: string, value: unknown): string => {
   } else if (key === 'attendance.workHours' && value && typeof value === 'object') {
     const v = value as { workStart?: string; workEnd?: string; graceMinutes?: number };
     text = `${v.workStart ?? '—'}–${v.workEnd ?? '—'}, grace ${v.graceMinutes ?? 0} min`;
+  } else if (key === 'performance.departmentTargets' && value && typeof value === 'object') {
+    const v = value as { updatesOnTimePct?: number; attainmentPct?: number; departments?: unknown[] };
+    const n = v.departments?.length ?? 0;
+    text = `Updates ${v.updatesOnTimePct ?? '—'}% · attainment ${v.attainmentPct ?? '—'}%${
+      n > 0 ? ` · ${n} department${n === 1 ? '' : 's'} with their own` : ''
+    }`;
   } else if (key === 'payroll.payslipHeader' && value && typeof value === 'object') {
     // Never print the logo's data URL — just whether there is one.
     const v = value as { companyName?: string; address?: string; logo?: string | null };

@@ -5,7 +5,7 @@ import type { Employee, EmployeeWithClaim, Level } from '@app-types/api.types';
 import { ROLE_INFO, roleLabel } from '@constants/Common/access/modules.constants';
 import { accessApi } from '@services/api/access.api';
 import { attendanceApi } from '@services/api/attendance.api';
-import { departmentsApi } from '@services/api/departments.api';
+import { departmentsApi, homeUnits } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -240,7 +240,7 @@ const InviteEmployeePage = () => {
               className={inputClass}
             >
               <option value=''>Not set</option>
-              {(departments ?? []).map((d) => (
+              {homeUnits(departments).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>

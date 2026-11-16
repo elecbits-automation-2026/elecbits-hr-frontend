@@ -27,6 +27,7 @@ import { canEnterSection, hrItemsFor } from '@utils/sections';
 import { cn } from '@utils/cn';
 
 import NotificationBell from './NotificationBell.component';
+import ThemeToggle from './ThemeToggle.component';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -214,6 +215,7 @@ const PortalShell = ({
           {showHr && <NavGroup label='HR' basePath={HR_ROUTE} items={hrItems} />}
           {showAdmin && <NavGroup label='Admin' basePath={ADMIN_ROUTE} items={ADMIN_NAV} />}
         </nav>
+        <ThemeToggle />
         <button
           type='button'
           onClick={signOut}

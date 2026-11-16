@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Recognition, RecognitionAward } from '@app-types/api.types';
+import AwardUsage from '@components/Employee/Recognition/AwardUsage.component';
 import FeedbackModal, {
   type FeedbackDraft,
 } from '@components/Employee/Home/FeedbackModal.component';
@@ -238,7 +239,7 @@ const CitationCard = ({
 const RecognitionPage = () => {
   const queryClient = useQueryClient();
   const month = currentMonth();
-  const [tab, setTab] = useState<'board' | 'mine' | 'sent' | 'approvals'>('board');
+  const [tab, setTab] = useState<'board' | 'mine' | 'sent' | 'approvals' | 'usage'>('board');
   const [nominating, setNominating] = useState(false);
   const [declining, setDeclining] = useState<Recognition | null>(null);
   const [declineReason, setDeclineReason] = useState('');
@@ -248,7 +249,7 @@ const RecognitionPage = () => {
   const board = useQuery({
     queryKey: ['recognitions-board'],
     queryFn: recognitionsApi.board,
-    enabled: tab === 'board',
+    enabled: tab === 'board' || tab === 'usage',
   });
   const mine = useQuery({
     queryKey: ['recognitions-mine'],
@@ -367,6 +368,7 @@ const RecognitionPage = () => {
             key: 'approvals' as const,
             label: `HR approvals${pending.data?.length ? ` (${pending.data.length})` : ''}`,
           },
+          { key: 'usage' as const, label: 'Usage' },
         ]
       : []),
   ];
@@ -403,7 +405,17 @@ const RecognitionPage = () => {
         ))}
       </div>
 
-      <div className='rounded-xl border border-slate-200 bg-white p-5'>
+      {tab === 'usage' && (
+        <>
+          {board.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
+          {board.error && <p className='text-sm text-red-600'>{apiErrorMessage(board.error)}</p>}
+          {board.data && <AwardUsage board={board.data} />}
+        </>
+      )}
+
+      <div
+        className={`rounded-xl border border-slate-200 bg-white p-5 ${tab === 'usage' ? 'hidden' : ''}`}
+      >
         {tab === 'board' && (
           <>
             {board.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}

@@ -12,8 +12,167 @@
   --color-brand-900: #1e3a5f;
 }
 
+:root {
+  /* Chart series (light); the dark theme re-steps them. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/*
+ * Dark theme (learner, 2026-11-16). The screens use fixed Tailwind colour
+ * classes, so dark mode swaps the colour VALUES instead of adding dark:
+ * variants everywhere: the slate scale flips to a dark scale, white cards
+ * become a dark surface, the pale tints (red-50 … 300) become dark tints, and
+ * coloured text (600–900) becomes its light shade. utils/theme.ts sets
+ * data-theme on <html> (System / Light / Dark, per browser). Screen only —
+ * printing always uses the light colours. A .light-island (the JD document)
+ * stays light inside a dark page.
+ */
+@media screen {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --surface: #131c2e;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --color-slate-50: #0b1120;
+    --color-slate-100: #1c2638;
+    --color-slate-200: #2a364b;
+    --color-slate-300: #3a475e;
+    --color-slate-400: #7d8ba1;
+    --color-slate-500: #9aa8bc;
+    --color-slate-600: #b5c0d0;
+    --color-slate-700: #cfd8e3;
+    --color-slate-800: #e5eaf1;
+    --color-slate-900: #f3f6fa;
+    --color-red-50: color-mix(in oklab, oklch(63.7% 0.237 25.331) 14%, #131c2e);
+    --color-red-100: color-mix(in oklab, oklch(63.7% 0.237 25.331) 22%, #131c2e);
+    --color-red-200: color-mix(in oklab, oklch(63.7% 0.237 25.331) 34%, #131c2e);
+    --color-red-300: color-mix(in oklab, oklch(63.7% 0.237 25.331) 46%, #131c2e);
+    --color-amber-50: color-mix(in oklab, oklch(76.9% 0.188 70.08) 14%, #131c2e);
+    --color-amber-100: color-mix(in oklab, oklch(76.9% 0.188 70.08) 22%, #131c2e);
+    --color-amber-200: color-mix(in oklab, oklch(76.9% 0.188 70.08) 34%, #131c2e);
+    --color-amber-300: color-mix(in oklab, oklch(76.9% 0.188 70.08) 46%, #131c2e);
+    --color-green-50: color-mix(in oklab, oklch(72.3% 0.219 149.579) 14%, #131c2e);
+    --color-green-100: color-mix(in oklab, oklch(72.3% 0.219 149.579) 22%, #131c2e);
+    --color-green-200: color-mix(in oklab, oklch(72.3% 0.219 149.579) 34%, #131c2e);
+    --color-green-300: color-mix(in oklab, oklch(72.3% 0.219 149.579) 46%, #131c2e);
+    --color-emerald-50: color-mix(in oklab, oklch(69.6% 0.17 162.48) 14%, #131c2e);
+    --color-emerald-100: color-mix(in oklab, oklch(69.6% 0.17 162.48) 22%, #131c2e);
+    --color-emerald-200: color-mix(in oklab, oklch(69.6% 0.17 162.48) 34%, #131c2e);
+    --color-emerald-300: color-mix(in oklab, oklch(69.6% 0.17 162.48) 46%, #131c2e);
+    --color-sky-50: color-mix(in oklab, oklch(68.5% 0.169 237.323) 14%, #131c2e);
+    --color-sky-100: color-mix(in oklab, oklch(68.5% 0.169 237.323) 22%, #131c2e);
+    --color-sky-200: color-mix(in oklab, oklch(68.5% 0.169 237.323) 34%, #131c2e);
+    --color-sky-300: color-mix(in oklab, oklch(68.5% 0.169 237.323) 46%, #131c2e);
+    --color-violet-50: color-mix(in oklab, oklch(60.6% 0.25 292.717) 14%, #131c2e);
+    --color-violet-100: color-mix(in oklab, oklch(60.6% 0.25 292.717) 22%, #131c2e);
+    --color-violet-200: color-mix(in oklab, oklch(60.6% 0.25 292.717) 34%, #131c2e);
+    --color-violet-300: color-mix(in oklab, oklch(60.6% 0.25 292.717) 46%, #131c2e);
+    --color-blue-50: color-mix(in oklab, oklch(62.3% 0.214 259.815) 14%, #131c2e);
+    --color-blue-100: color-mix(in oklab, oklch(62.3% 0.214 259.815) 22%, #131c2e);
+    --color-blue-200: color-mix(in oklab, oklch(62.3% 0.214 259.815) 34%, #131c2e);
+    --color-blue-300: color-mix(in oklab, oklch(62.3% 0.214 259.815) 46%, #131c2e);
+    --color-orange-50: color-mix(in oklab, oklch(70.5% 0.213 47.604) 14%, #131c2e);
+    --color-orange-100: color-mix(in oklab, oklch(70.5% 0.213 47.604) 22%, #131c2e);
+    --color-orange-200: color-mix(in oklab, oklch(70.5% 0.213 47.604) 34%, #131c2e);
+    --color-orange-300: color-mix(in oklab, oklch(70.5% 0.213 47.604) 46%, #131c2e);
+    --color-rose-50: color-mix(in oklab, oklch(64.5% 0.246 16.439) 14%, #131c2e);
+    --color-rose-100: color-mix(in oklab, oklch(64.5% 0.246 16.439) 22%, #131c2e);
+    --color-rose-200: color-mix(in oklab, oklch(64.5% 0.246 16.439) 34%, #131c2e);
+    --color-rose-300: color-mix(in oklab, oklch(64.5% 0.246 16.439) 46%, #131c2e);
+    --color-purple-50: color-mix(in oklab, oklch(62.7% 0.265 303.9) 14%, #131c2e);
+    --color-purple-100: color-mix(in oklab, oklch(62.7% 0.265 303.9) 22%, #131c2e);
+    --color-purple-200: color-mix(in oklab, oklch(62.7% 0.265 303.9) 34%, #131c2e);
+    --color-purple-300: color-mix(in oklab, oklch(62.7% 0.265 303.9) 46%, #131c2e);
+    --color-teal-50: color-mix(in oklab, oklch(70.4% 0.14 182.503) 14%, #131c2e);
+    --color-teal-100: color-mix(in oklab, oklch(70.4% 0.14 182.503) 22%, #131c2e);
+    --color-teal-200: color-mix(in oklab, oklch(70.4% 0.14 182.503) 34%, #131c2e);
+    --color-teal-300: color-mix(in oklab, oklch(70.4% 0.14 182.503) 46%, #131c2e);
+    --color-yellow-50: color-mix(in oklab, oklch(79.5% 0.184 86.047) 14%, #131c2e);
+    --color-yellow-100: color-mix(in oklab, oklch(79.5% 0.184 86.047) 22%, #131c2e);
+    --color-yellow-200: color-mix(in oklab, oklch(79.5% 0.184 86.047) 34%, #131c2e);
+    --color-yellow-300: color-mix(in oklab, oklch(79.5% 0.184 86.047) 46%, #131c2e);
+    --color-brand-50: color-mix(in oklab, #2563eb 14%, #131c2e);
+    --color-brand-100: color-mix(in oklab, #2563eb 22%, #131c2e);
+    --color-brand-200: color-mix(in oklab, #2563eb 34%, #131c2e);
+    --color-brand-300: color-mix(in oklab, #2563eb 46%, #131c2e);
+  }
+  :root[data-theme='dark'] .bg-white {
+    background-color: var(--surface);
+  }
+  /* Dark chips and tooltips (bg-slate-600…800 with white text) stay dark. */
+  :root[data-theme='dark'] .bg-slate-600 {
+    background-color: #46546c;
+  }
+  :root[data-theme='dark'] .bg-slate-700 {
+    background-color: #3a475e;
+  }
+  :root[data-theme='dark'] .bg-slate-800 {
+    background-color: #2f3b52;
+  }
+  /* Modal backdrops darken, never lighten. */
+  :root[data-theme='dark'] :is(.bg-slate-900/30, .bg-slate-900/40, .bg-slate-900/60) {
+    background-color: rgb(0 0 0 / 0.6);
+  }
+  :root[data-theme='dark'] :is(.text-red-600, .text-red-700, .text-red-800, .text-red-900) {
+    color: oklch(80.8% 0.114 19.571);
+  }
+  :root[data-theme='dark'] :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) {
+    color: oklch(87.9% 0.169 91.605);
+  }
+  :root[data-theme='dark'] :is(.text-green-600, .text-green-700, .text-green-800, .text-green-900) {
+    color: oklch(87.1% 0.15 154.449);
+  }
+  :root[data-theme='dark'] :is(.text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900) {
+    color: oklch(84.5% 0.143 164.978);
+  }
+  :root[data-theme='dark'] :is(.text-sky-600, .text-sky-700, .text-sky-800, .text-sky-900) {
+    color: oklch(82.8% 0.111 230.318);
+  }
+  :root[data-theme='dark'] :is(.text-violet-600, .text-violet-700, .text-violet-800, .text-violet-900) {
+    color: oklch(81.1% 0.111 293.571);
+  }
+  :root[data-theme='dark'] :is(.text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900) {
+    color: oklch(80.9% 0.105 251.813);
+  }
+  :root[data-theme='dark'] :is(.text-orange-600, .text-orange-700, .text-orange-800, .text-orange-900) {
+    color: oklch(83.7% 0.128 66.29);
+  }
+  :root[data-theme='dark'] :is(.text-rose-600, .text-rose-700, .text-rose-800, .text-rose-900) {
+    color: oklch(81% 0.117 11.638);
+  }
+  :root[data-theme='dark'] :is(.text-purple-600, .text-purple-700, .text-purple-800, .text-purple-900) {
+    color: oklch(82.7% 0.119 306.383);
+  }
+  :root[data-theme='dark'] :is(.text-teal-600, .text-teal-700, .text-teal-800, .text-teal-900) {
+    color: oklch(85.5% 0.138 181.071);
+  }
+  :root[data-theme='dark'] :is(.text-yellow-600, .text-yellow-700, .text-yellow-800, .text-yellow-900) {
+    color: oklch(90.5% 0.182 98.111);
+  }
+  :root[data-theme='dark'] :is(.text-brand-600, .text-brand-700, .text-brand-800, .text-brand-900) {
+    color: #93b4f8;
+  }
+  :root[data-theme='dark'] .light-island {
+    color-scheme: light;
+    --color-slate-50: oklch(98.4% 0.003 247.858);
+    --color-slate-100: oklch(96.8% 0.007 247.896);
+    --color-slate-200: oklch(92.9% 0.013 255.508);
+    --color-slate-300: oklch(86.9% 0.022 252.894);
+    --color-slate-400: oklch(70.4% 0.04 256.788);
+    --color-slate-500: oklch(55.4% 0.046 257.417);
+    --color-slate-600: oklch(44.6% 0.043 257.281);
+    --color-slate-700: oklch(37.2% 0.044 257.287);
+    --color-slate-800: oklch(27.9% 0.041 260.031);
+    --color-slate-900: oklch(20.8% 0.042 265.755);
+  }
+  :root[data-theme='dark'] .light-island .bg-white {
+    background-color: #fff;
+  }
 }
 
 /*
