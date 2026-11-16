@@ -611,10 +611,32 @@ export interface WfhRequest {
   createdAt: string;
 }
 
+/** Divisions and departments form the home tree; a chapter is joined by membership only. */
+export type UnitKind = 'division' | 'department' | 'chapter';
+
 export interface Department {
   id: string;
   name: string;
+  kind: UnitKind;
   parentId: string | null;
+  createdAt: string;
+  /** The open department-head seat (divisions and departments only). */
+  head: { employeeId: string; name: string; acting: boolean } | null;
+  /** A chapter's lead — a name, no powers. */
+  lead: { employeeId: string; name: string } | null;
+  /** Home members of this unit itself (not sub-units), leavers excluded. */
+  memberCount: number;
+  /** Extra ("also in" / chapter) members. */
+  extraCount: number;
+}
+
+/** An extra membership — display only; access keeps using the home unit. */
+export interface DepartmentMembership {
+  id: string;
+  departmentId: string;
+  employeeId: string;
+  employeeName: string;
+  isLead: boolean;
   createdAt: string;
 }
 
@@ -937,6 +959,14 @@ export interface RecognitionBoard {
   recent: Recognition[];
   /** Award key -> display name, for per-type badges. */
   typeNames: Record<AwardType, string>;
+  /** Last six months by approval month (IST), oldest first; a team award is one award. */
+  usage: Array<{
+    month: string;
+    awards: number;
+    people: number;
+    valueInr: number;
+    byType: Partial<Record<AwardType, number>>;
+  }>;
 }
 
 /** One award type nominators can pick. */
@@ -2648,4 +2678,74 @@ export interface TrackerRow {
   currentCtc: number | null;
   expectedCtc: number | null;
   offeredCtc: number | null;
+}
+
+/** Daily KPI alert rules — see the backend daily-kpi service. */
+export type DailyKpiAlertCode =
+  | 'no_update'
+  | 'absent'
+  | 'short_day'
+  | 'goals_at_risk'
+  | 'updates_below_target'
+  | 'attainment_below_target';
+
+/** One person's day against the record — derived, never typed in. */
+export interface DailyKpiRow {
+  employee: { id: string; name: string; employeeCode: string; department: string | null };
+  /** False before the joining date — such a day is never judged. */
+  employed: boolean;
+  attendance: {
+    status: string;
+    checkInAt: string | null;
+    checkOutAt: string | null;
+    workedHours: number | null;
+    holidayName: string | null;
+    remote: boolean;
+  };
+  update: { status: StripStatus; score: number | null };
+  /** The 7 days up to and including the date. */
+  strip: Array<{ date: string; status: StripStatus }>;
+  recentUpdates: { done: number; workingDays: number };
+  goals: { count: number; atRisk: number; attainment: number | null };
+  targets: { kpi: string | null; updatesOnTimePct: number; attainmentPct: number };
+  alerts: Array<{ code: DailyKpiAlertCode; title: string }>;
+}
+
+export interface DailyKpi {
+  date: string;
+  shortDayBelowHours: number;
+  cycle: { name: string; startDate: string; endDate: string };
+  rows: DailyKpiRow[];
+}
+
+/** The four learning streams. */
+export type TrainingStream = 'compliance' | 'leadership' | 'company' | 'functional';
+export type TrainingStatus = 'assigned' | 'completed' | 'cancelled';
+
+export interface Training {
+  id: string;
+  employee: { id: string; name: string; department: string | null };
+  title: string;
+  stream: TrainingStream;
+  description: string | null;
+  link: string | null;
+  dueOn: string | null;
+  status: TrainingStatus;
+  /** Assigned and past its due date. */
+  overdue: boolean;
+  assignedBy: { id: string; name: string };
+  assignedAt: string;
+  completedAt: string | null;
+  completionNote: string | null;
+  cancelledAt: string | null;
+  certificate: { fileName: string; sizeBytes: number } | null;
+}
+
+export interface AssignTrainingInput {
+  employeeIds: string[];
+  title: string;
+  stream: TrainingStream;
+  description?: string;
+  link?: string;
+  dueOn?: string;
 }

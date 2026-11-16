@@ -22,6 +22,7 @@ export const ONBOARDING_ROUTE = '/onboarding';
 export const RECOGNITION_ROUTE = '/recognition';
 export const GROWTH_ROUTE = '/growth';
 export const PERFORMANCE_ROUTE = '/performance';
+export const DAILY_KPI_ROUTE = '/daily-kpi';
 /** A tab of My team now (the old /team-attendance URL redirects here). */
 export const TEAM_ATTENDANCE_ROUTE = '/my-team?tab=attendance';
 export const RESIGNATION_ROUTE = '/resignation';
@@ -42,6 +43,7 @@ export const HR_ROUTE = '/hr';
 export const HR_PEOPLE_ROUTE = '/hr/people';
 export const HR_ORG_ROUTE = '/hr/org-structure';
 export const HR_DEPARTMENTS_ROUTE = '/hr/departments';
+export const HR_TRAININGS_ROUTE = '/hr/trainings';
 export const HR_EXITS_ROUTE = '/hr/exits';
 export const HR_LEAVES_ROUTE = '/hr/leaves';
 export const HR_ATTENDANCE_ROUTE = '/hr/attendance';

@@ -14,6 +14,8 @@ import CorrectionModal from '@components/Pr/CorrectionModal.component';
 import CorrectionsPanel from '@components/Pr/CorrectionsPanel.component';
 import TdsCalculator from '@components/Pr/TdsCalculator.component';
 import LoansPanel from '@components/Pr/LoansPanel.component';
+import PayrollTrend from '@components/Pr/PayrollTrend.component';
+import StatutoryPanel from '@components/Pr/StatutoryPanel.component';
 import JoinerTasks from '@components/Common/Onboarding/JoinerTasks.component';
 import ReimbursementDesk from '@components/Common/Reimbursements/ReimbursementDesk.component';
 import { payrollApi } from '@services/api/payroll.api';
@@ -112,6 +114,7 @@ const TAB_LABELS = {
   tds: 'TDS calculator',
   reimbursements: 'Reimbursements',
   loans: 'Loans',
+  statutory: 'Statutory',
   settings: 'Settings',
 } as const;
 
@@ -257,6 +260,8 @@ const PayrollPage = () => {
       {view === 'compensation' && <CompensationPanel />}
       {view === 'reimbursements' && <ReimbursementDesk role='pr' />}
       {view === 'loans' && <LoansPanel />}
+      {view === 'statutory' && <StatutoryPanel />}
+      {view === 'runs' && runs.data && <PayrollTrend runs={runs.data} />}
       {(view === 'runs' || view === 'compensation') && <JoinerTasks owner='payroll' />}
       {view === 'settings' && (
         <div className='max-w-4xl'>

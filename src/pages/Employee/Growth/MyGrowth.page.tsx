@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 
 import type { MyCareer, TeamCareerRow } from '@app-types/api.types';
 import PageTabs from '@components/Common/Tabs/PageTabs.component';
 import PromotionHistory from '@components/Employee/Growth/PromotionHistory.component';
 import RoadmapNotes from '@components/Employee/Growth/RoadmapNotes.component';
+import TrainingsTab from '@components/Employee/Growth/TrainingsTab.component';
 import { careerApi } from '@services/api/career.api';
+import { meApi } from '@services/api/me.api';
+import { trainingsApi } from '@services/api/trainings.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 const DAY_MS = 86_400_000;
@@ -77,7 +81,13 @@ const MyGrowthPage = () => {
   const queryClient = useQueryClient();
   const [closing, setClosing] = useState<TeamCareerRow | null>(null);
   const [notesFor, setNotesFor] = useState<TeamCareerRow | null>(null);
-  const [tab, setTab] = useState<'mine' | 'team'>('mine');
+  // ?tab=trainings opens the Trainings tab directly (the training bells).
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<'mine' | 'team' | 'trainings'>(
+    params.get('tab') === 'trainings' ? 'trainings' : 'mine',
+  );
+  const me = useQuery({ queryKey: ['me'], queryFn: meApi.get, staleTime: 60_000 });
+  const myTrainings = useQuery({ queryKey: ['trainings-mine'], queryFn: trainingsApi.mine });
 
   const mine = useQuery({ queryKey: ['my-career'], queryFn: careerApi.mine });
   const team = useQuery({ queryKey: ['career-team'], queryFn: careerApi.team });
@@ -110,22 +120,24 @@ const MyGrowthPage = () => {
   // Mine | My team: the RM's roadmap work sits on its own tab.
   const hasTeam = (team.data?.length ?? 0) > 0;
   const dueCount = (team.data ?? []).filter(dueConversation).length;
-  const view = hasTeam ? tab : 'mine';
+  const view = tab === 'team' && !hasTeam ? 'mine' : tab;
+  const openTrainings = (myTrainings.data ?? []).filter((t) => t.status === 'assigned').length;
 
   return (
     <div className='w-full space-y-4'>
       <h1 className='text-2xl font-semibold text-slate-800'>Career path</h1>
 
-      {hasTeam && (
-        <PageTabs
-          tabs={[
-            { key: 'mine', label: 'Me' },
-            { key: 'team', label: 'My team', count: dueCount },
-          ]}
-          active={view}
-          onChange={setTab}
-        />
-      )}
+      <PageTabs
+        tabs={[
+          { key: 'mine', label: 'Me' },
+          ...(hasTeam ? [{ key: 'team' as const, label: 'My team', count: dueCount }] : []),
+          { key: 'trainings', label: 'Trainings', count: openTrainings },
+        ]}
+        active={view}
+        onChange={setTab}
+      />
+
+      {view === 'trainings' && <TrainingsTab isRm={!!me.data?.hasReports} />}
 
       {view === 'mine' && (
         <>

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { IncompleteRecord } from '@app-types/api.types';
-import { departmentsApi } from '@services/api/departments.api';
+import { departmentsApi, homeUnits } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -75,7 +75,7 @@ const CompleteRow = ({ record }: { record: IncompleteRecord }) => {
           className={inputClass}
         >
           <option value=''>Department…</option>
-          {(departments.data ?? []).map((d) => (
+          {homeUnits(departments.data).map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
             </option>

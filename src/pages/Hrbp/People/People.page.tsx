@@ -11,6 +11,15 @@ import AddEmployeeModal from '@components/Hrbp/People/AddEmployeeModal.component
 import EditEmployeeModal from '@components/Hrbp/People/EditEmployeeModal.component';
 import ImportEmployeesModal from '@components/Hrbp/People/ImportEmployeesModal.component';
 import IncompleteRecords from '@components/Hrbp/People/IncompleteRecords.component';
+import PageTabs from '@components/Common/Tabs/PageTabs.component';
+import EmploymentTable from '@components/Hrbp/People/EmploymentTable.component';
+import PeopleAnalytics from '@components/Hrbp/People/PeopleAnalytics.component';
+import PeopleFilters from '@components/Hrbp/People/PeopleFilters.component';
+import {
+  applyPeopleFilter,
+  EMPTY_FILTER,
+  type PeopleFilter,
+} from '@components/Hrbp/People/peopleFilter';
 import { ProbationReviews } from '@components/Common/Probation/Probation.component';
 import RequestAccessModal from '@components/Hrbp/People/RequestAccessModal.component';
 import { ADMIN_BATCHES_ROUTE } from '@constants/Common/navigation/routes.constants';
@@ -48,6 +57,8 @@ const PeoplePage = () => {
   const [draft, setDraft] = useState<FeedbackDraft | null>(null);
   const [requestingFor, setRequestingFor] = useState<Employee | null>(null);
   const [editing, setEditing] = useState<Employee | null>(null);
+  const [tab, setTab] = useState<'roster' | 'employment' | 'analytics'>('roster');
+  const [filter, setFilter] = useState<PeopleFilter>(EMPTY_FILTER);
   const {
     data: employees,
     isLoading,
@@ -78,6 +89,8 @@ const PeoplePage = () => {
     },
   });
 
+  const filtered = applyPeopleFilter(employees ?? [], filter);
+
   if (isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
   if (error) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
 
@@ -104,99 +117,140 @@ const PeoplePage = () => {
       </div>
       {adding && <AddEmployeeModal onClose={() => setAdding(false)} />}
       {importing && <ImportEmployeesModal onClose={() => setImporting(false)} />}
-      <IncompleteRecords />
-      <ProbationReviews title='Probation reviews' hr />
-      {claimLink.error && (
-        <p className='text-sm text-red-600'>{apiErrorMessage(claimLink.error)}</p>
+      <PageTabs<'roster' | 'employment' | 'analytics'>
+        tabs={[
+          { key: 'roster', label: 'Roster' },
+          { key: 'employment', label: 'Employment' },
+          { key: 'analytics', label: 'Analytics' },
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
+      {tab === 'analytics' && <PeopleAnalytics employees={employees ?? []} />}
+      {tab !== 'analytics' && (
+        <PeopleFilters
+          employees={employees ?? []}
+          value={filter}
+          onChange={setFilter}
+          shown={filtered.length}
+        />
       )}
-      <div className='overflow-hidden rounded-xl border border-slate-200 bg-white'>
-        <table className='w-full text-left text-sm'>
-          <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
-            <tr>
-              <th className='px-4 py-3'>Name</th>
-              <th className='px-4 py-3'>Code</th>
-              <th className='px-4 py-3'>Email</th>
-              <th className='px-4 py-3'>Level</th>
-              <th className='px-4 py-3'>Status</th>
-              <th className='px-4 py-3'></th>
-            </tr>
-          </thead>
-          <tbody>
-            {(employees ?? []).map((employee) => {
-              // The sheet's per-person reads 404 on inactive records — those
-              // rows stay plain history, not a clickable sheet.
-              const openable = employee.status !== 'inactive';
-              return (
-                <tr
-                  key={employee.id}
-                  onClick={openable ? () => setPerson(toSheetPerson(employee)) : undefined}
-                  className={`border-t border-slate-100 ${openable ? 'cursor-pointer hover:bg-slate-50' : ''}`}
-                  title={openable ? `Open ${employee.name}'s sheet` : undefined}
-                >
-                  <td className='px-4 py-3 font-medium text-slate-800'>{employee.name}</td>
-                  <td className='px-4 py-3 text-slate-500'>{employee.employeeCode}</td>
-                  <td className='px-4 py-3 text-slate-500'>{employee.email}</td>
-                  <td className='px-4 py-3 text-slate-500'>{employee.level}</td>
-                  <td className='px-4 py-3 text-slate-500'>{employee.status}</td>
-                  <td className='space-x-3 whitespace-nowrap px-4 py-3 text-right'>
-                    <button
-                      type='button'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditing(employee);
-                      }}
-                      className='text-xs text-brand-600 hover:text-brand-500'
-                    >
-                      Edit
-                    </button>
-                    {openable && isAdmin && (
-                      <Link
-                        to={ADMIN_BATCHES_ROUTE}
-                        onClick={(e) => e.stopPropagation()}
-                        className='text-xs text-slate-500 hover:text-brand-600'
-                      >
-                        Give access
-                      </Link>
-                    )}
-                    {openable && me.data && !isAdmin && (
-                      <button
-                        type='button'
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRequestingFor(employee);
-                        }}
-                        className='text-xs text-slate-500 hover:text-brand-600'
-                      >
-                        Request access
-                      </button>
-                    )}
-                    {employee.status === 'invited' && (
-                      <button
-                        type='button'
-                        disabled={claimLink.isPending}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          claimLink.mutate(employee.id);
-                        }}
-                        className='text-xs text-brand-600 hover:text-brand-500 disabled:opacity-50'
-                      >
-                        {copiedFor === employee.id ? 'Link copied!' : 'Invite link'}
-                      </button>
-                    )}
-                  </td>
+      {tab === 'employment' && (
+        <EmploymentTable
+          employees={filtered}
+          everyone={employees ?? []}
+          onOpen={(e) => setPerson(toSheetPerson(e))}
+          onEdit={setEditing}
+        />
+      )}
+      {tab === 'roster' && (
+        <>
+          <IncompleteRecords />
+          <ProbationReviews title='Probation reviews' hr />
+          {claimLink.error && (
+            <p className='text-sm text-red-600'>{apiErrorMessage(claimLink.error)}</p>
+          )}
+          <div className='overflow-hidden rounded-xl border border-slate-200 bg-white'>
+            <table className='w-full text-left text-sm'>
+              <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
+                <tr>
+                  <th className='px-4 py-3'>Name</th>
+                  <th className='px-4 py-3'>Code</th>
+                  <th className='px-4 py-3'>Email</th>
+                  <th className='px-4 py-3'>Role</th>
+                  <th className='px-4 py-3'>Department</th>
+                  <th className='px-4 py-3'>Level</th>
+                  <th className='px-4 py-3'>Status</th>
+                  <th className='px-4 py-3'></th>
                 </tr>
-              );
-            })}
-            {(employees ?? []).length === 0 && (
-              <tr>
-                <td colSpan={6} className='px-4 py-8 text-center text-slate-400'>
-                  No employees yet — HRBP adds people top-down (managers first).
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {filtered.map((employee) => {
+                  // The sheet's per-person reads 404 on inactive records — those
+                  // rows stay plain history, not a clickable sheet.
+                  const openable = employee.status !== 'inactive';
+                  return (
+                    <tr
+                      key={employee.id}
+                      onClick={openable ? () => setPerson(toSheetPerson(employee)) : undefined}
+                      className={`border-t border-slate-100 ${openable ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+                      title={openable ? `Open ${employee.name}'s sheet` : undefined}
+                    >
+                      <td className='px-4 py-3 font-medium text-slate-800'>{employee.name}</td>
+                      <td className='px-4 py-3 text-slate-500'>{employee.employeeCode}</td>
+                      <td className='px-4 py-3 text-slate-500'>{employee.email}</td>
+                      <td className='px-4 py-3 text-slate-500'>{employee.designation ?? '—'}</td>
+                      <td className='px-4 py-3 text-slate-500'>{employee.departmentName ?? '—'}</td>
+                      <td className='px-4 py-3 text-slate-500'>{employee.level}</td>
+                      <td className='px-4 py-3 text-slate-500'>{employee.status}</td>
+                      <td className='space-x-3 whitespace-nowrap px-4 py-3 text-right'>
+                        <button
+                          type='button'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditing(employee);
+                          }}
+                          className='text-xs text-brand-600 hover:text-brand-500'
+                        >
+                          Edit
+                        </button>
+                        {openable && isAdmin && (
+                          <Link
+                            to={ADMIN_BATCHES_ROUTE}
+                            onClick={(e) => e.stopPropagation()}
+                            className='text-xs text-slate-500 hover:text-brand-600'
+                          >
+                            Give access
+                          </Link>
+                        )}
+                        {openable && me.data && !isAdmin && (
+                          <button
+                            type='button'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRequestingFor(employee);
+                            }}
+                            className='text-xs text-slate-500 hover:text-brand-600'
+                          >
+                            Request access
+                          </button>
+                        )}
+                        {employee.status === 'invited' && (
+                          <button
+                            type='button'
+                            disabled={claimLink.isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              claimLink.mutate(employee.id);
+                            }}
+                            className='text-xs text-brand-600 hover:text-brand-500 disabled:opacity-50'
+                          >
+                            {copiedFor === employee.id ? 'Link copied!' : 'Invite link'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {(employees ?? []).length > 0 && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className='px-4 py-8 text-center text-slate-400'>
+                      Nobody matches these filters.
+                    </td>
+                  </tr>
+                )}
+                {(employees ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={8} className='px-4 py-8 text-center text-slate-400'>
+                      No employees yet — HRBP adds people top-down (managers first).
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {person && (
         <PersonSheet

@@ -13,6 +13,7 @@ import {
   HR_ASSETS_ROUTE,
   HR_ASSET_REQUESTS_ROUTE,
   HR_DEPARTMENTS_ROUTE,
+  HR_TRAININGS_ROUTE,
   HR_EXITS_ROUTE,
   HR_GATE_PASSES_ROUTE,
   HR_HIRING_ROUTE,
@@ -35,6 +36,7 @@ import {
   HIRING_JOINERS_ROUTE,
   HIRING_PLAN_ROUTE,
   ONBOARDING_ROUTE,
+  DAILY_KPI_ROUTE,
   PERFORMANCE_ROUTE,
   POLICIES_ROUTE,
   RECOGNITION_ROUTE,
@@ -92,6 +94,7 @@ export const EMPLOYEE_NAV: NavItem[] = [
   { label: 'Onboarding', to: ONBOARDING_ROUTE, group: 'me' },
   // Work
   { label: 'Goals & updates', to: PERFORMANCE_ROUTE, group: 'work' },
+  { label: 'Daily KPI', to: DAILY_KPI_ROUTE, group: 'work' },
   { label: 'Career path', to: GROWTH_ROUTE, group: 'work' },
   { label: 'Awards', to: RECOGNITION_ROUTE, group: 'work' },
   // My team (RMs only — me.hasReports): People / Attendance / Leave tabs. The
@@ -124,6 +127,7 @@ export const HR_NAV: HrNavItem[] = [
   { label: 'People', to: HR_PEOPLE_ROUTE, portal: 'HRBP' },
   { label: 'Org structure', to: HR_ORG_ROUTE, portal: 'HRBP' },
   { label: 'Departments', to: HR_DEPARTMENTS_ROUTE, portal: 'HRBP' },
+  { label: 'Trainings', to: HR_TRAININGS_ROUTE, portal: 'HRBP' },
   // HR accepts and clears, OPS clears assets, payroll works the F&F.
   { label: 'Exits', to: HR_EXITS_ROUTE, portal: ['HRBP', 'PR', 'OPS'] },
   { label: 'Leaves', to: HR_LEAVES_ROUTE, portal: 'HRBP' },

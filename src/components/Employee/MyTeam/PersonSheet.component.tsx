@@ -10,6 +10,7 @@ import { BAND_LOOK } from '@constants/Common/quarter.constants';
 import { careerApi } from '@services/api/career.api';
 import { feedbackApi } from '@services/api/feedback.api';
 import { quarterReportsApi } from '@services/api/quarterReports.api';
+import { STREAM_LABEL, trainingsApi } from '@services/api/trainings.api';
 import { leavesApi } from '@services/api/leaves.api';
 import { performanceApi } from '@services/api/performance.api';
 import { apiErrorMessage } from '@utils/apiError';
@@ -140,6 +141,12 @@ const PersonSheet = ({
     queryKey: ['person-career', member.id],
     queryFn: () => careerApi.person(member.id),
   });
+  const trainings = useQuery({
+    queryKey: ['trainings-person', member.id],
+    queryFn: () => trainingsApi.forPerson(member.id),
+  });
+  const openTrainings = (trainings.data ?? []).filter((t) => t.status === 'assigned');
+  const doneTrainings = (trainings.data ?? []).filter((t) => t.status === 'completed').length;
 
   // ── Attendance this month, up to today. Credit: full day 1, half day 0.5.
   const past = days.filter((d) => d.date <= today);
@@ -457,6 +464,37 @@ const PersonSheet = ({
               <PersonPips employeeId={member.id} />
             </Card>
           </div>
+
+          <Card
+            title='Trainings'
+            right={
+              trainings.data ? (
+                <span className='text-xs text-slate-400'>
+                  {openTrainings.length} open · {doneTrainings} done
+                </span>
+              ) : undefined
+            }
+          >
+            {trainings.error ? (
+              <p className='text-sm text-slate-400'>{apiErrorMessage(trainings.error)}</p>
+            ) : openTrainings.length === 0 ? (
+              <p className='text-sm text-slate-400'>No open trainings.</p>
+            ) : (
+              <ul className='space-y-1.5 text-sm'>
+                {openTrainings.map((t) => (
+                  <li key={t.id} className='flex flex-wrap items-baseline justify-between gap-2'>
+                    <span className='text-slate-800'>
+                      {t.title}
+                      <span className='ml-2 text-xs text-slate-400'>{STREAM_LABEL[t.stream]}</span>
+                    </span>
+                    <span className={`text-xs ${t.overdue ? 'text-red-600' : 'text-slate-500'}`}>
+                      {t.dueOn ? `${t.overdue ? 'overdue · was due' : 'due'} ${t.dueOn}` : 'no due date'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
 
           <Card title='Notes history'>
             {notes.error ? (
