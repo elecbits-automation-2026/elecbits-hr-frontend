@@ -9,8 +9,10 @@ import RoadmapNotes from '@components/Employee/Growth/RoadmapNotes.component';
 import TrainingsTab from '@components/Employee/Growth/TrainingsTab.component';
 import { careerApi } from '@services/api/career.api';
 import { meApi } from '@services/api/me.api';
+import { performanceApi } from '@services/api/performance.api';
 import { trainingsApi } from '@services/api/trainings.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { tenureOf } from '@utils/tenure';
 
 const DAY_MS = 86_400_000;
 
@@ -91,6 +93,13 @@ const MyGrowthPage = () => {
 
   const mine = useQuery({ queryKey: ['my-career'], queryFn: careerApi.mine });
   const team = useQuery({ queryKey: ['career-team'], queryFn: careerApi.team });
+  // This quarter's goal attainment per person (the same rows as Goals → My team).
+  const teamGoals = useQuery({
+    queryKey: ['team-goals'],
+    queryFn: performanceApi.teamGoals,
+    enabled: (team.data?.length ?? 0) > 0,
+  });
+  const goalsFor = (id: string) => teamGoals.data?.find((g) => g.employee.id === id);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['my-career'] });
@@ -315,6 +324,8 @@ const MyGrowthPage = () => {
               <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
                 <th className='py-2 pr-4'>Person</th>
                 <th className='py-2 pr-4'>Band</th>
+                <th className='py-2 pr-4'>Time in band</th>
+                <th className='py-2 pr-4'>Goals this quarter</th>
                 <th className='py-2 pr-4'>Awards</th>
                 <th className='py-2 pr-4'>Roadmap</th>
                 <th className='py-2'></th>
@@ -332,6 +343,37 @@ const MyGrowthPage = () => {
                     )}
                   </td>
                   <td className='py-2.5 pr-4 font-mono text-xs text-slate-500'>{r.level}</td>
+                  <td className='py-2.5 pr-4 text-slate-600'>
+                    {tenureOf(r.inBandSince)}
+                    {r.bandTenureMet && (
+                      <span
+                        title='Past the months-in-band minimum in the career settings'
+                        className='ml-2 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700'
+                      >
+                        eligible
+                      </span>
+                    )}
+                  </td>
+                  <td className='py-2.5 pr-4 text-slate-600'>
+                    {(() => {
+                      const goals = goalsFor(r.employee.id);
+                      if (!goals || goals.goalCount === 0)
+                        return <span className='text-xs text-slate-400'>no goals</span>;
+                      return (
+                        <>
+                          {goals.attainment ?? 0}%
+                          <span className='ml-1 text-xs text-slate-400'>
+                            ({goals.goalCount} {goals.goalCount === 1 ? 'goal' : 'goals'})
+                          </span>
+                          {goals.atRisk > 0 && (
+                            <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700'>
+                              {goals.atRisk} at risk
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </td>
                   <td className='py-2.5 pr-4 text-slate-600'>
                     {r.recognitions}
                     {r.lastRecognizedAt && (

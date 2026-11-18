@@ -47,6 +47,7 @@ const plusDays = (date: string, days: number) => {
   d.setDate(d.getDate() + days);
   return d.toLocaleDateString('en-CA');
 };
+const days = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
 const time = (iso: string | null) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
 const shortDate = (date: string) =>
@@ -129,6 +130,9 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   const month = currentMonth();
   const today = todayStr();
   const weekEnd = plusDays(today, 7);
+  const weekAgo = plusDays(today, -7);
+  // The past-7-days window can start in last month — load that month too.
+  const lastMonth = weekAgo.slice(0, 7) !== month ? weekAgo.slice(0, 7) : null;
   const [draft, setDraft] = useState<FeedbackDraft | null>(null);
   const [person, setPerson] = useState<TeamMember | null>(null);
   const [search, setSearch] = useState('');
@@ -138,6 +142,11 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   const attendance = useQuery({
     queryKey: ['team-attendance', month],
     queryFn: () => attendanceApi.team(month),
+  });
+  const lastMonthAttendance = useQuery({
+    queryKey: ['team-attendance', lastMonth],
+    queryFn: () => attendanceApi.team(lastMonth!),
+    enabled: lastMonth !== null,
   });
   const teamLeaves = useQuery({ queryKey: ['team-leaves'], queryFn: leavesApi.listTeam });
   const teamWfh = useQuery({ queryKey: ['team-wfh'], queryFn: attendanceApi.teamWfh });
@@ -177,13 +186,34 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
     trainings.data ?? [],
   );
 
+  // Out today: on leave (full or half) or absent, from today's classified day.
+  const todayStates = members.map((m) => dayFor(m.id)?.status);
+  const onLeaveToday = todayStates.filter((s) => s === 'leave' || s === 'half_leave').length;
+  const absentToday = todayStates.filter((s) => s === 'absent').length;
+
+  // Out in the past 7 days (today excluded): leave and absent days per person.
+  const pastWeek = [...(lastMonthAttendance.data ?? []), ...(attendance.data ?? [])];
+  const outLastWeek = members
+    .map((m) => {
+      const days = pastWeek
+        .filter((a) => a.employee.id === m.id)
+        .flatMap((a) => a.days)
+        .filter((d) => d.date >= weekAgo && d.date < today);
+      const leave = days.filter((d) => d.status === 'leave' || d.status === 'half_leave');
+      const absent = days.filter((d) => d.status === 'absent');
+      return { member: m, leave, absent };
+    })
+    .filter((o) => o.leave.length + o.absent.length > 0)
+    .sort((a, b) => b.leave.length + b.absent.length - (a.leave.length + a.absent.length));
+
   const awayThisWeek = [
     ...(teamLeaves.data ?? [])
       .filter((l) => l.status === 'approved' && l.startDate < weekEnd && l.endDate >= today)
       .map((l) => ({
         key: `l:${l.id}`,
         name: l.employee.name,
-        what: `${l.type} leave`,
+        // Menstrual leave stays confidential on a screen others may see.
+        what: l.type === 'menstrual' ? 'leave' : `${l.type} leave`,
         from: l.startDate,
         to: l.endDate,
       })),
@@ -212,6 +242,13 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
         <p className='text-sm text-slate-500'>
           {members.length} {members.length === 1 ? 'person' : 'people'} route to you — direct
           reports and leave-approver assignees.
+          {attendance.data && members.length > 0 && (
+            <span className='ml-1'>
+              {onLeaveToday + absentToday === 0
+                ? 'Nobody is out today.'
+                : `${onLeaveToday + absentToday} out today (${onLeaveToday} on leave, ${absentToday} absent).`}
+            </span>
+          )}
         </p>
       </div>
 
@@ -226,6 +263,32 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
               <span key={a.key}>
                 <b>{a.name}</b> — {a.what} ·{' '}
                 {a.from === a.to ? shortDate(a.from) : `${shortDate(a.from)} → ${shortDate(a.to)}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {outLastWeek.length > 0 && (
+        <div className='rounded-xl border border-slate-200 bg-white p-4'>
+          <div className='text-sm font-semibold text-slate-800'>Out in the past 7 days</div>
+          <div className='mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-700'>
+            {outLastWeek.map((o) => (
+              <span
+                key={o.member.id}
+                title={[...o.leave, ...o.absent]
+                  .map((d) => d.date)
+                  .sort()
+                  .map(shortDate)
+                  .join(', ')}
+              >
+                <b>{o.member.name}</b> —{' '}
+                {[
+                  o.leave.length > 0 && `${days(o.leave.length)} on leave`,
+                  o.absent.length > 0 && `${days(o.absent.length)} absent`,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
               </span>
             ))}
           </div>

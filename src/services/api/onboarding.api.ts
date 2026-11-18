@@ -1,5 +1,6 @@
 import type {
   OnboardingJourney,
+  OnboardingOverview,
   OnboardingQueueRow,
   OnboardingTeamTask,
   StartOnboardingInput,
@@ -45,4 +46,10 @@ export const onboardingApi = {
     (await api.get<OnboardingJourney>(`/onboarding/employee/${employeeId}`)).data,
   start: async (input: StartOnboardingInput): Promise<OnboardingJourney> =>
     (await api.post<OnboardingJourney>('/onboarding', input)).data,
+  /** The numbers + joiners with no journey (hrbp.people read). */
+  overview: async (): Promise<OnboardingOverview> =>
+    (await api.get<OnboardingOverview>('/onboarding/overview')).data,
+  /** Bell + email to whoever owns an open step; once a day (hrbp.people update). */
+  nudge: async (employeeId: string): Promise<{ recipients: number }> =>
+    (await api.post<{ recipients: number }>(`/onboarding/employee/${employeeId}/nudge`)).data,
 };

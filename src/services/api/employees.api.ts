@@ -28,9 +28,12 @@ export const employeesApi = {
         validateStatus: (s) => s === 200 || s === 422,
       })
     ).data,
-  /** Live records missing a joining date, department or designation (hrbp.people read). */
+  /** Live records missing intake details or a working manager (hrbp.people read). */
   incomplete: async (): Promise<IncompleteRecord[]> =>
     (await api.get<IncompleteRecord[]>('/employees/incomplete')).data,
+  /** The next free code, to pre-fill Add employee (hrbp.people create). */
+  nextCode: async (): Promise<{ employeeCode: string }> =>
+    (await api.get<{ employeeCode: string }>('/employees/next-code')).data,
   get: async (id: string): Promise<Employee> =>
     (await api.get<Employee>(`/employees/${id}`)).data,
   create: async (input: CreateEmployeeInput): Promise<EmployeeWithClaim> =>

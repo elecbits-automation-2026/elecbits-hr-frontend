@@ -22,14 +22,18 @@ const BarList = ({
   rows,
   format = (n) => String(n),
   empty = 'Nothing to show yet.',
+  max: ceiling,
 }: {
   title: string;
   rows: BarListRow[];
   format?: (n: number) => string;
   empty?: string;
+  /** Fixed scale end (e.g. 100 for percentages); defaults to the largest value. */
+  max?: number;
 }) => {
   const [hover, setHover] = useState<string | null>(null);
-  const max = Math.max(0, ...rows.map((r) => r.value));
+  const largest = Math.max(0, ...rows.map((r) => r.value));
+  const max = ceiling ?? largest;
   return (
     <figure className='space-y-2 rounded-xl border border-slate-200 bg-white p-4'>
       <figcaption className='text-sm font-semibold text-slate-800'>{title}</figcaption>

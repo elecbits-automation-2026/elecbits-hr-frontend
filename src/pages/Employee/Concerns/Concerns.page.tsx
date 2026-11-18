@@ -2,15 +2,56 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { Concern, ConcernQueueName } from '@app-types/api.types';
+import type {
+  Concern,
+  ConcernQueueName,
+  ConcernQueueSummary,
+  ConcernSeverity,
+} from '@app-types/api.types';
 import ConcernCase, { StatusChip } from '@components/Employee/Concerns/ConcernCase.component';
 import RaiseConcern from '@components/Employee/Concerns/RaiseConcern.component';
 import { TRACK_LABELS, categoryLabel, dueLine } from '@constants/Common/concerns.constants';
 import { CONCERNS_FOLLOW_UP_ROUTE } from '@constants/Common/navigation/routes.constants';
 import { concernsApi } from '@services/api/concerns.api';
+import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
 
 type Tab = 'raise' | 'mine' | ConcernQueueName;
+
+const SEVERITY_CLS: Record<ConcernSeverity, string> = {
+  high: 'bg-red-50 text-red-700',
+  medium: 'bg-amber-50 text-amber-700',
+  low: 'bg-slate-100 text-slate-600',
+};
+
+/** The HR queue's triage numbers, above its list. */
+const QueueStats = ({ q }: { q: ConcernQueueSummary }) => (
+  <div className='flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm text-slate-600'>
+    <span>
+      <b className='text-slate-800'>{q.open}</b> open
+      {q.overdue > 0 && <span className='text-red-700'> · {q.overdue} overdue</span>}
+    </span>
+    <span className={q.unassigned > 0 ? 'text-amber-700' : ''}>
+      <b>{q.unassigned}</b> unassigned
+    </span>
+    <span>
+      <b className='text-slate-800'>{q.mine}</b> yours
+    </span>
+    <span>
+      High {q.bySeverity.high} · Medium {q.bySeverity.medium} · Low {q.bySeverity.low}
+      {q.bySeverity.unset > 0 && ` · not set ${q.bySeverity.unset}`}
+    </span>
+    <span>
+      Avg. to acknowledge:{' '}
+      <b className='text-slate-800'>
+        {q.avgDaysToAck === null ? '—' : `${q.avgDaysToAck} ${q.avgDaysToAck === 1 ? 'day' : 'days'}`}
+      </b>
+    </span>
+    <span>
+      <b className='text-slate-800'>{q.closedThisQuarter}</b> closed this quarter
+    </span>
+  </div>
+);
 
 const CaseList = ({
   rows,
@@ -41,11 +82,19 @@ const CaseList = ({
           >
             <span className='font-mono text-xs text-slate-400'>{c.code}</span>
             <span className='flex-1 truncate text-sm font-medium text-slate-800'>{c.title}</span>
+            {c.severity && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${SEVERITY_CLS[c.severity]}`}
+              >
+                {c.severity}
+              </span>
+            )}
             <StatusChip c={c} />
             <span className='w-full text-xs text-slate-400'>
               {TRACK_LABELS[c.track]} · {categoryLabel(c.track, c.category)}
               {showRaiser ? ` · ${c.anonymous ? 'anonymous' : (c.raisedBy?.name ?? '')}` : ''}
               {dueLine(c) ? ` · ${dueLine(c)}` : ''}
+              {c.can.assign || c.owner ? ` · ${c.owner ? `owner ${c.owner.name}` : 'unassigned'}` : ''}
             </span>
           </button>
         </li>
@@ -64,6 +113,10 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('mine');
   const [openId, setOpenId] = useState<string | null>(null);
+  // HR queue filters (owner + severity).
+  const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine' | 'unassigned'>('all');
+  const [severityFilter, setSeverityFilter] = useState<'' | ConcernSeverity>('');
+  const me = useQuery({ queryKey: ['me'], queryFn: meApi.get, staleTime: 60_000 });
 
   const mine = useQuery({ queryKey: ['concerns-mine'], queryFn: concernsApi.mine });
   const queues = useQuery({ queryKey: ['concerns-queues'], queryFn: concernsApi.queues });
@@ -85,6 +138,18 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
     queryClient.invalidateQueries({ queryKey: ['concerns-queues'] });
     queryClient.invalidateQueries({ queryKey: ['concerns-queue'] });
   };
+
+  const hrSummary = queues.data?.find((q) => q.queue === 'hr');
+  const shownQueue =
+    tab === 'hr'
+      ? queue.data?.filter(
+          (c) =>
+            (ownerFilter === 'all' ||
+              (ownerFilter === 'mine' && c.owner?.id === me.data?.id) ||
+              (ownerFilter === 'unassigned' && !c.owner)) &&
+            (!severityFilter || c.severity === severityFilter),
+        )
+      : queue.data;
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: 'mine', label: 'My concerns' },
@@ -146,9 +211,38 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
           onOpen={setOpenId}
         />
       )}
+      {tab === 'hr' && hrSummary && <QueueStats q={hrSummary} />}
+      {tab === 'hr' && (
+        <div className='flex flex-wrap items-center gap-2 text-sm'>
+          {(['all', 'mine', 'unassigned'] as const).map((f) => (
+            <button
+              key={f}
+              type='button'
+              onClick={() => setOwnerFilter(f)}
+              className={`rounded-md px-3 py-1 capitalize ${
+                ownerFilter === f
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {f === 'mine' ? 'Mine' : f}
+            </button>
+          ))}
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value as '' | ConcernSeverity)}
+            className='rounded-md border border-slate-300 px-2 py-1 text-sm'
+          >
+            <option value=''>Any severity</option>
+            <option value='high'>High</option>
+            <option value='medium'>Medium</option>
+            <option value='low'>Low</option>
+          </select>
+        </div>
+      )}
       {isQueue && (
         <CaseList
-          rows={queue.data}
+          rows={shownQueue}
           loading={queue.isLoading}
           error={queue.error}
           empty='Nothing waiting in this queue.'

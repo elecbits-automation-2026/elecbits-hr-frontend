@@ -26,7 +26,8 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [employeeCode, setEmployeeCode] = useState('');
+  // null until HR types one — the suggested next code shows meanwhile.
+  const [typedCode, setTypedCode] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [level, setLevel] = useState<Level>('L1');
   const [reportsTo, setReportsTo] = useState('');
@@ -46,6 +47,12 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
     queryFn: departmentsApi.list,
   });
   const { data: zones } = useQuery({ queryKey: ['punch-zones'], queryFn: attendanceApi.listZones });
+  const { data: suggested } = useQuery({
+    queryKey: ['employee-next-code'],
+    queryFn: employeesApi.nextCode,
+    staleTime: 0,
+  });
+  const employeeCode = typedCode ?? suggested?.employeeCode ?? '';
 
   const managers = (employees ?? []).filter((e) => e.status !== 'inactive');
 
@@ -62,6 +69,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
     mutationFn: employeesApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-next-code'] });
       onClose();
     },
   });
@@ -157,7 +165,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
             <input
               required
               value={employeeCode}
-              onChange={(e) => setEmployeeCode(e.target.value)}
+              onChange={(e) => setTypedCode(e.target.value)}
               className={inputClass}
               placeholder='EB-0002'
             />

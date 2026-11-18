@@ -3,6 +3,7 @@ import type {
   ConcernOutcome,
   ConcernQueueName,
   ConcernQueueSummary,
+  ConcernSeverity,
   CreateConcernInput,
   CreatedConcern,
   DirectoryEntry,
@@ -31,6 +32,12 @@ export const concernsApi = {
     (await api.post<Concern>(`/concerns/${id}/notes`, input)).data,
   acknowledge: async (id: string): Promise<Concern> =>
     (await api.post<Concern>(`/concerns/${id}/acknowledge`)).data,
+  /** HR-level case: owner = one of its handlers, or null to clear. */
+  assign: async (id: string, ownerId: string | null): Promise<Concern> =>
+    (await api.post<Concern>(`/concerns/${id}/assign`, { ownerId })).data,
+  /** HR-level case: internal severity, null clears; never shown to the raiser. */
+  setSeverity: async (id: string, severity: ConcernSeverity | null): Promise<Concern> =>
+    (await api.post<Concern>(`/concerns/${id}/severity`, { severity })).data,
   decide: async (id: string, decision: string): Promise<Concern> =>
     (await api.post<Concern>(`/concerns/${id}/decide`, { decision })).data,
   resolve: async (
