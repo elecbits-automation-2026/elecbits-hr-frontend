@@ -22,6 +22,13 @@ const CATEGORY_ORDER: PolicyCategory[] = [
   'other',
 ];
 
+/** "Effective from 1 Dec 2026", or "Takes effect 1 Dec 2026" while still ahead. */
+const effectiveLine = (iso: string) => {
+  const day = new Date(`${iso}T00:00:00`);
+  const label = day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return day.getTime() > Date.now() ? `Takes effect ${label}` : `Effective from ${label}`;
+};
+
 const stateChip = (p: MyPolicy) => {
   if (!p.ackRequired)
     return <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'>no sign-off needed</span>;
@@ -205,6 +212,9 @@ const MyPoliciesPage = () => {
                     <p className='font-medium text-slate-800'>
                       {p.title} <span className='text-xs text-slate-400'>v{p.version}</span>
                     </p>
+                    {p.effectiveFrom && (
+                      <p className='mt-0.5 text-xs text-slate-400'>{effectiveLine(p.effectiveFrom)}</p>
+                    )}
                     {p.summary && <p className='mt-0.5 text-xs text-slate-500'>{p.summary}</p>}
                     {p.hasDocument ? (
                       <button

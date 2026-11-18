@@ -7,6 +7,7 @@ import type {
   PolicyCategory,
   UpdatePolicyInput,
 } from '@app-types/api.types';
+import BarList, { type BarListRow } from '@components/Common/Charts/BarList.component';
 import { policiesApi } from '@services/api/policies.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -27,6 +28,8 @@ interface Draft {
   ackRequired: boolean;
   summary: string;
   docUrl: string;
+  /** YYYY-MM-DD, or '' when not set. */
+  effectiveFrom: string;
 }
 
 const emptyDraft = (): Draft => ({
@@ -37,6 +40,7 @@ const emptyDraft = (): Draft => ({
   ackRequired: true,
   summary: '',
   docUrl: '',
+  effectiveFrom: '',
 });
 
 const draftOf = (p: Policy): Draft => ({
@@ -47,7 +51,15 @@ const draftOf = (p: Policy): Draft => ({
   ackRequired: p.ackRequired,
   summary: p.summary ?? '',
   docUrl: p.docUrl ?? '',
+  effectiveFrom: p.effectiveFrom ?? '',
 });
+
+const fmtDay = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 
 /** Create/edit modal. Changing the version is called out as the re-ask act. */
 const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: () => void }) => {
@@ -72,6 +84,7 @@ const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: 
           ...common,
           summary: draft.summary.trim() || null,
           docUrl: draft.docUrl.trim() || null,
+          effectiveFrom: draft.effectiveFrom || null,
         };
         const updated = await policiesApi.update(existing.id, input);
         // Storing a PDF clears any external link server-side — our DB is
@@ -83,6 +96,7 @@ const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: 
         ...common,
         ...(draft.summary.trim() ? { summary: draft.summary.trim() } : {}),
         ...(draft.docUrl.trim() ? { docUrl: draft.docUrl.trim() } : {}),
+        ...(draft.effectiveFrom ? { effectiveFrom: draft.effectiveFrom } : {}),
       };
       const created = await policiesApi.create(input);
       return file ? policiesApi.uploadDocument(created.id, file) : created;
@@ -145,6 +159,15 @@ const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: 
               <input
                 value={draft.version}
                 onChange={(e) => set('version', e.target.value)}
+                className='mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
+              />
+            </label>
+            <label className='block flex-1 text-sm'>
+              <span className='text-slate-600'>Effective from</span>
+              <input
+                type='date'
+                value={draft.effectiveFrom}
+                onChange={(e) => set('effectiveFrom', e.target.value)}
                 className='mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
               />
             </label>
@@ -285,10 +308,13 @@ const HrPoliciesPage = () => {
   const [editing, setEditing] = useState<Policy | null>(null);
   const [adding, setAdding] = useState(false);
 
+  const [department, setDepartment] = useState('');
+  const [missingOnly, setMissingOnly] = useState(false);
+
+  // Both tabs use the tracker: the Manage table shows "N of M signed" per policy.
   const tracker = useQuery({
     queryKey: ['hr-policy-tracker'],
     queryFn: policiesApi.tracker,
-    enabled: tab === 'tracker',
   });
   const list = useQuery({
     queryKey: ['hr-policies'],
@@ -296,12 +322,47 @@ const HrPoliciesPage = () => {
     enabled: tab === 'manage',
   });
 
-  const cells = tracker.data?.rows.flatMap((r) => r.cells) ?? [];
+  const departments = [
+    ...new Set((tracker.data?.rows ?? []).map((r) => r.employee.department ?? 'No department')),
+  ].sort();
+  const inDepartment = (tracker.data?.rows ?? []).filter(
+    (r) => !department || (r.employee.department ?? 'No department') === department,
+  );
+  const shownRows = missingOnly
+    ? inDepartment.filter((r) => r.cells.some((c) => c.state !== 'ok'))
+    : inDepartment;
+
+  // Totals follow the department filter, never the "missing only" view.
+  const cells = inDepartment.flatMap((r) => r.cells);
   const okCount = cells.filter((c) => c.state === 'ok').length;
   const staleCount = cells.filter((c) => c.state === 'stale').length;
   const coverage = cells.length > 0 ? Math.round((okCount / cells.length) * 100) : null;
-  const fullyCovered =
-    tracker.data?.rows.filter((r) => r.cells.every((c) => c.state === 'ok')).length ?? 0;
+  const fullyCovered = inDepartment.filter((r) => r.cells.every((c) => c.state === 'ok')).length;
+
+  /** Per policy: how many of the people in view hold each state. */
+  const countsFor = (policyId: string, rows = inDepartment) => {
+    const states = rows.map((r) => r.cells.find((c) => c.policyId === policyId)?.state);
+    return {
+      ok: states.filter((s) => s === 'ok').length,
+      stale: states.filter((s) => s === 'stale').length,
+      none: states.filter((s) => s === 'none').length,
+      total: rows.length,
+    };
+  };
+  const policyBars: BarListRow[] = (tracker.data?.policies ?? []).map((p) => {
+    const n = countsFor(p.id);
+    return {
+      key: p.id,
+      label: p.title,
+      value: n.total > 0 ? Math.round((n.ok / n.total) * 100) : 0,
+      hint: `${n.ok} current · ${n.stale} old version · ${n.none} never signed`,
+    };
+  });
+  // Signed on the whole roster, regardless of the filter (the Manage tab has none).
+  const signedOf = (policyId: string) =>
+    tracker.data?.policies.some((p) => p.id === policyId)
+      ? countsFor(policyId, tracker.data.rows)
+      : null;
 
   return (
     <div className='w-full space-y-4'>
@@ -343,6 +404,28 @@ const HrPoliciesPage = () => {
           )}
           {tracker.data && tracker.data.policies.length > 0 && (
             <>
+              <div className='mb-4 flex flex-wrap items-center gap-3 text-sm'>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className='rounded-md border border-slate-300 px-2 py-1 text-sm'
+                >
+                  <option value=''>All departments</option>
+                  {departments.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <label className='flex items-center gap-1.5 text-slate-600'>
+                  <input
+                    type='checkbox'
+                    checked={missingOnly}
+                    onChange={(e) => setMissingOnly(e.target.checked)}
+                  />
+                  Only people with something missing
+                </label>
+              </div>
               <div className='mb-4 flex flex-wrap gap-4 text-sm'>
                 <span
                   className={`font-medium ${
@@ -356,17 +439,29 @@ const HrPoliciesPage = () => {
                   {coverage}% acknowledged
                 </span>
                 <span className='text-slate-500'>
-                  {fullyCovered}/{tracker.data.rows.length} people fully covered
+                  {fullyCovered}/{inDepartment.length} people fully covered
                 </span>
                 {staleCount > 0 && (
-                  <span className='text-amber-700'>{staleCount} signatures on an old version</span>
+                  <span className='text-amber-700'>
+                    {staleCount} signatures on an old version — those people need to sign again
+                  </span>
                 )}
+              </div>
+              <div className='mb-4'>
+                <BarList
+                  title='Signed the current version, by policy'
+                  rows={policyBars}
+                  format={(n) => `${n}%`}
+                  max={100}
+                  empty='Nobody in this view.'
+                />
               </div>
               <div className='overflow-x-auto'>
                 <table className='min-w-full text-sm'>
                   <thead>
                     <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
                       <th className='sticky left-0 bg-white py-2 pr-4'>Person</th>
+                      <th className='px-2 py-2 text-center font-medium'>Signed</th>
                       {tracker.data.policies.map((p) => (
                         <th key={p.id} className='px-2 py-2 text-center font-medium'>
                           {p.title}
@@ -378,30 +473,50 @@ const HrPoliciesPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {tracker.data.rows.map((r) => (
-                      <tr key={r.employee.id} className='border-t border-slate-100'>
-                        <td className='sticky left-0 bg-white py-2 pr-4'>
-                          <span className='font-medium text-slate-700'>{r.employee.name}</span>
-                          <span className='ml-2 text-xs text-slate-400'>
-                            {r.employee.employeeCode}
-                          </span>
+                    {shownRows.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={tracker.data.policies.length + 2}
+                          className='py-4 text-center text-sm text-slate-500'
+                        >
+                          {missingOnly ? 'Everyone in this view is up to date.' : 'Nobody in this view.'}
                         </td>
-                        {r.cells.map((c) => (
-                          <td key={c.policyId} className='px-2 py-2 text-center'>
-                            <span
-                              title={
-                                c.ackedVersion
-                                  ? `signed v${c.ackedVersion}`
-                                  : 'never acknowledged'
-                              }
-                              className={`inline-block min-w-8 rounded-full px-2 py-0.5 text-xs ${CELL[c.state].cls}`}
-                            >
-                              {CELL[c.state].label}
+                      </tr>
+                    )}
+                    {shownRows.map((r) => {
+                      const signed = r.cells.filter((c) => c.state === 'ok').length;
+                      return (
+                        <tr key={r.employee.id} className='border-t border-slate-100'>
+                          <td className='sticky left-0 bg-white py-2 pr-4'>
+                            <span className='font-medium text-slate-700'>{r.employee.name}</span>
+                            <span className='ml-2 text-xs text-slate-400'>
+                              {r.employee.employeeCode}
                             </span>
                           </td>
-                        ))}
-                      </tr>
-                    ))}
+                          <td
+                            className={`px-2 py-2 text-center text-xs tabular-nums ${
+                              signed === r.cells.length ? 'text-green-700' : 'text-slate-600'
+                            }`}
+                          >
+                            {signed}/{r.cells.length}
+                          </td>
+                          {r.cells.map((c) => (
+                            <td key={c.policyId} className='px-2 py-2 text-center'>
+                              <span
+                                title={
+                                  c.ackedVersion
+                                    ? `signed v${c.ackedVersion}`
+                                    : 'never acknowledged'
+                                }
+                                className={`inline-block min-w-8 rounded-full px-2 py-0.5 text-xs ${CELL[c.state].cls}`}
+                              >
+                                {CELL[c.state].label}
+                              </span>
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -424,6 +539,7 @@ const HrPoliciesPage = () => {
                   <th className='py-2 pr-4'>Policy</th>
                   <th className='py-2 pr-4'>Category</th>
                   <th className='py-2 pr-4'>Version</th>
+                  <th className='py-2 pr-4'>Effective</th>
                   <th className='py-2 pr-4'>Sign-off</th>
                   <th className='py-2 pr-4'>Document</th>
                   <th className='py-2'></th>
@@ -450,7 +566,18 @@ const HrPoliciesPage = () => {
                     <td className='py-2 pr-4 capitalize text-slate-600'>{p.category}</td>
                     <td className='py-2 pr-4 text-slate-600'>v{p.version}</td>
                     <td className='py-2 pr-4 text-slate-600'>
+                      {p.effectiveFrom ? fmtDay(p.effectiveFrom) : <span className='text-slate-400'>—</span>}
+                    </td>
+                    <td className='py-2 pr-4 text-slate-600'>
                       {p.ackRequired ? 'required' : 'not required'}
+                      {(() => {
+                        const n = signedOf(p.id);
+                        return n ? (
+                          <span className='block text-xs text-slate-400'>
+                            {n.ok} of {n.total} signed
+                          </span>
+                        ) : null;
+                      })()}
                     </td>
                     <td className='py-2 pr-4'>
                       {p.hasDocument ? (

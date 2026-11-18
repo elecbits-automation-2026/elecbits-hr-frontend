@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
-import type { Concern, ConcernOutcome } from '@app-types/api.types';
+import type { Concern, ConcernOutcome, ConcernSeverity } from '@app-types/api.types';
 import {
   LEVEL_LABELS,
   OUTCOME_LABELS,
@@ -221,6 +221,57 @@ const ConcernCase = ({
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* HR-queue triage: owner + severity (internal, never shown to the raiser). */}
+      {mode === 'handler' && (c.can.assign || c.owner || c.severity) && (
+        <div className='flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm'>
+          <label className='flex items-center gap-2 text-slate-600'>
+            Owner
+            {c.can.assign ? (
+              <select
+                value={c.owner?.id ?? ''}
+                disabled={act.isPending}
+                onChange={(e) => run(() => concernsApi.assign(c.id, e.target.value || null))}
+                className='rounded-md border border-slate-300 px-2 py-1 text-sm'
+              >
+                <option value=''>Unassigned</option>
+                {c.assignable.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className='text-slate-800'>{c.owner?.name ?? 'Unassigned'}</span>
+            )}
+          </label>
+          <label className='flex items-center gap-2 text-slate-600'>
+            Severity
+            {c.can.assign ? (
+              <select
+                value={c.severity ?? ''}
+                disabled={act.isPending}
+                onChange={(e) =>
+                  run(() =>
+                    concernsApi.setSeverity(c.id, (e.target.value || null) as ConcernSeverity | null),
+                  )
+                }
+                className='rounded-md border border-slate-300 px-2 py-1 text-sm'
+              >
+                <option value=''>Not set</option>
+                <option value='low'>Low</option>
+                <option value='medium'>Medium</option>
+                <option value='high'>High</option>
+              </select>
+            ) : (
+              <span className='capitalize text-slate-800'>{c.severity ?? 'not set'}</span>
+            )}
+          </label>
+          <span className='basis-full text-xs text-slate-400'>
+            Internal to HR — the person who raised this never sees the owner or severity.
+          </span>
         </div>
       )}
 

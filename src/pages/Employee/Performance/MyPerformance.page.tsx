@@ -160,6 +160,19 @@ const wordCount = (text: string): number => {
 const daysLeft = (dueOn: string, today: string): number =>
   Math.round((Date.parse(dueOn) - Date.parse(today)) / DAY_MS);
 
+/** "12 days left" / "due today" / "3 days overdue" — amber in the last 14 days, red once past. */
+const DaysLeftTag = ({ dueOn, today }: { dueOn: string; today: string }) => {
+  const n = daysLeft(dueOn, today);
+  const cls = n < 0 ? 'text-red-700' : n <= 14 ? 'text-amber-700' : 'text-slate-400';
+  const label =
+    n < 0
+      ? `${-n} ${n === -1 ? 'day' : 'days'} overdue`
+      : n === 0
+        ? 'due today'
+        : `${n} ${n === 1 ? 'day' : 'days'} left`;
+  return <span className={cls}>{label}</span>;
+};
+
 /** Mirrors the server's at-risk rule: under 40% with under 30 days to due. */
 const isAtRisk = (g: Goal, today: string): boolean =>
   g.progress < 40 && daysLeft(g.dueOn, today) < 30;
@@ -280,7 +293,16 @@ const MyPerformancePage = () => {
       setGoalDraft(EMPTY_GOAL);
       queryClient.invalidateQueries({ queryKey: ['team-goals'] });
       queryClient.invalidateQueries({ queryKey: ['my-goals'] });
+      queryClient.invalidateQueries({ queryKey: ['team-member-goals'] });
     },
+  });
+  // The person's current weight total, for the running total in the add-goal
+  // modal (their own goals come from my-goals when it's the caller).
+  const goalForIsMe = goalFor !== null && goalFor.id === me.data?.id;
+  const goalForGoals = useQuery({
+    queryKey: ['team-member-goals', goalFor?.id],
+    queryFn: () => performanceApi.teamMemberGoals(goalFor!.id),
+    enabled: goalFor !== null && !goalForIsMe,
   });
 
   if (mine.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
@@ -304,8 +326,14 @@ const MyPerformancePage = () => {
     <div className='w-full space-y-4'>
       <div className='flex flex-wrap items-baseline justify-between gap-2'>
         <h1 className='text-2xl font-semibold text-slate-800'>Goals &amp; updates</h1>
-        <span className='text-sm text-slate-400'>
-          {g.cycle.name} · {g.cycle.startDate} → {g.cycle.endDate}
+        <span className='flex items-center gap-2 text-sm text-slate-400'>
+          <span className='rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700'>
+            {g.cycle.name} · {(() => {
+              const n = Math.max(0, daysLeft(g.cycle.endDate, today));
+              return `${n} ${n === 1 ? 'day' : 'days'} left`;
+            })()}
+          </span>
+          {g.cycle.startDate} → {g.cycle.endDate}
         </span>
       </div>
 
@@ -356,6 +384,22 @@ const MyPerformancePage = () => {
               </span>
             )}
           </div>
+
+          {g.departmentKpi && (
+            <p className='mt-2 text-sm text-slate-600'>
+              Your function is measured on: <span className='text-slate-800'>{g.departmentKpi}</span>
+            </p>
+          )}
+
+          {g.goals.length > 0 && (
+            <p className='mt-1 text-xs text-slate-500'>
+              {g.goals.length} {g.goals.length === 1 ? 'goal' : 'goals'} · weights total{' '}
+              <span className={g.weightTotal === 100 ? 'text-slate-700' : 'text-amber-700'}>
+                {g.weightTotal}
+              </span>
+              {' '}/ 100
+            </p>
+          )}
 
           {g.goals.length > 0 && (
             <p className='mt-1 text-xs text-slate-400'>
@@ -413,7 +457,8 @@ const MyPerformancePage = () => {
                               {goal.target ? ` → ${goal.target}` : ''} ·{' '}
                             </>
                           )}
-                          weight {goal.weight} · due {goal.dueOn}
+                          weight {goal.weight} · due {goal.dueOn} ·{' '}
+                          <DaysLeftTag dueOn={goal.dueOn} today={today} />
                           {goal.createdByName && <> · set by {goal.createdByName}</>}
                         </p>
                       </div>
@@ -1037,6 +1082,18 @@ const MyPerformancePage = () => {
                     }
                     className='mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
                   />
+                  {(() => {
+                    const before = goalForIsMe ? g.weightTotal : goalForGoals.data?.weightTotal;
+                    if (before === undefined) return null;
+                    const total = Math.round((before + (goalDraft.weight || 0)) * 10) / 10;
+                    return (
+                      <span
+                        className={`mt-1 block ${total === 100 ? 'text-green-700' : total > 100 ? 'text-red-600' : 'text-amber-700'}`}
+                      >
+                        Total weight with this goal: {total} / 100
+                      </span>
+                    );
+                  })()}
                 </label>
                 <label className='text-xs text-slate-500'>
                   Due on (optional)

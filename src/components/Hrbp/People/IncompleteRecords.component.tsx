@@ -14,10 +14,15 @@ const FIELD_LABELS: Record<IncompleteRecord['missing'][number], string> = {
   designation: 'designation',
 };
 
+const MANAGER_ISSUE: Record<NonNullable<IncompleteRecord['managerIssue']>, string> = {
+  none: 'No manager set',
+  left: 'Their manager has left',
+};
+
 /** One record's inline completion form — only the missing fields are asked. */
 const CompleteRow = ({ record }: { record: IncompleteRecord }) => {
   const queryClient = useQueryClient();
-  const { employee, missing } = record;
+  const { employee, missing, managerIssue } = record;
   const [dateOfJoining, setDateOfJoining] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [designation, setDesignation] = useState('');
@@ -54,9 +59,16 @@ const CompleteRow = ({ record }: { record: IncompleteRecord }) => {
       <span className='min-w-40 flex-1 text-sm'>
         <span className='font-medium text-slate-800'>{employee.name}</span>
         <span className='ml-2 font-mono text-xs text-slate-400'>{employee.employeeCode}</span>
-        <span className='block text-xs text-amber-700'>
-          Missing {missing.map((f) => FIELD_LABELS[f]).join(', ')}
-        </span>
+        {missing.length > 0 && (
+          <span className='block text-xs text-amber-700'>
+            Missing {missing.map((f) => FIELD_LABELS[f]).join(', ')}
+          </span>
+        )}
+        {managerIssue && (
+          <span className='block text-xs text-amber-700'>
+            {MANAGER_ISSUE[managerIssue]} — set a new one on their record
+          </span>
+        )}
       </span>
       {missing.includes('dateOfJoining') && (
         <input
@@ -92,13 +104,15 @@ const CompleteRow = ({ record }: { record: IncompleteRecord }) => {
           className={`${inputClass} w-40`}
         />
       )}
-      <button
-        type='submit'
-        disabled={nothingEntered || save.isPending}
-        className='rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-40'
-      >
-        Save
-      </button>
+      {missing.length > 0 && (
+        <button
+          type='submit'
+          disabled={nothingEntered || save.isPending}
+          className='rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-40'
+        >
+          Save
+        </button>
+      )}
       {save.error && (
         <span className='basis-full text-xs text-red-600'>{apiErrorMessage(save.error)}</span>
       )}
@@ -133,7 +147,7 @@ const IncompleteRecords = () => {
             {n} {n === 1 ? 'record is' : 'records are'} incomplete
           </span>
           <span className='ml-2 text-amber-700'>
-            — missing a joining date, department or designation
+            — missing a joining date, department, designation or a working manager
           </span>
         </span>
         <span className='text-xs text-amber-700'>{open ? 'Hide' : 'Complete them'}</span>

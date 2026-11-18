@@ -852,7 +852,7 @@ export interface PolicyAckResult {
 export interface PolicyTracker {
   policies: Policy[];
   rows: Array<{
-    employee: { id: string; name: string; employeeCode: string };
+    employee: { id: string; name: string; employeeCode: string; department: string | null };
     cells: Array<{
       policyId: string;
       state: PolicyAckState;
@@ -928,6 +928,18 @@ export interface OnboardingQueueRow {
   progress: { done: number; total: number };
   /** Days until dueOn; negative = overdue. */
   daysLeft: number;
+  /** HR already nudged this journey today (one nudge a day). */
+  nudgedToday: boolean;
+}
+
+/** HR overview: the numbers + joiners in the 90-day window with no journey. */
+export interface OnboardingOverview {
+  stats: { joinedLast90Days: number; inProgress: number; pastDay30: number; done: number };
+  noJourney: Array<{
+    employee: { id: string; name: string; employeeCode: string };
+    status: 'active' | 'invited';
+    dateOfJoining: string;
+  }>;
 }
 
 export interface StartOnboardingInput {
@@ -1097,6 +1109,10 @@ export interface TeamCareerRow {
   recognitions: number;
   lastRecognizedAt: string | null;
   track: CareerTrack | null;
+  /** Last band change, else the joining date; null when neither is on record. */
+  inBandSince: string | null;
+  /** Past the months-in-band minimum; null when unknown or the rule is off. */
+  bandTenureMet: boolean | null;
 }
 
 export interface OpenCareerTrackInput {
@@ -1225,6 +1241,8 @@ export interface MyGoals {
   atRisk: number;
   /** Weights should sum to 100 — the UI warns, nothing blocks. */
   weightTotal: number;
+  /** The department's KPI text; null when none is set. */
+  departmentKpi: string | null;
 }
 
 export interface CreateGoalInput {
@@ -1372,6 +1390,8 @@ export interface NotificationList {
 export interface IncompleteRecord {
   employee: Employee;
   missing: Array<'dateOfJoining' | 'departmentId' | 'designation'>;
+  /** No manager set, or the manager on record has left. */
+  managerIssue: 'none' | 'left' | null;
 }
 
 /** One person as parsed from HR's import CSV — the server validates every cell. */
@@ -1580,9 +1600,18 @@ export interface Concern {
     accept: boolean;
     escalate: boolean;
     note: boolean;
+    /** Set the owner / severity (HR-level live cases, handlers only). */
+    assign: boolean;
   };
+  /** HR-queue triage — handlers only; always null in the raiser's view. */
+  owner: { id: string; name: string } | null;
+  severity: ConcernSeverity | null;
+  /** Who the case may be assigned to; empty unless can.assign. */
+  assignable: Array<{ id: string; name: string }>;
   notes: ConcernNote[];
 }
+
+export type ConcernSeverity = 'low' | 'medium' | 'high';
 
 export interface CreateConcernInput {
   track: ConcernTrack;
@@ -1606,6 +1635,13 @@ export interface ConcernQueueSummary {
   label: string;
   open: number;
   overdue: number;
+  /** Open cases with no owner / owned by the caller. */
+  unassigned: number;
+  mine: number;
+  bySeverity: Record<ConcernSeverity | 'unset', number>;
+  /** Raised → acknowledged, cases raised this quarter; null when none yet. */
+  avgDaysToAck: number | null;
+  closedThisQuarter: number;
 }
 
 // ---- Open door ----

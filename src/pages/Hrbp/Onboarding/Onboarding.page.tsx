@@ -67,6 +67,7 @@ const StartModal = ({ onClose }: { onClose: () => void }) => {
       onboardingApi.start({ employeeId, ...(startedOn ? { startedOn } : {}) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hr-onboarding'] });
+      queryClient.invalidateQueries({ queryKey: ['hr-onboarding-overview'] });
       onClose();
     },
   });
@@ -145,6 +146,63 @@ const daysChip = (row: OnboardingQueueRow) => {
   );
 };
 
+/** Nudge one open journey — once a day; the button says so afterwards. */
+const NudgeButton = ({ row }: { row: OnboardingQueueRow }) => {
+  const queryClient = useQueryClient();
+  const nudge = useMutation({
+    mutationFn: () => onboardingApi.nudge(row.employee.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr-onboarding'] }),
+  });
+  if (row.status === 'done') return null;
+  if (row.nudgedToday || nudge.isSuccess)
+    return <span className='text-xs text-slate-400'>Nudged today</span>;
+  return (
+    <button
+      type='button'
+      disabled={nudge.isPending}
+      onClick={() => nudge.mutate()}
+      title={
+        nudge.error
+          ? apiErrorMessage(nudge.error)
+          : 'Bell + email to whoever owns an open step (joiner, manager, OPS, payroll)'
+      }
+      className={`text-xs hover:underline disabled:opacity-50 ${nudge.error ? 'text-red-600' : 'text-brand-600'}`}
+    >
+      {nudge.isPending ? 'Nudging…' : nudge.error ? 'Nudge failed' : 'Nudge'}
+    </button>
+  );
+};
+
+/** Start a listed joiner's journey from their joining date, in one click. */
+const StartNowButton = ({ employeeId }: { employeeId: string }) => {
+  const queryClient = useQueryClient();
+  const start = useMutation({
+    mutationFn: () => onboardingApi.start({ employeeId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr-onboarding'] });
+      queryClient.invalidateQueries({ queryKey: ['hr-onboarding-overview'] });
+    },
+  });
+  return (
+    <button
+      type='button'
+      disabled={start.isPending}
+      onClick={() => start.mutate()}
+      title={start.error ? apiErrorMessage(start.error) : undefined}
+      className={`text-xs hover:underline disabled:opacity-50 ${start.error ? 'text-red-600' : 'text-brand-600'}`}
+    >
+      {start.isPending ? 'Starting…' : start.error ? 'Could not start' : 'Start journey'}
+    </button>
+  );
+};
+
+const Stat = ({ label, value, tone }: { label: string; value: number; tone?: string }) => (
+  <div className='rounded-xl border border-slate-200 bg-white px-4 py-3'>
+    <div className={`text-2xl font-semibold tabular-nums ${tone ?? 'text-slate-800'}`}>{value}</div>
+    <div className='text-xs text-slate-500'>{label}</div>
+  </div>
+);
+
 /** Who is onboarding — the HR queue behind hrbp.people. */
 const HrOnboardingPage = () => {
   const [open, setOpen] = useState<OnboardingQueueRow | null>(null);
@@ -154,6 +212,12 @@ const HrOnboardingPage = () => {
     queryKey: ['hr-onboarding'],
     queryFn: onboardingApi.queue,
   });
+  const overview = useQuery({
+    queryKey: ['hr-onboarding-overview'],
+    queryFn: onboardingApi.overview,
+  });
+  const stats = overview.data?.stats;
+  const noJourney = overview.data?.noJourney ?? [];
 
   return (
     <div className='w-full space-y-4'>
@@ -167,6 +231,51 @@ const HrOnboardingPage = () => {
           + Start a journey
         </button>
       </div>
+
+      {stats && (
+        <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
+          <Stat label='Joined in the last 90 days' value={stats.joinedLast90Days} />
+          <Stat label='Onboarding in progress' value={stats.inProgress} />
+          <Stat
+            label='Past day 30, not finished'
+            value={stats.pastDay30}
+            tone={stats.pastDay30 > 0 ? 'text-red-700' : undefined}
+          />
+          <Stat label='Finished' value={stats.done} />
+        </div>
+      )}
+
+      {noJourney.length > 0 && (
+        <div className='rounded-xl border border-amber-200 bg-amber-50/60 p-5'>
+          <h2 className='text-sm font-semibold text-amber-800'>
+            {noJourney.length} {noJourney.length === 1 ? 'joiner has' : 'joiners have'} no journey
+          </h2>
+          <p className='text-xs text-amber-700'>
+            Joined in the last 90 days or joining soon, but no onboarding started.
+          </p>
+          <table className='mt-2 min-w-full text-sm'>
+            <tbody>
+              {noJourney.map((p) => (
+                <tr key={p.employee.id} className='border-t border-amber-100'>
+                  <td className='py-2 pr-4'>
+                    <span className='font-medium text-slate-700'>{p.employee.name}</span>
+                    <span className='ml-2 text-xs text-slate-400'>{p.employee.employeeCode}</span>
+                    {p.status === 'invited' && (
+                      <span className='ml-2 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] text-violet-700'>
+                        invited
+                      </span>
+                    )}
+                  </td>
+                  <td className='py-2 pr-4 text-slate-600'>joins {p.dateOfJoining}</td>
+                  <td className='py-2 text-right'>
+                    <StartNowButton employeeId={p.employee.id} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         {isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
@@ -213,13 +322,16 @@ const HrOnboardingPage = () => {
                   </td>
                   <td className='py-2.5 pr-4'>{daysChip(r)}</td>
                   <td className='py-2.5 text-right'>
-                    <button
-                      type='button'
-                      onClick={() => setOpen(r)}
-                      className='text-xs text-brand-600 hover:underline'
-                    >
-                      Open
-                    </button>
+                    <span className='inline-flex items-center gap-3'>
+                      <NudgeButton row={r} />
+                      <button
+                        type='button'
+                        onClick={() => setOpen(r)}
+                        className='text-xs text-brand-600 hover:underline'
+                      >
+                        Open
+                      </button>
+                    </span>
                   </td>
                 </tr>
               ))}
