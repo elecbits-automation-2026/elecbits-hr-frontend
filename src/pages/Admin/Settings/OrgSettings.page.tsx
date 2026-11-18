@@ -1,4 +1,5 @@
 import BackgroundJobs from '@components/Admin/BackgroundJobs.component';
+import EmailDelivery from '@components/Admin/EmailDelivery.component';
 import { SettingsBrowser } from '@components/Common/Settings/SettingsBrowser.component';
 
 /**
@@ -19,7 +20,12 @@ const OrgSettingsPage = () => (
         log. Payroll and HR can also edit their own areas from their consoles.
       </p>
     </div>
-    <SettingsBrowser extra={[{ key: 'jobs', title: 'Background jobs', node: <BackgroundJobs /> }]} />
+    <SettingsBrowser
+      extra={[
+        { key: 'jobs', title: 'Background jobs', node: <BackgroundJobs /> },
+        { key: 'email', title: 'Email delivery', node: <EmailDelivery /> },
+      ]}
+    />
   </div>
 );
 

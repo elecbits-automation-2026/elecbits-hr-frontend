@@ -96,6 +96,21 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
       {btn}
     </ToggleFieldsEditor>
   ),
+  'payroll.esic': (v, onSave, btn) => (
+    <ToggleFieldsEditor value={v as Record<string, boolean>} onSave={onSave}>
+      {btn}
+    </ToggleFieldsEditor>
+  ),
+  'payroll.esicRates': (v, onSave, btn) => (
+    <NumberFieldsEditor value={v as Record<string, number>} onSave={onSave} decimals>
+      {btn}
+    </NumberFieldsEditor>
+  ),
+  'email.delivery': (v, onSave, btn) => (
+    <ToggleFieldsEditor value={v as Record<string, boolean>} onSave={onSave}>
+      {btn}
+    </ToggleFieldsEditor>
+  ),
   'payroll.autoCoverLeaveTypes': (v, onSave, btn) => (
     <OrderedLeaveTypesEditor value={v as string[]} onSave={onSave}>
       {btn}

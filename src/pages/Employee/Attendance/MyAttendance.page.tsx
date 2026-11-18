@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { ApprovalStatus } from '@app-types/api.types';
+import ColumnChart from '@components/Common/Charts/ColumnChart.component';
 import MonthCalendar from '@components/Common/Attendance/MonthCalendar.component';
+import RaiseLeaveModal from '@components/Employee/Leaves/RaiseLeaveModal.component';
 // Self-service regularization is DISABLED for now (user decision): only
 // HRBP/Admin regularize a missed day, via HR → Attendance → Mark attendance.
 // import RegularizeModal from '@components/Employee/Attendance/RegularizeModal.component';
 import WfhModal from '@components/Employee/Attendance/WfhModal.component';
 import { attendanceApi } from '@services/api/attendance.api';
+import { leavesApi } from '@services/api/leaves.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { attendancePct, averageHours } from '@utils/attendance';
 import { wfhSlots } from '@utils/approvals';
 import { bestPosition } from '@utils/geolocation';
 
@@ -69,6 +73,13 @@ const MyAttendancePage = () => {
   const [month, setMonth] = useState(currentMonth());
   // const [showRegularize, setShowRegularize] = useState(false); // disabled (user decision)
   const [showWfh, setShowWfh] = useState(false);
+  // "Apply leave for this day" from an absent day on the calendar.
+  const [leaveFor, setLeaveFor] = useState<string | null>(null);
+  const balances = useQuery({
+    queryKey: ['leave-balances'],
+    queryFn: () => leavesApi.balances(),
+    enabled: leaveFor !== null,
+  });
 
   const view = useQuery({
     queryKey: ['my-attendance', month],
@@ -102,6 +113,24 @@ const MyAttendancePage = () => {
 
   const today = view.data?.today ?? null;
   const summary = view.data?.summary;
+  // Month stats up to today (a past month: all of it) — same rules as My team.
+  const todayDate = new Date().toLocaleDateString('en-CA');
+  const days = view.data?.days ?? [];
+  const pct = attendancePct(days, todayDate);
+  const hours = averageHours(days, todayDate);
+  const hourPoints = days
+    .filter((d) => d.date <= todayDate && d.workedHours !== null)
+    .map((d) => ({
+      key: d.date,
+      label: String(Number(d.date.slice(8))),
+      title: new Date(`${d.date}T00:00:00`).toLocaleDateString([], {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      }),
+      values: [d.workedHours as number],
+      note: d.status === 'wfh' ? 'remote' : undefined,
+    }));
   const punchError = checkIn.error ?? checkOut.error;
   // A full-day approved leave makes today inert — the backend rejects the
   // punch anyway; hiding the buttons is the honest UI for it.
@@ -211,12 +240,29 @@ const MyAttendancePage = () => {
               <span>Remote: <b className='text-slate-700'>{summary.wfh}</b></span>
               <span>Late ins: <b className='text-slate-700'>{summary.lateIns}</b></span>
               <span>Early outs: <b className='text-slate-700'>{summary.earlyOuts}</b></span>
+              <span title='Present over the working days so far (week offs, holidays and full-day leave left out; half a day counts 0.5)'>
+                Attendance: <b className='text-slate-700'>{pct ? `${pct.pct}%` : '—'}</b>
+              </span>
+              <span title='Average over the days with a check-in and a check-out'>
+                Avg hours: <b className='text-slate-700'>{hours ? `${hours.avg} h` : '—'}</b>
+              </span>
             </div>
           )}
         </div>
         {view.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
         {view.error && <p className='text-sm text-red-600'>{apiErrorMessage(view.error)}</p>}
-        {view.data && <MonthCalendar days={view.data.days} />}
+        {view.data && <MonthCalendar days={view.data.days} onApplyLeave={setLeaveFor} />}
+        {hourPoints.length > 0 && (
+          <div className='mt-5'>
+            <ColumnChart
+              title='Hours worked per day'
+              series={[{ key: 'hours', label: 'Hours' }]}
+              points={hourPoints}
+              format={(n) => `${n} h`}
+              footnote='Days with a check-in and a check-out only.'
+            />
+          </div>
+        )}
       </div>
 
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
@@ -261,6 +307,13 @@ const MyAttendancePage = () => {
 
       {/* {showRegularize && <RegularizeModal onClose={() => setShowRegularize(false)} />} */}
       {showWfh && <WfhModal onClose={() => setShowWfh(false)} />}
+      {leaveFor && balances.data && (
+        <RaiseLeaveModal
+          types={balances.data.map((b) => b.type)}
+          initialStart={leaveFor}
+          onClose={() => setLeaveFor(null)}
+        />
+      )}
     </div>
   );
 };

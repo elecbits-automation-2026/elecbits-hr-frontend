@@ -8,7 +8,9 @@ import type {
   EmployeeAttendance,
   TeamMember,
 } from '@app-types/api.types';
-import FeedbackModal, { type FeedbackDraft } from '@components/Employee/Home/FeedbackModal.component';
+import FeedbackModal, {
+  type FeedbackDraft,
+} from '@components/Employee/Home/FeedbackModal.component';
 import PersonSheet from '@components/Employee/MyTeam/PersonSheet.component';
 import TalkNext from '@components/Employee/MyTeam/TalkNext.component';
 import { rankTalkNext } from '@components/Employee/MyTeam/talkNext';
@@ -25,6 +27,18 @@ import { leavesApi } from '@services/api/leaves.api';
 import { meApi } from '@services/api/me.api';
 import { trainingsApi } from '@services/api/trainings.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { attendancePct } from '@utils/attendance';
+import { tenureOf } from '@utils/tenure';
+
+const NO_DEPT = '__none__';
+const selectClass = 'rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm';
+
+/** Employment status as a pill: notice is the word people use for `exiting`. */
+const STATUS_LOOK: Record<TeamMember['status'], { label: string; cls: string }> = {
+  active: { label: 'active', cls: 'bg-green-50 text-green-700' },
+  invited: { label: 'invited', cls: 'bg-violet-50 text-violet-700' },
+  exiting: { label: 'on notice', cls: 'bg-amber-50 text-amber-700' },
+};
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
 const todayStr = () => new Date().toLocaleDateString('en-CA');
@@ -36,7 +50,11 @@ const plusDays = (date: string, days: number) => {
 const time = (iso: string | null) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
 const shortDate = (date: string) =>
-  new Date(`${date}T00:00:00`).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+  new Date(`${date}T00:00:00`).toLocaleDateString([], {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
 /**
  * Today's one-word state for a person, from their classified day. Invited
@@ -70,37 +88,6 @@ const todayChip = (
         ? { label: `in ${time(day.checkInAt)}`, cls: 'bg-green-50 text-green-700' }
         : { label: 'not in yet', cls: 'bg-slate-100 text-slate-500' };
   }
-};
-
-/** Credit per classified day: full 1, half 0.5; days that do not count are null. */
-const credit = (d: AttendanceDay): number | null => {
-  switch (d.status) {
-    case 'present':
-    case 'wfh':
-      return 1;
-    case 'half_day':
-    case 'half_leave':
-      return 0.5;
-    case 'absent':
-      return 0;
-    default:
-      return null; // week off, holiday, full leave, not yet
-  }
-};
-
-/**
- * Attendance % this month up to today: credit over the days that count —
- * week offs, holidays and approved full-day leave are left out; today counts
- * once marked. Null with no countable day yet.
- */
-const attendancePct = (days: AttendanceDay[], today: string) => {
-  const counted = days
-    .filter((d) => d.date <= today)
-    .map(credit)
-    .filter((c): c is number => c !== null);
-  if (counted.length === 0) return null;
-  const got = counted.reduce((n, c) => n + c, 0);
-  return { pct: Math.round((got / counted.length) * 100), got, of: counted.length };
 };
 
 const pctClass = (pct: number) =>
@@ -144,6 +131,8 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   const weekEnd = plusDays(today, 7);
   const [draft, setDraft] = useState<FeedbackDraft | null>(null);
   const [person, setPerson] = useState<TeamMember | null>(null);
+  const [search, setSearch] = useState('');
+  const [dept, setDept] = useState('');
 
   const team = useQuery({ queryKey: ['my-team'], queryFn: meApi.team });
   const attendance = useQuery({
@@ -164,6 +153,18 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   if (team.error) return <p className='text-sm text-red-600'>{apiErrorMessage(team.error)}</p>;
 
   const members = team.data ?? [];
+  const departments = [...new Set(members.map((m) => m.department ?? NO_DEPT))].sort((a, b) =>
+    a === NO_DEPT ? 1 : b === NO_DEPT ? -1 : a.localeCompare(b),
+  );
+  const needle = search.trim().toLowerCase();
+  const shown = members.filter(
+    (m) =>
+      (!dept || (m.department ?? NO_DEPT) === dept) &&
+      (!needle ||
+        [m.name, m.employeeCode, m.designation ?? ''].some((s) =>
+          s.toLowerCase().includes(needle),
+        )),
+  );
   const monthFor = (id: string): AttendanceDay[] =>
     (attendance.data ?? []).find((m: EmployeeAttendance) => m.employee.id === id)?.days ?? [];
   const dayFor = (id: string): AttendanceDay | undefined =>
@@ -235,12 +236,54 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
         <TalkNext ranked={ranked} onOpen={setPerson} />
       )}
 
+      {members.length > 0 && (
+        <div className='flex flex-wrap items-center gap-2'>
+          <input
+            type='search'
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder='Search name, code, role…'
+            className={`${selectClass} min-w-56`}
+          />
+          {departments.length > 1 && (
+            <select className={selectClass} value={dept} onChange={(e) => setDept(e.target.value)}>
+              <option value=''>Every department</option>
+              {departments.map((d) => (
+                <option key={d} value={d}>
+                  {d === NO_DEPT ? 'No department' : d}
+                </option>
+              ))}
+            </select>
+          )}
+          <span className='text-sm text-slate-500'>
+            {shown.length} {shown.length === 1 ? 'person' : 'people'}
+          </span>
+          {(search || dept) && (
+            <button
+              type='button'
+              onClick={() => {
+                setSearch('');
+                setDept('');
+              }}
+              className='text-sm text-brand-600 hover:underline'
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white'>
-        <table className='w-full min-w-[52rem] text-left text-sm'>
+        <table className='w-full min-w-[64rem] text-left text-sm'>
           <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
             <tr>
               <th className='px-4 py-3'>Person</th>
               <th className='px-4 py-3'>Role</th>
+              <th className='px-4 py-3'>Band</th>
+              <th className='px-4 py-3' title='Time since the joining date'>
+                Tenure
+              </th>
+              <th className='px-4 py-3'>Status</th>
               <th className='px-4 py-3'>Base</th>
               <th className='px-4 py-3'>Contact</th>
               <th className='px-4 py-3'>Today</th>
@@ -260,8 +303,9 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
             </tr>
           </thead>
           <tbody>
-            {members.map((m) => {
+            {shown.map((m) => {
               const chip = todayChip(dayFor(m.id), m.status);
+              const status = STATUS_LOOK[m.status];
               return (
                 <tr
                   key={m.id}
@@ -283,6 +327,15 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
                   <td className='px-4 py-3 text-slate-600'>
                     {m.designation ?? '—'}
                     {m.department && <div className='text-xs text-slate-400'>{m.department}</div>}
+                  </td>
+                  <td className='px-4 py-3 text-slate-600'>{m.level}</td>
+                  <td className='px-4 py-3 whitespace-nowrap text-slate-600'>
+                    {tenureOf(m.dateOfJoining)}
+                  </td>
+                  <td className='px-4 py-3'>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.cls}`}>
+                      {status.label}
+                    </span>
                   </td>
                   <td className='px-4 py-3 text-slate-600'>{m.baseZone ?? '—'}</td>
                   <td className='px-4 py-3 text-xs text-slate-500'>
@@ -329,10 +382,12 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
                 </tr>
               );
             })}
-            {members.length === 0 && (
+            {shown.length === 0 && (
               <tr>
-                <td colSpan={8} className='px-4 py-8 text-center text-slate-400'>
-                  Nobody routes to you yet.
+                <td colSpan={11} className='px-4 py-8 text-center text-slate-400'>
+                  {members.length === 0
+                    ? 'Nobody routes to you yet.'
+                    : 'Nobody matches these filters.'}
                 </td>
               </tr>
             )}

@@ -6,6 +6,9 @@ import { useAuthStore } from '@store/auth.store';
 
 const baseURL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:4000'}/api/v1`;
 
+/** The API root, for the rare full-page navigation to the backend (Google sign-in). */
+export const apiBaseURL = baseURL;
+
 /**
  * The single Axios instance every service uses. Base URL comes from the env
  * (local backend now; the deployed API later — only .env changes).

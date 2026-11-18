@@ -13,6 +13,8 @@ interface MonthTotals {
   people: number;
   pfEmployee: number;
   pfEmployer: number;
+  esicEmployee: number;
+  esicEmployer: number;
   pt: number;
   tds: number;
 }
@@ -20,12 +22,15 @@ interface MonthTotals {
 const COLUMNS: Array<[keyof Omit<MonthTotals, 'run' | 'people'>, string]> = [
   ['pfEmployee', 'PF (employee)'],
   ['pfEmployer', 'PF (employer)'],
+  ['esicEmployee', 'ESIC (employee)'],
+  ['esicEmployer', 'ESIC (employer)'],
   ['pt', 'Professional tax'],
   ['tds', 'TDS'],
 ];
 
 const pfTotal = (m: Pick<MonthTotals, 'pfEmployee' | 'pfEmployer'>) => m.pfEmployee + m.pfEmployer;
-const total = (m: Omit<MonthTotals, 'run' | 'people'>) => pfTotal(m) + m.pt + m.tds;
+const total = (m: Omit<MonthTotals, 'run' | 'people'>) =>
+  pfTotal(m) + m.esicEmployee + m.esicEmployer + m.pt + m.tds;
 
 const STATUS: Record<PayrollRun['status'], string> = {
   draft: 'Draft — may change',
@@ -35,7 +40,7 @@ const STATUS: Record<PayrollRun['status'], string> = {
 
 /**
  * Payroll → Statutory (learner, 2026-11-16): what each month's payslips hold
- * back for PF (both sides), professional tax and TDS — the numbers the
+ * back for PF and ESIC (both sides), professional tax and TDS — the numbers the
  * challans are filed for. Sums of the payslips themselves; a draft month is
  * shown but kept out of the totals. Filing status is not tracked here.
  */
@@ -64,6 +69,8 @@ const StatutoryPanel = () => {
       people: slips.length,
       pfEmployee: slips.reduce((n, s) => n + s.pf, 0),
       pfEmployer: slips.reduce((n, s) => n + s.pfEmployer, 0),
+      esicEmployee: slips.reduce((n, s) => n + s.esicEmployee, 0),
+      esicEmployer: slips.reduce((n, s) => n + s.esicEmployer, 0),
       pt: slips.reduce((n, s) => n + s.professionalTax, 0),
       tds: slips.reduce((n, s) => n + s.tds, 0),
     };
@@ -72,6 +79,8 @@ const StatutoryPanel = () => {
   const sum = {
     pfEmployee: closed.reduce((n, m) => n + m.pfEmployee, 0),
     pfEmployer: closed.reduce((n, m) => n + m.pfEmployer, 0),
+    esicEmployee: closed.reduce((n, m) => n + m.esicEmployee, 0),
+    esicEmployer: closed.reduce((n, m) => n + m.esicEmployer, 0),
     pt: closed.reduce((n, m) => n + m.pt, 0),
     tds: closed.reduce((n, m) => n + m.tds, 0),
   };
@@ -85,6 +94,8 @@ const StatutoryPanel = () => {
         'PF employee',
         'PF employer',
         'PF total',
+        'ESIC employee',
+        'ESIC employer',
         'PT',
         'TDS',
         'Total',
@@ -96,6 +107,8 @@ const StatutoryPanel = () => {
         m.pfEmployee,
         m.pfEmployer,
         pfTotal(m),
+        m.esicEmployee,
+        m.esicEmployer,
         m.pt,
         m.tds,
         total(m),
@@ -114,8 +127,8 @@ const StatutoryPanel = () => {
     <div className='space-y-3'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <p className='text-sm text-slate-500'>
-          What each month&rsquo;s payslips hold back — the amounts the PF, PT and TDS challans are
-          filed for. Draft months are shown but left out of the totals.
+          What each month&rsquo;s payslips hold back — the amounts the PF, ESIC, PT and TDS challans
+          are filed for. Draft months are shown but left out of the totals.
         </p>
         <button
           type='button'
@@ -126,7 +139,7 @@ const StatutoryPanel = () => {
         </button>
       </div>
       <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white'>
-        <table className='w-full min-w-[52rem] text-left text-sm'>
+        <table className='w-full min-w-[64rem] text-left text-sm'>
           <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
             <tr>
               <th className='px-4 py-3'>Month</th>
@@ -180,8 +193,7 @@ const StatutoryPanel = () => {
         </table>
       </div>
       <p className='text-xs text-slate-500'>
-        The last 12 runs. ESIC is not part of this payroll, so it has no column. Filing status
-        (challan paid or not) is not tracked here.
+        The last 12 runs. Filing status (challan paid or not) is not tracked here.
       </p>
     </div>
   );

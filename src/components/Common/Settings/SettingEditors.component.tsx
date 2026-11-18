@@ -55,7 +55,8 @@ export const NumberFieldsEditor = ({
   onSave,
   children,
   nullable = false,
-}: EditorProps<Record<string, number | null>> & { nullable?: boolean }) => {
+  decimals = false,
+}: EditorProps<Record<string, number | null>> & { nullable?: boolean; decimals?: boolean }) => {
   const [draft, setDraft] = useState(() =>
     Object.fromEntries(Object.entries(value).map(([k, v]) => [k, v === null ? '' : String(v)])),
   );
@@ -81,6 +82,7 @@ export const NumberFieldsEditor = ({
             required={!nullable}
             type='number'
             min={0}
+            step={decimals ? 'any' : undefined}
             value={draft[field]}
             placeholder={nullable ? 'not set' : undefined}
             onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}

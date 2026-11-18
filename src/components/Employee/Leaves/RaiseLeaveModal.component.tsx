@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { CreateLeaveRequestInput, LeaveDayPart, LeaveType } from '@app-types/api.types';
 import { LEAVE_TYPE_LABELS } from '@constants/Common/leaves/leave.constants';
@@ -31,18 +31,46 @@ const weekdaysBetween = (from: string, to: string): number => {
  * which half. The backend recomputes days and enforces overlap/balance rules —
  * this form only collects the request. `types` comes from the balances
  * response, so a type the caller isn't entitled to (menstrual) never shows.
+ * `initialStart` / `initialEnd` prefill the dates (e.g. "Apply leave for this
+ * day" from an absent day on the attendance calendar).
  */
-const RaiseLeaveModal = ({ types, onClose }: { types: LeaveType[]; onClose: () => void }) => {
+const RaiseLeaveModal = ({
+  types,
+  onClose,
+  initialStart = '',
+  initialEnd = '',
+}: {
+  types: LeaveType[];
+  onClose: () => void;
+  initialStart?: string;
+  initialEnd?: string;
+}) => {
   const queryClient = useQueryClient();
 
   const [type, setType] = useState<LeaveType>(types[0] ?? 'sick');
   const [half, setHalf] = useState(false);
   const [dayPart, setDayPart] = useState<Exclude<LeaveDayPart, 'full'>>('first_half');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(initialStart);
+  const [endDate, setEndDate] = useState(initialEnd || initialStart);
   const [reason, setReason] = useState('');
   const [certificate, setCertificate] = useState<File | null>(null);
   const { leaveWindowDays } = usePublicSettings();
+  // Who this type of request will go to — the backend's own routing rule.
+  const route = useQuery({
+    queryKey: ['leave-approval-route', type],
+    queryFn: () => leavesApi.approvalRoute(type),
+    staleTime: 5 * 60_000,
+  });
+  const r = route.data;
+  const goesTo = !r
+    ? null
+    : r.selfApproved
+      ? 'Approved automatically — you are at the top of the org chart.'
+      : r.rm && r.hr
+        ? `Goes to ${r.rm.name} (your manager), then HR.`
+        : r.rm
+          ? `Goes to ${r.rm.name} (your manager).`
+          : 'Goes to HR.';
   // Sick leave of more than 3 days: the medical certificate goes with the
   // request (learner, 2026-11-05); it can't be approved without one.
   const sickLong =
@@ -186,6 +214,7 @@ const RaiseLeaveModal = ({ types, onClose }: { types: LeaveType[]; onClose: () =
           )}
         </div>
 
+        {goesTo && <p className='text-xs font-medium text-slate-600'>{goesTo}</p>}
         <p className='text-xs text-slate-400'>
           Weekends and company holidays inside the range don’t count — Fri→Mon costs 2 days.
         </p>

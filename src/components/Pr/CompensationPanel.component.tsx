@@ -22,6 +22,7 @@ interface Draft {
   salaryMode: string;
   panNumber: string;
   uanNumber: string;
+  esicIpNumber: string;
   providentFundAccount: string;
   payrollCostCenter: string;
   bankName: string;
@@ -40,6 +41,7 @@ const EMPTY: Draft = {
   salaryMode: 'Bank',
   panNumber: '',
   uanNumber: '',
+  esicIpNumber: '',
   providentFundAccount: '',
   payrollCostCenter: '',
   bankName: '',
@@ -93,6 +95,7 @@ const CompensationPanel = () => {
       salaryMode: record.salaryMode ?? 'Bank',
       panNumber: record.panNumber ?? '',
       uanNumber: record.uanNumber ?? '',
+      esicIpNumber: record.esicIpNumber ?? '',
       providentFundAccount: record.providentFundAccount ?? '',
       payrollCostCenter: record.payrollCostCenter ?? '',
       bankName: record.bankName ?? '',
@@ -121,6 +124,7 @@ const CompensationPanel = () => {
         salaryMode: v(form.salaryMode),
         panNumber: v(form.panNumber),
         uanNumber: v(form.uanNumber.replace(/\s/g, '')),
+        esicIpNumber: v(form.esicIpNumber.replace(/\s/g, '')),
         providentFundAccount: v(form.providentFundAccount),
         payrollCostCenter: v(form.payrollCostCenter),
         ...(bankHidden
@@ -310,6 +314,17 @@ const CompensationPanel = () => {
                   inputMode='numeric'
                   maxLength={14}
                   placeholder='12 digits'
+                />
+              </div>
+              <div className='space-y-1'>
+                <label className={labelClass}>ESIC IP number</label>
+                <input
+                  value={form.esicIpNumber}
+                  onChange={(e) => set('esicIpNumber', e.target.value)}
+                  className={inputClass}
+                  inputMode='numeric'
+                  maxLength={12}
+                  placeholder='10 digits, if covered'
                 />
               </div>
               <div className='space-y-1'>

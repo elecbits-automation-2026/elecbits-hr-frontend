@@ -14,19 +14,9 @@ import { STREAM_LABEL, trainingsApi } from '@services/api/trainings.api';
 import { leavesApi } from '@services/api/leaves.api';
 import { performanceApi } from '@services/api/performance.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { tenureOf } from '@utils/tenure';
 
 const todayStr = () => new Date().toLocaleDateString('en-CA');
-const DAY_MS = 86_400_000;
-
-const tenureOf = (doj: string | null): string => {
-  if (!doj) return '—';
-  const months = Math.max(0, Math.floor((Date.now() - Date.parse(doj)) / DAY_MS / 30.44));
-  if (months < 1) return 'under a month';
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  return y ? `${y}y ${m}m` : `${m}m`;
-};
-
 const niceDate = (d: string) =>
   new Date(`${d}T00:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
 const shortDate = (d: string) =>
