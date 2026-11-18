@@ -78,7 +78,15 @@ const title = (d: AttendanceDay, isToday: boolean): string => {
 };
 
 /** What one clicked day reads as — future days simply have no data yet. */
-const DayDetail = ({ day, isToday }: { day: AttendanceDay; isToday: boolean }) => {
+const DayDetail = ({
+  day,
+  isToday,
+  onApplyLeave,
+}: {
+  day: AttendanceDay;
+  isToday: boolean;
+  onApplyLeave?: (date: string) => void;
+}) => {
   const rows: Array<[string, string, string?]> = [];
 
   if (day.status === 'none' && !isToday) {
@@ -142,13 +150,24 @@ const DayDetail = ({ day, isToday }: { day: AttendanceDay; isToday: boolean }) =
           : 'text-slate-700';
 
   return (
-    <div className='grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4'>
-      {rows.map(([label, value, timing]) => (
-        <div key={label}>
-          <span className='text-xs text-slate-400'>{label}</span>
-          <div className={valueClass(timing)}>{value}</div>
-        </div>
-      ))}
+    <div className='space-y-2'>
+      <div className='grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4'>
+        {rows.map(([label, value, timing]) => (
+          <div key={label}>
+            <span className='text-xs text-slate-400'>{label}</span>
+            <div className={valueClass(timing)}>{value}</div>
+          </div>
+        ))}
+      </div>
+      {onApplyLeave && day.status === 'absent' && (
+        <button
+          type='button'
+          onClick={() => onApplyLeave(day.date)}
+          className='rounded-md border border-brand-600 px-3 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50'
+        >
+          Apply leave for this day
+        </button>
+      )}
     </div>
   );
 };
@@ -157,9 +176,16 @@ const DayDetail = ({ day, isToday }: { day: AttendanceDay; isToday: boolean }) =
  * Month grid, Monday-first, colored by classified status; today is ringed.
  * Corner dots are punctuality: top-left = check-in (late), top-right =
  * check-out (left early) — green / amber (≤ grace) / red. Clicking a date
- * opens its detail below — future dates read "no data".
+ * opens its detail below — future dates read "no data". With `onApplyLeave`,
+ * an absent day offers "Apply leave for this day" (own calendar only).
  */
-const MonthCalendar = ({ days }: { days: AttendanceDay[] }) => {
+const MonthCalendar = ({
+  days,
+  onApplyLeave,
+}: {
+  days: AttendanceDay[];
+  onApplyLeave?: (date: string) => void;
+}) => {
   const [selected, setSelected] = useState<string | null>(null);
   if (days.length === 0) return null;
   // getDay(): 0=Sun…6=Sat → Monday-first offset for the 1st of the month.
@@ -230,7 +256,11 @@ const MonthCalendar = ({ days }: { days: AttendanceDay[] }) => {
               ✕
             </button>
           </div>
-          <DayDetail day={selectedDay} isToday={selectedDay.date === today} />
+          <DayDetail
+            day={selectedDay}
+            isToday={selectedDay.date === today}
+            onApplyLeave={onApplyLeave}
+          />
         </div>
       )}
 

@@ -98,6 +98,7 @@ export interface EmployeeSalary {
   salaryMode: string | null;
   panNumber: string | null;
   uanNumber: string | null;
+  esicIpNumber: string | null;
   providentFundAccount: string | null;
   employeeAdvanceAccount: string | null;
   bankName: string | null;
@@ -129,6 +130,7 @@ export interface UpdateEmployeeSalaryInput {
   salaryMode?: string | null;
   panNumber?: string | null;
   uanNumber?: string | null;
+  esicIpNumber?: string | null;
   providentFundAccount?: string | null;
   employeeAdvanceAccount?: string | null;
   bankName?: string | null;
@@ -182,9 +184,11 @@ export interface Payslip {
   autoSlDays: number;
   autoClDays: number;
   lopOverridden: boolean;
-  /** PF (both sides) and PT are computed by the engine — read-only. */
+  /** PF and ESIC (both sides) and PT are computed by the engine — read-only. */
   pf: number;
   pfEmployer: number;
+  esicEmployee: number;
+  esicEmployer: number;
   tds: number;
   professionalTax: number;
   otherDeduction: number;
@@ -471,6 +475,13 @@ export interface LeaveBalance {
   opening: number;
   used: number;
   remaining: number | null;
+}
+
+/** Who a request of a type would go to — the leave form's preview line. */
+export interface LeaveApprovalRoute {
+  selfApproved: boolean;
+  rm: { id: string; name: string } | null;
+  hr: boolean;
 }
 
 export interface CreateLeaveRequestInput {
@@ -1159,6 +1170,9 @@ export interface SalaryAnnexure {
   grossSalary: number;
   pfEmployee: number;
   pfEmployer: number;
+  /** Zero above the ESIC ceiling or with ESIC off. */
+  esicEmployee: number;
+  esicEmployer: number;
   professionalTax: number;
   healthInsurance: number;
   cnpsEmployer: number;
@@ -1288,6 +1302,8 @@ export interface MyWorkUpdates {
 export interface TeamUpdatesRow {
   employee: { id: string; name: string; employeeCode: string };
   updates: WorkUpdate[];
+  /** One status per day over the window (the manager's people × days grid). */
+  strip: Array<{ date: string; status: StripStatus }>;
   missesThisMonth: number;
   overAllowance: boolean;
 }
@@ -1477,6 +1493,28 @@ export interface BackgroundJobsOverview {
   schedulerEnabled: boolean;
   jobs: Array<{ name: string; description: string; schedule: string }>;
   runs: BackgroundJobRun[];
+}
+
+/** Email delivery (Admin): the switch, the sender, the queue. */
+export interface EmailStatus {
+  enabled: boolean;
+  driver: 'log' | 'gmail';
+  from: string;
+  replyTo: string | null;
+  redirectTo: string | null;
+  pending: number;
+  failed: number;
+  sentLastDay: number;
+  sentLast30Days: number;
+  recentFailures: Array<{
+    id: string;
+    toAddress: string;
+    type: string;
+    subject: string;
+    attempts: number;
+    lastError: string | null;
+    createdAt: string;
+  }>;
 }
 
 // ---- Concerns (disputes, complaints; whistleblower = old cases only) ----
@@ -2209,6 +2247,8 @@ export interface Requisition {
   waitingOn: ApproverRole[];
   returnReason: string | null;
   createdByName: string;
+  /** For an urgent line: who asked for it (raised on their behalf). */
+  urgentRequestedByName: string | null;
   submittedAt: string | null;
   approvedAt: string | null;
   /** The TA RM Admin gave the line to — they assign its positions to their team. */
@@ -2290,6 +2330,8 @@ export interface Position {
   /** The recruiter's hiring goal this quarter (progress follows the position). */
   goal: { id: string; weight: number; progress: number } | null;
   openedAt: string | null;
+  /** On hold (TA RM / HRBP): nothing moves the seat forward until resumed. */
+  onHold: { at: string; reason: string | null; byName: string | null } | null;
   /** Its own JD + scorecard, written by its recruiter. */
   documents: { jd: TaDocument | null; scorecard: TaDocument | null };
 }
@@ -2434,6 +2476,8 @@ export interface Application {
   currentRound: InterviewRound | null;
   /** The rejection record: the round, who rejected, when the candidate was told. */
   rejectedRound: InterviewRound | null;
+  /** Rejected / withdrawn: the stage it ended from (where Restore returns it). */
+  preEndStage: ApplicationStage | null;
   rejectedByName: string | null;
   informedAt: string | null;
   shortlistedByName: string | null;
@@ -2706,6 +2750,8 @@ export interface DailyKpiRow {
   /** The 7 days up to and including the date. */
   strip: Array<{ date: string; status: StripStatus }>;
   recentUpdates: { done: number; workingDays: number };
+  /** Average worked hours over the 7 days up to the date (days with hours only). */
+  recentHours: { avg: number | null; days: number };
   goals: { count: number; atRisk: number; attainment: number | null };
   targets: { kpi: string | null; updatesOnTimePct: number; attainmentPct: number };
   alerts: Array<{ code: DailyKpiAlertCode; title: string }>;

@@ -1,7 +1,7 @@
 import type { Session } from '@app-types/api.types';
 import { queryClient } from '@providers/queryClient';
 import { useAuthStore } from '@store/auth.store';
-import { api } from '@utils/axiosInstance';
+import { api, apiBaseURL } from '@utils/axiosInstance';
 
 /**
  * Auth flows (design doc §5): sign in, claim the record HRBP created, and the
@@ -21,6 +21,21 @@ export const authService = {
   claimRecord: async (email: string, password: string, token: string): Promise<Session> => {
     // `token` is the single-use invite token from the claim link HR shared.
     const { data } = await api.post<Session>('/auth/claim', { email, password, token });
+    queryClient.clear();
+    useAuthStore.getState().setSession(data);
+    return data;
+  },
+
+  /**
+   * Google sign-in is a full-page trip: the browser goes to the backend, on to
+   * Google, and back to the sign-in page with ?google=done once the server has
+   * set the refresh cookie. No token ever rides in a URL.
+   */
+  googleStartUrl: (): string => `${apiBaseURL}/auth/google/start`,
+
+  /** Finish Google sign-in: trade the cookie the callback set for a session. */
+  completeGoogle: async (): Promise<Session> => {
+    const { data } = await api.post<Session>('/auth/refresh');
     queryClient.clear();
     useAuthStore.getState().setSession(data);
     return data;

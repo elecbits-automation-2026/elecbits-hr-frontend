@@ -401,7 +401,7 @@ const PayrollPage = () => {
 
           {isDraft && (
             <p className='mb-3 text-xs text-slate-400'>
-              The engine follows the ERP sheet: PF (both sides) and PT compute themselves from
+              The engine follows the ERP sheet: PF and ESIC (both sides) and PT compute themselves from
               the prorated salary — the editable columns are what a human types on the sheet
               (LOP, TDS, loan/other, insurance, CNPS and the earnings-side adjustments). Change
               a value and press Enter to recompute. “Re-pull from attendance” rebuilds all
@@ -428,6 +428,12 @@ const PayrollPage = () => {
                   </th>
                   <th className='py-2 pr-3 text-right font-medium' title='Computed: employer side, also inside CTC'>
                     PF (ER)
+                  </th>
+                  <th className='py-2 pr-3 text-right font-medium' title='Computed: 0.75% of ESIC wages, for people covered this contribution period (Settings → ESIC)'>
+                    ESIC (EE)
+                  </th>
+                  <th className='py-2 pr-3 text-right font-medium' title='Computed: 3.25% of ESIC wages — employer side, inside CTC like employer PF'>
+                    ESIC (ER)
                   </th>
                   <th className='py-2 pr-3 text-right font-medium' title='Computed from the state slabs in Settings → Professional tax by state (February can differ)'>
                     PT
@@ -528,6 +534,8 @@ const PayrollPage = () => {
                     <td className='py-2 pr-3 text-right text-red-600'>{money(s.lopAmount)}</td>
                     <td className='py-2 pr-3 text-right text-slate-500'>{money(s.pf)}</td>
                     <td className='py-2 pr-3 text-right text-slate-500'>{money(s.pfEmployer)}</td>
+                    <td className='py-2 pr-3 text-right text-slate-500'>{money(s.esicEmployee)}</td>
+                    <td className='py-2 pr-3 text-right text-slate-500'>{money(s.esicEmployer)}</td>
                     <td className='py-2 pr-3 text-right text-slate-500'>
                       {money(s.professionalTax)}
                     </td>

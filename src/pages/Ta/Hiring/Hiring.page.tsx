@@ -135,8 +135,10 @@ const HiringPage = () => {
   const mode = scope ?? (hasMine ? 'mine' : 'all');
   const visible = mode === 'mine' ? all.filter(isMine) : all;
   const order = ['awaiting_docs', 'open', 'interviewing', 'offer', 'filled'];
+  // Held seats sort after the live ones.
   const roles = [...visible].sort(
     (a, b) =>
+      Number(!!a.position.onHold) - Number(!!b.position.onHold) ||
       order.indexOf(a.position.status) - order.indexOf(b.position.status) ||
       a.line.roleTitle.localeCompare(b.line.roleTitle) ||
       a.position.number - b.position.number,
@@ -169,9 +171,13 @@ const HiringPage = () => {
   const drawerApp: Application | undefined = board.data?.applications.find(
     (a) => a.id === appOpen,
   );
+  // Hold / resume: the line's TA RM or an HRBP (the backend checks the same).
+  const canHold = (i: BoardPosition) =>
+    !!meId && (i.line.taRm?.id === meId || !!me.data?.batches.includes('HRBP'));
   const canAdd =
     !!focused &&
     isMine(focused) &&
+    !focused.position.onHold &&
     (focused.position.status === 'open' || focused.position.status === 'interviewing');
 
   const tabs: Array<{ key: Tab; label: string }> = [
@@ -260,6 +266,7 @@ const HiringPage = () => {
                       item={i}
                       onPipeline={() => showPosition(i.position.id)}
                       onDetails={() => setLineOpen(i.line.id)}
+                      canHold={canHold(i)}
                     />
                   ))}
                 </div>

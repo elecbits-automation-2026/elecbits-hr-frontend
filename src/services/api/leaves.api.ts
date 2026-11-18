@@ -1,6 +1,7 @@
 import type {
   CreateLeaveRequestInput,
   DecideLeaveInput,
+  LeaveApprovalRoute,
   LeaveBalance,
   LeaveRequest,
   LeaveStatus,
@@ -33,6 +34,9 @@ export const leavesApi = {
     (await api.get<LeaveRequest[]>('/leaves/mine')).data,
   balances: async (year?: number): Promise<LeaveBalance[]> =>
     (await api.get<LeaveBalance[]>('/leaves/balances', { params: { year } })).data,
+  /** Who a request of this type would go to (the same rule the backend raises with). */
+  approvalRoute: async (type: LeaveRequest['type']): Promise<LeaveApprovalRoute> =>
+    (await api.get<LeaveApprovalRoute>('/leaves/approval-route', { params: { type } })).data,
   create: async (input: CreateLeaveRequestInput): Promise<LeaveRequest> =>
     (await api.post<LeaveRequest>('/leaves', input)).data,
   cancel: async (id: string): Promise<LeaveRequest> =>

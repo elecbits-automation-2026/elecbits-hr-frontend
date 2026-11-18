@@ -15,11 +15,23 @@ const btn =
 // Stages TA can still reject or record a withdrawal from (offers end in the hire panel).
 const LIVE = ['sourced', 'shortlisted', 'interviewing', 'interviewed', 'decision', 'selected'];
 const HIRE_STAGES = ['interviewed', 'decision', 'selected', 'offered', 'hired', 'joined'];
+// One step back is a correction (hired / joined never go back — No-show undoes a hire).
+const BACK = ['interviewing', 'interviewed', 'decision', 'selected', 'offered'];
+const ENDED = ['rejected', 'withdrawn'];
+
+type Ending = 'reject' | 'withdraw' | 'back' | 'restore';
+const ENDING_TEXT: Record<Ending, { prompt: string; button: string; cls: string }> = {
+  reject: { prompt: 'Why is this candidate rejected?', button: 'Reject', cls: 'bg-red-600 hover:bg-red-700' },
+  withdraw: { prompt: 'Why did they withdraw?', button: 'Record withdrawal', cls: 'bg-red-600 hover:bg-red-700' },
+  back: { prompt: 'Why move them back a stage?', button: 'Move back', cls: 'bg-slate-700 hover:bg-slate-800' },
+  restore: { prompt: 'Why bring them back?', button: 'Restore', cls: 'bg-brand-600 hover:bg-brand-700' },
+};
 
 /**
  * One candidate on one position: stage, each round's interviewer and score,
  * and TA's next move — start the screening (round 1, the gate), reject or
- * record a withdrawal (both need a reason). Scores are read-only here.
+ * record a withdrawal, move one stage back, or restore an ended candidate
+ * (each needs a reason). Scores are read-only here.
  */
 const ApplicationRow = ({
   app,
@@ -38,7 +50,7 @@ const ApplicationRow = ({
   const me = useQuery({ queryKey: ['me'], queryFn: meApi.get, staleTime: 60_000 });
   const isTaRm = !!me.data && app.taRmId === me.data.id;
   const canSchedule = isTaRm || (!!me.data && app.recruiterId === me.data.id);
-  const [ending, setEnding] = useState<'reject' | 'withdraw' | null>(null);
+  const [ending, setEnding] = useState<Ending | null>(null);
   const [reason, setReason] = useState('');
   const [open, setOpen] = useState(defaultOpen);
   const refresh = () => {
@@ -47,14 +59,18 @@ const ApplicationRow = ({
     queryClient.invalidateQueries({ queryKey: ['hiring-requisitions'] });
   };
   const act = useMutation({
-    mutationFn: (kind: 'informed' | 'start' | 'reject' | 'withdraw') =>
+    mutationFn: (kind: 'informed' | 'start' | Ending) =>
       kind === 'informed'
         ? candidatesApi.informed(app.id)
         : kind === 'start'
           ? candidatesApi.startInterviews(app.id)
           : kind === 'reject'
             ? candidatesApi.reject(app.id, reason.trim())
-            : candidatesApi.withdraw(app.id, reason.trim()),
+            : kind === 'withdraw'
+              ? candidatesApi.withdraw(app.id, reason.trim())
+              : kind === 'back'
+                ? candidatesApi.moveBack(app.id, reason.trim())
+                : candidatesApi.restore(app.id, reason.trim()),
     onSuccess: () => {
       setEnding(null);
       setReason('');
@@ -62,6 +78,8 @@ const ApplicationRow = ({
     },
   });
   const scored = app.rounds.filter((r) => r.score).length;
+  const canBack = canSchedule && BACK.includes(app.stage);
+  const canRestore = canSchedule && ENDED.includes(app.stage);
 
   return (
     <div className='space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm'>
@@ -136,15 +154,13 @@ const ApplicationRow = ({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={2}
-          placeholder={
-            ending === 'reject' ? 'Why is this candidate rejected?' : 'Why did they withdraw?'
-          }
+          placeholder={ENDING_TEXT[ending].prompt}
           className='w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
         />
       )}
       {HIRE_STAGES.includes(app.stage) && <HirePanel app={app} canWork={canSchedule} />}
       {act.error && <p className='text-xs text-red-600'>{apiErrorMessage(act.error)}</p>}
-      {LIVE.includes(app.stage) && (
+      {(LIVE.includes(app.stage) || canBack || canRestore) && (
         <div className='flex flex-wrap justify-end gap-2'>
           {ending ? (
             <>
@@ -155,19 +171,47 @@ const ApplicationRow = ({
                 type='button'
                 disabled={!reason.trim() || act.isPending}
                 onClick={() => act.mutate(ending)}
-                className='rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50'
+                className={`rounded-md px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50 ${ENDING_TEXT[ending].cls}`}
               >
-                {ending === 'reject' ? 'Reject' : 'Record withdrawal'}
+                {ENDING_TEXT[ending].button}
               </button>
             </>
           ) : (
             <>
-              <button type='button' onClick={() => setEnding('withdraw')} className={btn}>
-                Withdrew
-              </button>
-              <button type='button' onClick={() => setEnding('reject')} className={btn}>
-                Reject
-              </button>
+              {canBack && (
+                <button
+                  type='button'
+                  onClick={() => setEnding('back')}
+                  title='One stage back — a correction'
+                  className={btn}
+                >
+                  ↩ Move back
+                </button>
+              )}
+              {canRestore && (
+                <button
+                  type='button'
+                  onClick={() => setEnding('restore')}
+                  title={
+                    app.preEndStage
+                      ? `Back to where they ended: ${STAGE_LABEL[app.preEndStage]}`
+                      : 'Back to the start of the pipeline'
+                  }
+                  className={btn}
+                >
+                  ↺ Restore
+                </button>
+              )}
+              {LIVE.includes(app.stage) && (
+                <>
+                  <button type='button' onClick={() => setEnding('withdraw')} className={btn}>
+                    Withdrew
+                  </button>
+                  <button type='button' onClick={() => setEnding('reject')} className={btn}>
+                    Reject
+                  </button>
+                </>
+              )}
               {(app.stage === 'sourced' || app.stage === 'shortlisted') && canSchedule && (
                 <button
                   type='button'

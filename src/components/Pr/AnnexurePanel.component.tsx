@@ -21,8 +21,18 @@ export const BreakdownTable = ({ data }: { data: SalaryAnnexure }) => {
     { label: 'LTA (10%)', monthly: data.lta },
     { label: 'Special allowance', monthly: data.specialAllowance, note: 'balancing figure' },
     { label: 'PF — employer', monthly: data.pfEmployer, note: 'blended 16/14-day rule, same as the payslip' },
-    { label: 'Gross salary', monthly: data.grossSalary, note: 'CTC − employer PF' },
+    ...(data.esicEmployer > 0
+      ? [{ label: 'ESIC — employer', monthly: data.esicEmployer, note: '3.25% of ESIC wages, inside CTC' }]
+      : []),
+    {
+      label: 'Gross salary',
+      monthly: data.grossSalary,
+      note: data.esicEmployer > 0 ? 'CTC − employer PF − employer ESIC' : 'CTC − employer PF',
+    },
     { label: 'PF — employee', monthly: data.pfEmployee, deduction: true },
+    ...(data.esicEmployee > 0
+      ? [{ label: 'ESIC — employee', monthly: data.esicEmployee, deduction: true }]
+      : []),
     { label: 'Professional tax', monthly: data.professionalTax, deduction: true },
     { label: 'Health insurance', monthly: data.healthInsurance, deduction: true },
     { label: 'CNPS (employer)', monthly: data.cnpsEmployer, deduction: true },

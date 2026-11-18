@@ -115,6 +115,23 @@ const Tile = ({
 const has = (r: DailyKpiRow, code: DailyKpiRow['alerts'][number]['code']) =>
   r.alerts.some((a) => a.code === code);
 
+/** Days from the chosen date to the cycle's end (0 on the last day); null once it ended. */
+const daysLeftIn = (data: DailyKpi) => {
+  const left = Math.round(
+    (Date.parse(`${data.cycle.endDate}T00:00:00`) - Date.parse(`${data.date}T00:00:00`)) /
+      86_400_000,
+  );
+  return left < 0 ? null : left;
+};
+
+/** Wrote an update the working day before the chosen date (from the 7-day strip). */
+const wroteYesterday = (r: DailyKpiRow, date: string) => {
+  const prev = [...r.strip].reverse().find((s) => s.date < date);
+  if (!prev || !['done', 'late_approved', 'missed', 'late_pending'].includes(prev.status))
+    return null; // not a working day for them
+  return prev.status === 'done' || prev.status === 'late_approved';
+};
+
 /** Your own day: the alert banner, the 7-day strip and six tiles. */
 const MyDay = ({
   data,
@@ -131,8 +148,26 @@ const MyDay = ({
   const pct = r.recentUpdates.workingDays
     ? Math.round((r.recentUpdates.done / r.recentUpdates.workingDays) * 100)
     : null;
+  const left = daysLeftIn(data);
   return (
     <div className='space-y-4'>
+      <p className='flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600'>
+        <span>
+          {data.cycle.name}:{' '}
+          <span className='font-semibold text-slate-800'>
+            {left === null ? 'ended' : left === 0 ? 'last day' : `${left} days left`}
+          </span>
+        </span>
+        <span>
+          Last 7 days:{' '}
+          <span className='font-semibold text-slate-800'>
+            {r.recentHours.avg === null ? '—' : `${r.recentHours.avg}h a day`}
+          </span>
+          {r.recentHours.days > 0 && (
+            <span className='text-xs text-slate-400'> (over {r.recentHours.days} days)</span>
+          )}
+        </span>
+      </p>
       {!r.employed ? (
         <p className='rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500'>
           This day is before your joining date — nothing to judge.
@@ -245,6 +280,17 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
   const present = data.rows.filter((r) =>
     ['present', 'wfh', 'half_day'].includes(r.attendance.status),
   ).length;
+  // The working day before: counted over people for whom it WAS a working day.
+  const yesterday = data.rows.map((r) => wroteYesterday(r, data.date)).filter((w) => w !== null);
+  const wroteY = yesterday.filter(Boolean).length;
+  const hoursRows = data.rows.filter((r) => r.recentHours.avg !== null);
+  const teamAvg = hoursRows.length
+    ? Math.round(
+        (hoursRows.reduce((n, r) => n + (r.recentHours.avg as number), 0) / hoursRows.length) *
+          10,
+      ) / 10
+    : null;
+  const left = daysLeftIn(data);
 
   if (data.rows.length === 0) {
     return <p className='text-sm text-slate-500'>Nobody to show here.</p>;
@@ -259,7 +305,18 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
           <span className='font-semibold text-slate-800'>{written}</span> wrote an update
         </span>
         <span>
+          <span className='font-semibold text-slate-800'>{wroteY}</span>
+          {yesterday.length > 0 && <> of {yesterday.length}</>} wrote one the day before
+        </span>
+        <span title='Average of each person’s average hours over the last 7 days'>
+          avg <span className='font-semibold text-slate-800'>{teamAvg ?? '—'}</span>
+          {teamAvg !== null && 'h'} over 7 days
+        </span>
+        <span>
           <span className='font-semibold text-red-700'>{flagged}</span> flagged
+        </span>
+        <span className='text-slate-500'>
+          {data.cycle.name}: {left === null ? 'ended' : `${left} days left`}
         </span>
         <span className='ml-auto flex items-center gap-3'>
           <input
@@ -287,6 +344,9 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
               <th className='px-4 py-3'>Attendance</th>
               <th className='px-4 py-3'>Update</th>
               <th className='px-4 py-3'>Hours</th>
+              <th className='px-4 py-3' title='Average over the last 7 days (days with hours only)'>
+                7-day avg
+              </th>
               <th className='px-4 py-3'>Last 7 working days</th>
               <th className='px-4 py-3'>Attainment</th>
               <th className='px-4 py-3'>Flags</th>
@@ -316,6 +376,9 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
                   className={`px-4 py-3 tabular-nums ${has(r, 'short_day') ? 'text-red-700' : 'text-slate-600'}`}
                 >
                   {r.attendance.workedHours !== null ? `${r.attendance.workedHours}h` : '—'}
+                </td>
+                <td className='px-4 py-3 tabular-nums text-slate-600'>
+                  {r.recentHours.avg !== null ? `${r.recentHours.avg}h` : '—'}
                 </td>
                 <td
                   className={`px-4 py-3 tabular-nums ${has(r, 'updates_below_target') ? 'text-red-700' : 'text-slate-600'}`}
@@ -370,7 +433,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className='px-4 py-6 text-center text-slate-400'>
+                <td colSpan={8} className='px-4 py-6 text-center text-slate-400'>
                   Nobody matches.
                 </td>
               </tr>

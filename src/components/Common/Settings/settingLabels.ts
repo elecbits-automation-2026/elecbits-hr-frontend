@@ -23,6 +23,12 @@ export const FIELD_LABELS: Record<string, string> = {
   complaintAck: 'Complaint — acknowledge in',
   complaintResolveCalendarDays: 'Complaint — outcome in (calendar days)',
   contact: 'Contact (name, email or phone)',
+  enabled: 'Send HR emails',
+  onPayslips: 'Deduct ESIC on payslips',
+  employeePct: 'Employee share (%)',
+  employerPct: 'Employer share (%)',
+  wageCeiling: 'Covered up to (₹ gross / month)',
+  lowWageDaily: 'No employee share at or under (₹ / day)',
 };
 
 export const SATURDAY_LABELS: Record<string, string> = {

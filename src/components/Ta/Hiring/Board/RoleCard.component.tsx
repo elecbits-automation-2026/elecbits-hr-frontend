@@ -1,4 +1,9 @@
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { PRIORITY_LABEL } from '@constants/Common/hiring.constants';
+import { candidatesApi } from '@services/api/candidates.api';
+import { apiErrorMessage } from '@utils/apiError';
 
 import {
   LIVE_STAGES,
@@ -20,22 +25,48 @@ const Stat = ({ label, value, warn = false }: { label: string; value: string; wa
 
 /**
  * One position as a card, in the old HR tool's "Open roles" style: status
- * accent on the left, JD / scorecard state, the numbers that matter, and a
- * warning when it's open with nobody in the pipeline.
+ * accent on the left, JD / scorecard state, the numbers that matter, who
+ * raised it and when, and a warning when it's open with nobody in the
+ * pipeline. The line's TA RM or an HRBP can put it on hold (with a reason)
+ * and resume it; a held card is dimmed and nothing moves it forward.
  */
 const RoleCard = ({
   item,
   onPipeline,
   onDetails,
+  canHold,
 }: {
   item: BoardPosition;
   onPipeline: () => void;
   onDetails: () => void;
+  /** The line's TA RM or an HRBP. */
+  canHold: boolean;
 }) => {
+  const queryClient = useQueryClient();
+  const [holding, setHolding] = useState(false);
+  const [reason, setReason] = useState('');
   const { line, position: p, apps } = item;
   const inFlight = apps.filter((a) => LIVE_STAGES.includes(a.stage)).length;
   const interviewing = apps.filter((a) => a.stage === 'interviewing').length;
   const offers = apps.filter((a) => a.stage === 'offered').length;
+  const joined = apps.filter((a) => a.stage === 'joined').length;
+  const accepted = apps.filter((a) => a.stage === 'hired').length;
+  const held = p.onHold;
+  const toggle = useMutation({
+    mutationFn: () =>
+      held ? candidatesApi.resume(p.id) : candidatesApi.hold(p.id, reason.trim()),
+    onSuccess: () => {
+      setHolding(false);
+      setReason('');
+      queryClient.invalidateQueries({ queryKey: ['hiring-requisitions'] });
+    },
+  });
+  const raisedBy = line.urgentRequestedByName ?? line.createdByName;
+  const raisedOn = new Date(line.createdAt).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
   const days = p.status === 'filled' || p.status === 'cancelled' ? null : daysSince(p.openedAt);
   const live = p.status === 'open' || p.status === 'interviewing';
   const pill = POSITION_PILL[p.status];
@@ -44,7 +75,7 @@ const RoleCard = ({
 
   return (
     <article
-      className={`flex flex-col gap-3 rounded-xl border border-l-[3px] border-slate-200 bg-white p-4 ${POSITION_ACCENT[p.status]}`}
+      className={`flex flex-col gap-3 rounded-xl border border-l-[3px] border-slate-200 bg-white p-4 ${held ? 'border-l-slate-400' : POSITION_ACCENT[p.status]}`}
     >
       <div className='flex items-start justify-between gap-2'>
         <div className='min-w-0'>
@@ -58,9 +89,9 @@ const RoleCard = ({
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${pill.cls}`}
+          className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${held ? 'bg-slate-200 text-slate-700' : pill.cls}`}
         >
-          {pill.label}
+          {held ? 'On hold' : pill.label}
         </span>
       </div>
 
@@ -76,10 +107,20 @@ const RoleCard = ({
         </span>
       </div>
 
-      <div className='grid grid-cols-4 gap-2'>
+      {held && (
+        <p className='rounded-md bg-slate-100 px-2.5 py-1.5 text-xs text-slate-700'>
+          ⏸ On hold since{' '}
+          {new Date(held.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          {held.byName && <> by {held.byName}</>}
+          {held.reason && <>: {held.reason}</>} — no new candidates, interviews or offers.
+        </p>
+      )}
+
+      <div className={`grid grid-cols-5 gap-2 ${held ? 'opacity-60' : ''}`}>
         <Stat label='In flight' value={String(inFlight)} />
         <Stat label='Interviews' value={String(interviewing)} />
         <Stat label='Offers' value={String(offers)} />
+        <Stat label='Joined' value={accepted ? `${joined}+${accepted}` : String(joined)} />
         <Stat
           label='Days open'
           value={days === null ? '—' : String(days)}
@@ -97,14 +138,57 @@ const RoleCard = ({
         )}
         {line.taRm && <> · TA RM {line.taRm.name}</>}
       </p>
+      <p className='text-xs text-slate-500'>
+        Raised by <span className='font-medium text-slate-700'>{raisedBy}</span> on {raisedOn}
+        {line.urgentRequestedByName && <span className='ml-1 text-amber-700'>(urgent)</span>}
+      </p>
 
-      {live && inFlight === 0 && (
+      {live && !held && inFlight === 0 && (
         <p className='rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800'>
           ⚠ Open with nobody in the pipeline
         </p>
       )}
 
+      {toggle.error && <p className='text-xs text-red-600'>{apiErrorMessage(toggle.error)}</p>}
+      {holding && (
+        <div className='space-y-1'>
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder='Why is this on hold?'
+            className='w-full rounded-md border border-slate-300 px-2 py-1 text-xs'
+          />
+          <div className='flex justify-end gap-1'>
+            <button
+              type='button'
+              onClick={() => setHolding(false)}
+              className='rounded px-2 py-0.5 text-[11px] text-slate-500 hover:bg-slate-100'
+            >
+              Back
+            </button>
+            <button
+              type='button'
+              disabled={!reason.trim() || toggle.isPending}
+              onClick={() => toggle.mutate()}
+              className='rounded bg-slate-700 px-2 py-0.5 text-[11px] font-medium text-white disabled:opacity-50'
+            >
+              Put on hold
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className='mt-auto flex justify-end gap-2 border-t border-slate-100 pt-3'>
+        {canHold && p.status !== 'filled' && !holding && (
+          <button
+            type='button'
+            disabled={toggle.isPending}
+            onClick={() => (held ? toggle.mutate() : setHolding(true))}
+            className='mr-auto rounded-md px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-100 disabled:opacity-50'
+          >
+            {held ? '▶ Resume' : '⏸ Hold'}
+          </button>
+        )}
         <button
           type='button'
           onClick={onDetails}

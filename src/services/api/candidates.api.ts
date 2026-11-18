@@ -71,6 +71,19 @@ export const candidatesApi = {
     (await api.post<Application>(`/hiring/applications/${id}/reject`, { reason })).data,
   withdraw: async (id: string, reason: string): Promise<Application> =>
     (await api.post<Application>(`/hiring/applications/${id}/withdraw`, { reason })).data,
+  /** One stage back (a correction), with a reason. */
+  moveBack: async (id: string, reason: string): Promise<Application> =>
+    (await api.post<Application>(`/hiring/applications/${id}/move-back`, { reason })).data,
+  /** A rejected / withdrawn candidate back to where they ended. */
+  restore: async (id: string, reason: string): Promise<Application> =>
+    (await api.post<Application>(`/hiring/applications/${id}/restore`, { reason })).data,
+  /** Hold / resume a seat (the line's TA RM or an HRBP). */
+  hold: async (positionId: string, reason: string): Promise<void> => {
+    await api.post(`/hiring/positions/${positionId}/hold`, { reason });
+  },
+  resume: async (positionId: string): Promise<void> => {
+    await api.post(`/hiring/positions/${positionId}/resume`);
+  },
   swapInterviewer: async (
     requisitionId: string,
     round: InterviewRound,

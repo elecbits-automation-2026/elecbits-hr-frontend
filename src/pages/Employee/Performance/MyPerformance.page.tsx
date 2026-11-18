@@ -8,6 +8,7 @@ import type {
   GoalCategory,
   StripStatus,
   TeamGoalsRow,
+  WorkUpdate,
 } from '@app-types/api.types';
 import FeedbackModal, {
   type FeedbackDraft,
@@ -46,6 +47,114 @@ const STRIP_LOOK: Record<StripStatus, { cls: string; label: string }> = {
   weekend: { cls: 'bg-slate-100', label: 'weekend' },
   today: { cls: 'bg-amber-300', label: 'due today' },
   not_joined: { cls: 'bg-transparent', label: 'before you joined' },
+};
+
+/** What a grid day reads as, from the manager's side (the strip is the server's). */
+const GRID_LABEL: Record<StripStatus, string> = {
+  done: 'update written',
+  late_approved: 'filled in late — approved',
+  late_pending: 'filled in late — waiting for you',
+  missed: 'missed',
+  leave: 'on leave',
+  holiday: 'holiday',
+  weekend: 'weekend',
+  today: 'due today',
+  not_joined: 'before they joined',
+};
+
+/** The strip colours without their own-view click affordances. */
+const gridColour = (s: StripStatus) =>
+  STRIP_LOOK[s].cls.replace('hover:bg-red-400 cursor-pointer', '').trim();
+
+/**
+ * The manager's sheet: one row per person, one cell per day (last 7 days),
+ * coloured like the person's own strip. A cell with an entry opens that
+ * day's update; the name opens their last five.
+ */
+const TeamUpdatesGrid = ({
+  rows,
+  onPerson,
+  onDay,
+}: {
+  rows: Array<{
+    employee: { id: string; name: string };
+    updates: WorkUpdate[];
+    strip: Array<{ date: string; status: StripStatus }>;
+    missesThisMonth: number;
+    overAllowance: boolean;
+  }>;
+  onPerson: (p: { id: string; name: string }) => void;
+  onDay: (p: { id: string; name: string }, u: WorkUpdate) => void;
+}) => {
+  const dates = rows[0]?.strip.map((d) => d.date) ?? [];
+  return (
+    <div className='mt-3 overflow-x-auto'>
+      <table className='w-full min-w-[36rem] text-left text-sm'>
+        <thead className='text-[11px] text-slate-400'>
+          <tr>
+            <th className='py-1 pr-3 font-medium'>Person</th>
+            {dates.map((d) => (
+              <th key={d} className='px-1 py-1 text-center font-medium'>
+                {new Date(`${d}T00:00:00`).toLocaleDateString([], { weekday: 'short' })}
+                <div className='font-mono text-[10px]'>{d.slice(8)}</div>
+              </th>
+            ))}
+            <th className='py-1 pl-3 font-medium'>Missed this month</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.employee.id} className='border-t border-slate-100'>
+              <td className='py-1.5 pr-3'>
+                <button
+                  type='button'
+                  onClick={() => onPerson(r.employee)}
+                  className='font-medium text-slate-700 hover:text-brand-600 hover:underline'
+                >
+                  {r.employee.name}
+                </button>
+              </td>
+              {r.strip.map((d) => {
+                const u = r.updates.find((x) => x.date === d.date);
+                return (
+                  <td key={d.date} className='px-1 py-1.5 text-center'>
+                    <button
+                      type='button'
+                      disabled={!u}
+                      onClick={() => u && onDay(r.employee, u)}
+                      title={`${d.date} — ${GRID_LABEL[d.status]}${u && u.score !== null ? ` · score ${u.score}` : ''}${u ? ' — click to read' : ''}`}
+                      className={`h-6 w-6 rounded ${gridColour(d.status)} ${u ? 'cursor-pointer ring-brand-400 hover:ring-2' : 'cursor-default'}`}
+                    >
+                      <span className='sr-only'>{GRID_LABEL[d.status]}</span>
+                    </button>
+                  </td>
+                );
+              })}
+              <td className='py-1.5 pl-3'>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] ${
+                    r.overAllowance ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {r.missesThisMonth}
+                  {r.overAllowance ? ' — over allowance' : ''}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className='mt-2 text-[11px] text-slate-400'>
+        Green = written · red = missed · amber = due today or waiting for you · blue = leave.
+        Hover a day for its status; click a filled one to read it.
+      </p>
+    </div>
+  );
+};
+
+const wordCount = (text: string): number => {
+  const t = text.trim();
+  return t ? t.split(/\s+/).length : 0;
 };
 
 const daysLeft = (dueOn: string, today: string): number =>
@@ -118,6 +227,11 @@ const MyPerformancePage = () => {
   // ── Clicking a name in the team sections peeks at that person's LAST
   // FIVE work updates (30-day window) — a quick read, not the full sheet.
   const [peek, setPeek] = useState<{ id: string; name: string } | null>(null);
+  // One day from the team grid: whose, and their entry.
+  const [dayOpen, setDayOpen] = useState<{
+    person: { id: string; name: string };
+    update: WorkUpdate;
+  } | null>(null);
   const peekUpdates = useQuery({
     queryKey: ['team-member-updates-peek', peek?.id],
     queryFn: () => performanceApi.teamMemberUpdates(peek!.id, 30),
@@ -391,11 +505,22 @@ const MyPerformancePage = () => {
 
           <textarea
             value={draft}
-            onChange={(e) => setNote(e.target.value)}
-            rows={3}
-            placeholder='What actually moved today? Mention the goal it served — the score reads for alignment.'
-            className='mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
+            onChange={(e) => {
+              setNote(e.target.value);
+              // Grow with the text, up to a cap (then it scrolls).
+              e.target.style.height = 'auto';
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 360)}px`;
+            }}
+            rows={4}
+            placeholder={
+              'What did you ship or move today, and for which goal?\n' +
+              'What went wrong, and what did you learn? Mistakes are welcome here — this is the learning vault, and an honest hard day scores well.'
+            }
+            className='mt-3 w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
           />
+          <p className='mt-1 text-right text-xs tabular-nums text-slate-400'>
+            {wordCount(draft)} {wordCount(draft) === 1 ? 'word' : 'words'}
+          </p>
           {g.goals.length > 0 && (
             <div className='mt-2 flex flex-wrap items-center gap-1.5'>
               <span className='text-xs text-slate-400'>About:</span>
@@ -638,6 +763,15 @@ const MyPerformancePage = () => {
           <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
             Your people — updates this week
           </h2>
+          <TeamUpdatesGrid
+            rows={teamUpdates.data ?? []}
+            onPerson={(p) => openSheet(p.id, p.name)}
+            onDay={(person, update) => setDayOpen({ person, update })}
+          />
+          <details className='mt-4'>
+            <summary className='cursor-pointer text-xs text-slate-500 hover:text-slate-700'>
+              Show the notes as a list
+            </summary>
           <div className='mt-3 space-y-4'>
             {(teamUpdates.data ?? [])
               .filter((r) => r.updates.length > 0 || r.missesThisMonth > 0)
@@ -685,6 +819,71 @@ const MyPerformancePage = () => {
                   </div>
                 </div>
               ))}
+          </div>
+          </details>
+        </div>
+      )}
+
+      {/* ── One day from the team grid ──────────────────────── */}
+      {dayOpen && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'
+          onClick={() => setDayOpen(null)}
+        >
+          <div
+            className='max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-lg'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-start justify-between gap-3'>
+              <div>
+                <h2 className='text-lg font-semibold text-slate-800'>{dayOpen.person.name}</h2>
+                <p className='text-xs text-slate-500'>
+                  {new Date(`${dayOpen.update.date}T00:00:00`).toLocaleDateString([], {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                  {dayOpen.update.lateStatus && ' · filled in late'}
+                </p>
+              </div>
+              <button
+                type='button'
+                onClick={() => setDayOpen(null)}
+                className='text-sm text-slate-400 hover:text-slate-600'
+              >
+                ✕
+              </button>
+            </div>
+            {dayOpen.update.score !== null && (
+              <span
+                className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${scoreTone(dayOpen.update.score)}`}
+              >
+                Score {dayOpen.update.score}
+              </span>
+            )}
+            <p className='mt-3 whitespace-pre-wrap text-sm text-slate-700'>{dayOpen.update.note}</p>
+            {dayOpen.update.feedback && (
+              <p className='mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                {dayOpen.update.feedback}
+              </p>
+            )}
+            {(dayOpen.update.kpiHits?.length ?? 0) > 0 && (
+              <p className='mt-2 text-xs text-slate-500'>
+                Touches: {dayOpen.update.kpiHits!.join(', ')}
+              </p>
+            )}
+            <div className='mt-4 flex justify-end'>
+              <button
+                type='button'
+                onClick={() => {
+                  react(dayOpen.person, dayOpen.update.date);
+                  setDayOpen(null);
+                }}
+                className='rounded-md border border-slate-300 px-3 py-1.5 text-xs text-brand-600 hover:bg-slate-50'
+              >
+                React to this
+              </button>
+            </div>
           </div>
         </div>
       )}

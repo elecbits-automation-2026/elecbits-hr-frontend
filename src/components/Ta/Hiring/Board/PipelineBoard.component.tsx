@@ -34,7 +34,7 @@ const nextMove = (
   item: BoardPosition,
   meId: string | undefined,
 ): { label: string; run: () => Promise<Application> } | null => {
-  if (!canWorkOn(item, meId)) return null;
+  if (!canWorkOn(item, meId) || item.position.onHold) return null;
   if (a.stage === 'sourced' || a.stage === 'shortlisted')
     return { label: 'Start screening', run: () => candidatesApi.startInterviews(a.id) };
   return null;
@@ -48,6 +48,31 @@ const REJECTABLE: ApplicationStage[] = [
   'decision',
   'selected',
 ];
+
+/** Stages a step back is allowed from (a correction; hired / joined never go back). */
+const MOVABLE_BACK: ApplicationStage[] = ['interviewing', 'interviewed', 'decision', 'selected', 'offered'];
+
+type CardAction = 'reject' | 'back' | 'restore';
+
+/** The inline reason form per action: prompt, button, colour, call. */
+const ACTIONS: Record<
+  CardAction,
+  { prompt: string; button: string; cls: string; run: (id: string, reason: string) => Promise<Application> }
+> = {
+  reject: { prompt: 'Why not?', button: 'Reject', cls: 'bg-red-600', run: candidatesApi.reject },
+  back: {
+    prompt: 'Why move back a stage?',
+    button: 'Move back',
+    cls: 'bg-slate-700',
+    run: candidatesApi.moveBack,
+  },
+  restore: {
+    prompt: 'Why bring them back?',
+    button: 'Restore',
+    cls: 'bg-blue-600',
+    run: candidatesApi.restore,
+  },
+};
 
 const CandidateCard = ({
   a,
@@ -63,7 +88,7 @@ const CandidateCard = ({
   onOpen: () => void;
 }) => {
   const queryClient = useQueryClient();
-  const [rejecting, setRejecting] = useState(false);
+  const [acting, setActing] = useState<CardAction | null>(null);
   const [reason, setReason] = useState('');
   const move = nextMove(a, item, meId);
   const refresh = () => {
@@ -71,10 +96,16 @@ const CandidateCard = ({
     queryClient.invalidateQueries({ queryKey: ['pipeline'] });
   };
   const go = useMutation({ mutationFn: () => move!.run(), onSuccess: refresh });
-  const reject = useMutation({
-    mutationFn: () => candidatesApi.reject(a.id, reason.trim()),
-    onSuccess: refresh,
+  const act = useMutation({
+    mutationFn: (what: CardAction) => ACTIONS[what].run(a.id, reason.trim()),
+    onSuccess: () => {
+      setActing(null);
+      setReason('');
+      refresh();
+    },
   });
+  const works = canWorkOn(item, meId);
+  const ended = a.stage === 'rejected' || a.stage === 'withdrawn';
   const days = daysSince(a.updatedAt);
 
   return (
@@ -133,48 +164,71 @@ const CandidateCard = ({
           Round open: {ROUND_LABEL[a.currentRound]}
         </p>
       )}
-      {(go.error || reject.error) && (
-        <p className='text-[11px] text-red-600'>{apiErrorMessage(go.error ?? reject.error)}</p>
+      {(go.error || act.error) && (
+        <p className='text-[11px] text-red-600'>{apiErrorMessage(go.error ?? act.error)}</p>
       )}
-      {rejecting ? (
+      {ended && a.preEndStage && (
+        <p className='text-[10.5px] text-slate-500'>Ended at: {STAGE_LABEL[a.preEndStage]}</p>
+      )}
+      {acting ? (
         <div className='space-y-1' onClick={(e) => e.stopPropagation()}>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder='Why not?'
+            placeholder={ACTIONS[acting].prompt}
             className='w-full rounded-md border border-slate-300 px-2 py-1 text-xs'
           />
           <div className='flex justify-end gap-1'>
             <button
               type='button'
-              onClick={() => setRejecting(false)}
+              onClick={() => setActing(null)}
               className='rounded px-2 py-0.5 text-[11px] text-slate-500 hover:bg-slate-100'
             >
               Back
             </button>
             <button
               type='button'
-              disabled={!reason.trim() || reject.isPending}
-              onClick={() => reject.mutate()}
-              className='rounded bg-red-600 px-2 py-0.5 text-[11px] font-medium text-white disabled:opacity-50'
+              disabled={!reason.trim() || act.isPending}
+              onClick={() => act.mutate(acting)}
+              className={`rounded px-2 py-0.5 text-[11px] font-medium text-white disabled:opacity-50 ${ACTIONS[acting].cls}`}
             >
-              Reject
+              {ACTIONS[acting].button}
             </button>
           </div>
         </div>
       ) : (
         <div className='flex items-center justify-between gap-1' onClick={(e) => e.stopPropagation()}>
-          {canWorkOn(item, meId) && REJECTABLE.includes(a.stage) ? (
-            <button
-              type='button'
-              onClick={() => setRejecting(true)}
-              className='text-[11px] text-slate-400 hover:text-red-600'
-            >
-              ✕ not going ahead
-            </button>
-          ) : (
-            <span />
-          )}
+          <span className='flex gap-2'>
+            {works && REJECTABLE.includes(a.stage) && (
+              <button
+                type='button'
+                onClick={() => setActing('reject')}
+                className='text-[11px] text-slate-400 hover:text-red-600'
+              >
+                ✕ not going ahead
+              </button>
+            )}
+            {works && MOVABLE_BACK.includes(a.stage) && (
+              <button
+                type='button'
+                onClick={() => setActing('back')}
+                title='One stage back — a correction'
+                className='text-[11px] text-slate-400 hover:text-slate-700'
+              >
+                ↩ back
+              </button>
+            )}
+            {works && ended && !item.position.onHold && (
+              <button
+                type='button'
+                onClick={() => setActing('restore')}
+                title='Bring them back to the stage they ended at'
+                className='text-[11px] text-blue-600 hover:underline'
+              >
+                ↺ restore
+              </button>
+            )}
+          </span>
           {move && (
             <button
               type='button'
