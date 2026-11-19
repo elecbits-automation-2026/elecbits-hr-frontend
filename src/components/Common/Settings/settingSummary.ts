@@ -45,6 +45,8 @@ export const settingSummary = (key: string, value: unknown): string => {
     text = [v.companyName ?? '—', v.address, v.logo ? 'with logo' : 'no logo']
       .filter(Boolean)
       .join(' · ');
+  } else if (key === 'assistant.enabled' && value && typeof value === 'object') {
+    text = (value as { enabled?: boolean }).enabled ? 'On for HR and managers' : 'Off';
   } else if (key === 'attendance.maxLocationErrorM' && typeof value === 'number') {
     text = value === 0 ? 'Any accuracy accepted' : `Within ${value} m`;
   } else if (key === 'payroll.reimbursementDigestDay' && typeof value === 'number') {

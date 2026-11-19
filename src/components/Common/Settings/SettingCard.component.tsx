@@ -111,6 +111,15 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
       {btn}
     </ToggleFieldsEditor>
   ),
+  'assistant.enabled': (v, onSave, btn) => (
+    <ToggleFieldsEditor
+      value={v as Record<string, boolean>}
+      onSave={onSave}
+      labels={{ enabled: 'Turn on the HR Assistant for HR and managers' }}
+    >
+      {btn}
+    </ToggleFieldsEditor>
+  ),
   'payroll.autoCoverLeaveTypes': (v, onSave, btn) => (
     <OrderedLeaveTypesEditor value={v as string[]} onSave={onSave}>
       {btn}

@@ -2,7 +2,9 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
+import { AssistantLauncher } from '@components/Common/Assistant/AssistantDrawer.component';
 import { APP_SECTION } from '@constants/Common/auth/portal.constants';
+import { usePublicSettings } from '@hooks/Common/usePublicSettings.hook';
 import {
   ADMIN_NAV,
   EMPLOYEE_NAV,
@@ -163,6 +165,9 @@ const PortalShell = ({
   const hrItems = me ? hrItemsFor(me) : [];
   const showHr = me !== undefined && canEnterSection(me, APP_SECTION.hr) && hrItems.length > 0;
   const showAdmin = me !== undefined && canEnterSection(me, APP_SECTION.admin);
+  // HR Assistant: HR and managers, once the Admin switch is on (the server re-checks).
+  const { assistantEnabled } = usePublicSettings();
+  const showAssistant = assistantEnabled && (!!me?.hasReports || showHr);
 
   return (
     <div className='flex min-h-screen'>
@@ -226,6 +231,7 @@ const PortalShell = ({
       </aside>
       {/* min-w-0 lets wide page content wrap instead of overflowing the viewport. */}
       <main className='min-w-0 flex-1 p-4 pt-20 md:p-8'>{children}</main>
+      {showAssistant && <AssistantLauncher />}
     </div>
   );
 };

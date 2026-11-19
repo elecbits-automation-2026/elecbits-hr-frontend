@@ -1358,7 +1358,21 @@ export interface PublicSettings {
     effectiveFrom?: string;
   };
   'concerns.icContact'?: { contact: string };
+  'assistant.enabled'?: { enabled: boolean };
 }
+
+/** One text turn of an HR Assistant chat (held in the browser only — never stored). */
+export interface AssistantTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/** One server-sent event from POST /assistant/chat. */
+export type AssistantEvent =
+  | { type: 'tool'; name: string; label: string }
+  | { type: 'text'; delta: string }
+  | { type: 'done'; tools: string[] }
+  | { type: 'error'; code: string; message: string };
 
 export interface AwardCatalogEntry {
   name: string;
