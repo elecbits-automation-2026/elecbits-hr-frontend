@@ -26,5 +26,6 @@ export const usePublicSettings = () => {
     },
     icContact: values['concerns.icContact']?.contact ?? '',
     leaveWindowDays: values['leaves.applicationWindowDays'] ?? { earned: 7, vacation_family: 7 },
+    assistantEnabled: values['assistant.enabled']?.enabled ?? false,
   };
 };

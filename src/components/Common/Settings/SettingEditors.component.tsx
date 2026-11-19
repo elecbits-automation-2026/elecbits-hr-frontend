@@ -286,12 +286,13 @@ export const TextFieldsEditor = ({
   );
 };
 
-/** On/off switches for an object of booleans. */
+/** On/off switches for an object of booleans; `labels` overrides FIELD_LABELS per key. */
 export const ToggleFieldsEditor = ({
   value,
   onSave,
   children,
-}: EditorProps<Record<string, boolean>>) => {
+  labels = {},
+}: EditorProps<Record<string, boolean>> & { labels?: Record<string, string> }) => {
   const [draft, setDraft] = useState(value);
   return (
     <form
@@ -309,7 +310,7 @@ export const ToggleFieldsEditor = ({
             onChange={(e) => setDraft({ ...draft, [field]: e.target.checked })}
             className='h-4 w-4'
           />
-          {FIELD_LABELS[field] ?? field}
+          {labels[field] ?? FIELD_LABELS[field] ?? field}
         </label>
       ))}
       {children}

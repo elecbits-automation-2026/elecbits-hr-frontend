@@ -36,7 +36,7 @@ api.interceptors.request.use((config) => {
  * Uses bare axios so the refresh call never re-enters these interceptors.
  */
 let refreshing: Promise<string> | null = null;
-const renewAccessToken = (): Promise<string> => {
+export const renewAccessToken = (): Promise<string> => {
   refreshing ??= axios
     .post<Session>(`${baseURL}/auth/refresh`, null, { withCredentials: true })
     .then(({ data }) => {
@@ -49,7 +49,7 @@ const renewAccessToken = (): Promise<string> => {
   return refreshing;
 };
 
-const endSession = () => {
+export const endSession = () => {
   useAuthStore.getState().clearSession();
   queryClient.clear();
   // The route guard reads the store non-reactively, so an expired session
