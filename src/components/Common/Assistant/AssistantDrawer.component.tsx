@@ -39,7 +39,11 @@ const AssistantDrawer = ({ onClose }: { onClose: () => void }) => {
     };
   }, [onClose]);
 
-  useEffect(() => bottom.current?.scrollIntoView({ block: 'end' }), [turns]);
+  // Block body on purpose: newer browsers return a value from scrollIntoView,
+  // and an effect may only return a cleanup function.
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: 'end' });
+  }, [turns]);
 
   /** Patch the answer being streamed (always the last turn). */
   const patchLast = (fn: (t: ShownTurn) => ShownTurn) =>
