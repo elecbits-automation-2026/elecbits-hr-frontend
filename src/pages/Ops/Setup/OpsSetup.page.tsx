@@ -55,6 +55,7 @@ const CategoryRow = ({ cat, onSaved }: { cat?: Category; onSaved: (s: AssetSetup
     <tr className='border-b border-slate-100 align-top'>
       <td className='py-2 pr-2'>
         <input
+          aria-label='Category name'
           value={d.name}
           onChange={(e) => setD({ ...d, name: e.target.value })}
           placeholder='Category name'
@@ -63,6 +64,7 @@ const CategoryRow = ({ cat, onSaved }: { cat?: Category; onSaved: (s: AssetSetup
       </td>
       <td className='py-2 pr-2'>
         <input
+          aria-label='Code prefix'
           value={d.codePrefix}
           onChange={(e) => setD({ ...d, codePrefix: e.target.value.toUpperCase() })}
           placeholder='LAP'
@@ -72,6 +74,7 @@ const CategoryRow = ({ cat, onSaved }: { cat?: Category; onSaved: (s: AssetSetup
       </td>
       <td className='py-2 pr-2'>
         <select
+          aria-label='Kind'
           value={d.kind}
           // Gate passes are for lent items only — never laptops or other issued kit.
           onChange={(e) => {

@@ -21,6 +21,8 @@ import {
 import { employeesApi } from '@services/api/employees.api';
 import { hiringApi } from '@services/api/hiring.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const input =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
@@ -67,15 +69,15 @@ const LineForm = ({
     });
   const pick = (round: InterviewRound, id: string) =>
     setRounds((prev) => new Map(prev).set(round, id || null));
-  const valid =
-    roleTitle.trim() && quantity >= 1 && quantity <= 50 && rounds.size > 0 && detailsOk;
+  const valid = roleTitle.trim() && quantity >= 1 && quantity <= 50 && rounds.size > 0 && detailsOk;
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>{title}</h2>
         <div className='grid grid-cols-[1fr_90px] gap-2'>
           <input
+            aria-label='Role, e.g. Hardware Engineer'
             value={roleTitle}
             onChange={(e) => setRoleTitle(e.target.value)}
             placeholder='Role, e.g. Hardware Engineer'
@@ -92,6 +94,7 @@ const LineForm = ({
           />
         </div>
         <textarea
+          aria-label='What you need: skills, experience, why now'
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
@@ -183,23 +186,26 @@ const LineForm = ({
                 <span className='text-xs text-slate-500'>
                   Round 1, always — the position&apos;s recruiter (TA SPOC) calls the candidate
                 </span>
-              ) : rounds.has(round) && (
-                <select
-                  value={rounds.get(round) ?? ''}
-                  onChange={(e) => pick(round, e.target.value)}
-                  className={input}
-                >
-                  <option value=''>
-                    {round === 'hr_final' ? 'The recruiter (default)' : 'Name later'}
-                  </option>
-                  {people.data
-                    ?.filter((p) => p.status === 'active')
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                </select>
+              ) : (
+                rounds.has(round) && (
+                  <select
+                    aria-label={`Round ${round} interviewer`}
+                    value={rounds.get(round) ?? ''}
+                    onChange={(e) => pick(round, e.target.value)}
+                    className={input}
+                  >
+                    <option value=''>
+                      {round === 'hr_final' ? 'The recruiter (default)' : 'Name later'}
+                    </option>
+                    {people.data
+                      ?.filter((p) => p.status === 'active')
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </select>
+                )
               )}
             </div>
           ))}
@@ -235,7 +241,7 @@ const LineForm = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -304,7 +310,7 @@ const HiringPlanPage = () => {
   });
 
   if (me.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (me.error) return <p className='text-sm text-red-600'>{apiErrorMessage(me.error)}</p>;
+  if (me.error) return <QueryError error={me.error} />;
   if (!me.data?.headOf.length)
     return (
       <p className='text-sm text-slate-500'>
@@ -323,13 +329,14 @@ const HiringPlanPage = () => {
           <h1 className='text-2xl font-semibold text-slate-800'>Hiring plan</h1>
           <p className='text-sm text-slate-500'>
             Add the people your department needs next quarter. Submitted lines wait until the
-            deadline, then all go to HRBP together; one approval from either
-            approves a line, then Admin gives it to a TA RM.
+            deadline, then all go to HRBP together; one approval from either approves a line, then
+            Admin gives it to a TA RM.
           </p>
         </div>
         <div className='flex gap-2'>
           {me.data.headOf.length > 1 && (
             <select
+              aria-label='Department'
               value={department}
               onChange={(e) => setDeptId(e.target.value)}
               className='rounded-md border border-slate-300 px-2 py-1.5 text-sm'
@@ -343,6 +350,7 @@ const HiringPlanPage = () => {
             </select>
           )}
           <select
+            aria-label='Quarter'
             value={quarter}
             onChange={(e) => setPicked(e.target.value)}
             className='rounded-md border border-slate-300 px-2 py-1.5 text-sm'
@@ -458,7 +466,9 @@ const HiringPlanPage = () => {
                       onClick={() => act.mutate({ id: r.id, kind: 'submit' })}
                       className='rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50'
                     >
-                      {r.status === 'returned' || r.submittedAt ? 'Resubmit' : `Submit for ${quarter}`}
+                      {r.status === 'returned' || r.submittedAt
+                        ? 'Resubmit'
+                        : `Submit for ${quarter}`}
                     </button>
                   </>
                 )}

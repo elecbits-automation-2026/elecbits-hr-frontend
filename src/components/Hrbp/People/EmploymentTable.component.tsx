@@ -87,7 +87,7 @@ const EmploymentTable = ({
                 <td className='px-4 py-3 text-slate-500'>{e.employeeCode}</td>
                 <td className='px-4 py-3'>
                   <p className='font-medium text-slate-800'>{e.name}</p>
-                  <p className='text-xs text-slate-400'>
+                  <p className='text-xs text-slate-500'>
                     {[e.designation, e.departmentName].filter(Boolean).join(' · ') || '—'}
                   </p>
                 </td>
@@ -106,7 +106,7 @@ const EmploymentTable = ({
                   {e.reportsTo ? (
                     nameOf(e.reportsTo)
                   ) : (
-                    <span className='text-xs text-slate-400'>top of the tree</span>
+                    <span className='text-xs text-slate-500'>top of the tree</span>
                   )}
                 </td>
                 <td className='px-4 py-3 text-right'>
@@ -126,7 +126,7 @@ const EmploymentTable = ({
           })}
           {employees.length === 0 && (
             <tr>
-              <td colSpan={9} className='px-4 py-8 text-center text-slate-400'>
+              <td colSpan={9} className='px-4 py-8 text-center text-slate-500'>
                 Nobody matches these filters.
               </td>
             </tr>

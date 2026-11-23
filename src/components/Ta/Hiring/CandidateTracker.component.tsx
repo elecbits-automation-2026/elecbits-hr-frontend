@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  ActivityKind,
-  ActivityOutcome,
-  Application,
-  Candidate,
-} from '@app-types/api.types';
+import type { ActivityKind, ActivityOutcome, Application, Candidate } from '@app-types/api.types';
 import {
   ACTIVITY_KIND_LABEL,
   ACTIVITY_OUTCOME_LABEL,
@@ -24,12 +19,18 @@ const btn =
   'rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50';
 const primary =
   'rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50';
-const label = 'text-[10px] font-semibold uppercase tracking-wide text-slate-400';
+const label = 'text-xs font-semibold uppercase tracking-wide text-slate-500';
 
 const useRefresh = () => {
   const queryClient = useQueryClient();
   return () => {
-    for (const key of ['candidate', 'hiring-requisitions', 'pipeline', 'candidates', 'activities']) {
+    for (const key of [
+      'candidate',
+      'hiring-requisitions',
+      'pipeline',
+      'candidates',
+      'activities',
+    ]) {
       queryClient.invalidateQueries({ queryKey: [key] });
     }
   };
@@ -78,7 +79,8 @@ export const Profile = ({ c, canEdit }: { c: Candidate; canEdit: boolean }) => {
     <section className='space-y-2 rounded-lg border border-slate-200 p-3'>
       <div className='flex items-center justify-between'>
         <p className='text-sm font-semibold text-slate-800'>
-          Profile <span className='font-mono text-xs font-normal text-slate-400'>{c.candidateCode}</span>
+          Profile{' '}
+          <span className='font-mono text-xs font-normal text-slate-500'>{c.candidateCode}</span>
         </p>
         {canEdit && !editing && (
           <button type='button' onClick={() => setEditing(true)} className={btn}>
@@ -88,22 +90,76 @@ export const Profile = ({ c, canEdit }: { c: Candidate; canEdit: boolean }) => {
       </div>
       {editing ? (
         <div className='grid gap-2 sm:grid-cols-2'>
-          <input value={f.currentCompany} onChange={set('currentCompany')} placeholder='Current company' className={input} />
-          <input value={f.designation} onChange={set('designation')} placeholder='Designation' className={input} />
-          <input value={f.location} onChange={set('location')} placeholder='Location' className={input} />
-          <input type='number' min={0} value={f.noticeDays} onChange={set('noticeDays')} placeholder='Notice (days)' className={input} />
-          <input type='number' min={0} value={f.currentCtc} onChange={set('currentCtc')} placeholder='Current CTC (₹/yr)' className={input} />
-          <input type='number' min={0} value={f.expectedCtc} onChange={set('expectedCtc')} placeholder='Expected CTC (₹/yr)' className={input} />
+          <input
+            aria-label='Current company'
+            value={f.currentCompany}
+            onChange={set('currentCompany')}
+            placeholder='Current company'
+            className={input}
+          />
+          <input
+            aria-label='Designation'
+            value={f.designation}
+            onChange={set('designation')}
+            placeholder='Designation'
+            className={input}
+          />
+          <input
+            aria-label='Location'
+            value={f.location}
+            onChange={set('location')}
+            placeholder='Location'
+            className={input}
+          />
+          <input
+            aria-label='Notice (days)'
+            type='number'
+            min={0}
+            value={f.noticeDays}
+            onChange={set('noticeDays')}
+            placeholder='Notice (days)'
+            className={input}
+          />
+          <input
+            aria-label='Current CTC (₹/yr)'
+            type='number'
+            min={0}
+            value={f.currentCtc}
+            onChange={set('currentCtc')}
+            placeholder='Current CTC (₹/yr)'
+            className={input}
+          />
+          <input
+            aria-label='Expected CTC (₹/yr)'
+            type='number'
+            min={0}
+            value={f.expectedCtc}
+            onChange={set('expectedCtc')}
+            placeholder='Expected CTC (₹/yr)'
+            className={input}
+          />
           <label className='space-y-1 sm:col-span-2'>
             <span className={label}>Available to join from</span>
-            <input type='date' value={f.availableFrom} onChange={set('availableFrom')} className={input} />
+            <input
+              type='date'
+              value={f.availableFrom}
+              onChange={set('availableFrom')}
+              className={input}
+            />
           </label>
-          {save.error && <p className='text-xs text-red-600 sm:col-span-2'>{apiErrorMessage(save.error)}</p>}
+          {save.error && (
+            <p className='text-xs text-red-600 sm:col-span-2'>{apiErrorMessage(save.error)}</p>
+          )}
           <div className='flex justify-end gap-2 sm:col-span-2'>
             <button type='button' onClick={() => setEditing(false)} className={btn}>
               Cancel
             </button>
-            <button type='button' disabled={save.isPending} onClick={() => save.mutate()} className={primary}>
+            <button
+              type='button'
+              disabled={save.isPending}
+              onClick={() => save.mutate()}
+              className={primary}
+            >
               Save
             </button>
           </div>
@@ -131,7 +187,11 @@ export const Profile = ({ c, canEdit }: { c: Candidate; canEdit: boolean }) => {
 /** What happens next, who does it and by when (workflow deck: live progress). */
 const NextAction = ({ app, canEdit }: { app: Application; canEdit: boolean }) => {
   const refresh = useRefresh();
-  const people = useQuery({ queryKey: ['concern-people'], queryFn: concernsApi.people, staleTime: 5 * 60_000 });
+  const people = useQuery({
+    queryKey: ['concern-people'],
+    queryFn: concernsApi.people,
+    staleTime: 5 * 60_000,
+  });
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(app.nextAction?.text ?? '');
   const [ownerId, setOwnerId] = useState(app.nextAction?.ownerId ?? '');
@@ -164,8 +224,19 @@ const NextAction = ({ app, canEdit }: { app: Application; canEdit: boolean }) =>
       </div>
       {editing ? (
         <div className='grid gap-2 sm:grid-cols-[1fr_160px_140px]'>
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder='e.g. Share the technical slot' className={input} />
-          <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className={input} aria-label='Owner'>
+          <input
+            aria-label='Next action'
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder='e.g. Share the technical slot'
+            className={input}
+          />
+          <select
+            value={ownerId}
+            onChange={(e) => setOwnerId(e.target.value)}
+            className={input}
+            aria-label='Owner'
+          >
             <option value=''>Owner…</option>
             {people.data?.map((p) => (
               <option key={p.id} value={p.id}>
@@ -173,8 +244,16 @@ const NextAction = ({ app, canEdit }: { app: Application; canEdit: boolean }) =>
               </option>
             ))}
           </select>
-          <input type='date' value={due} onChange={(e) => setDue(e.target.value)} className={input} aria-label='Due' />
-          {save.error && <p className='text-xs text-red-600 sm:col-span-3'>{apiErrorMessage(save.error)}</p>}
+          <input
+            type='date'
+            value={due}
+            onChange={(e) => setDue(e.target.value)}
+            className={input}
+            aria-label='Due'
+          />
+          {save.error && (
+            <p className='text-xs text-red-600 sm:col-span-3'>{apiErrorMessage(save.error)}</p>
+          )}
           <div className='flex justify-end gap-2 sm:col-span-3'>
             {app.nextAction && (
               <button type='button' onClick={() => save.mutate(true)} className={btn}>
@@ -184,7 +263,12 @@ const NextAction = ({ app, canEdit }: { app: Application; canEdit: boolean }) =>
             <button type='button' onClick={() => setEditing(false)} className={btn}>
               Cancel
             </button>
-            <button type='button' disabled={!text.trim() || save.isPending} onClick={() => save.mutate(false)} className={primary}>
+            <button
+              type='button'
+              disabled={!text.trim() || save.isPending}
+              onClick={() => save.mutate(false)}
+              className={primary}
+            >
               Save
             </button>
           </div>
@@ -204,7 +288,7 @@ const NextAction = ({ app, canEdit }: { app: Application; canEdit: boolean }) =>
           </span>
         </p>
       ) : (
-        <p className='text-sm text-slate-400'>Nothing set.</p>
+        <p className='text-sm text-slate-500'>Nothing set.</p>
       )}
     </section>
   );
@@ -213,12 +297,16 @@ const NextAction = ({ app, canEdit }: { app: Application; canEdit: boolean }) =>
 /** Calls, emails, WhatsApp and meetings with the candidate (workflow deck: "calls done"). */
 const ActivityLog = ({ app, canEdit }: { app: Application; canEdit: boolean }) => {
   const refresh = useRefresh();
-  const log = useQuery({ queryKey: ['activities', app.id], queryFn: () => candidatesApi.activities(app.id) });
+  const log = useQuery({
+    queryKey: ['activities', app.id],
+    queryFn: () => candidatesApi.activities(app.id),
+  });
   const [kind, setKind] = useState<ActivityKind>('call');
   const [outcome, setOutcome] = useState<ActivityOutcome>('connected');
   const [notes, setNotes] = useState('');
   const add = useMutation({
-    mutationFn: () => candidatesApi.logActivity(app.id, { kind, outcome, notes: notes.trim() || undefined }),
+    mutationFn: () =>
+      candidatesApi.logActivity(app.id, { kind, outcome, notes: notes.trim() || undefined }),
     onSuccess: () => {
       setNotes('');
       refresh();
@@ -228,26 +316,48 @@ const ActivityLog = ({ app, canEdit }: { app: Application; canEdit: boolean }) =
   return (
     <section className='space-y-2 rounded-lg border border-slate-200 p-3'>
       <p className='text-sm font-semibold text-slate-800'>
-        Contacts <span className='text-xs font-normal text-slate-400'>{app.contactCount} logged</span>
+        Contacts{' '}
+        <span className='text-xs font-normal text-slate-500'>{app.contactCount} logged</span>
       </p>
       {canEdit && (
         <div className='grid gap-2 sm:grid-cols-[110px_130px_1fr_auto]'>
-          <select value={kind} onChange={(e) => setKind(e.target.value as ActivityKind)} className={input} aria-label='Kind'>
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as ActivityKind)}
+            className={input}
+            aria-label='Kind'
+          >
             {(Object.keys(ACTIVITY_KIND_LABEL) as ActivityKind[]).map((k) => (
               <option key={k} value={k}>
                 {ACTIVITY_KIND_LABEL[k]}
               </option>
             ))}
           </select>
-          <select value={outcome} onChange={(e) => setOutcome(e.target.value as ActivityOutcome)} className={input} aria-label='Outcome'>
+          <select
+            value={outcome}
+            onChange={(e) => setOutcome(e.target.value as ActivityOutcome)}
+            className={input}
+            aria-label='Outcome'
+          >
             {(Object.keys(ACTIVITY_OUTCOME_LABEL) as ActivityOutcome[]).map((k) => (
               <option key={k} value={k}>
                 {ACTIVITY_OUTCOME_LABEL[k]}
               </option>
             ))}
           </select>
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder='Notes (optional)' className={input} />
-          <button type='button' disabled={add.isPending} onClick={() => add.mutate()} className={primary}>
+          <input
+            aria-label='Notes (optional)'
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder='Notes (optional)'
+            className={input}
+          />
+          <button
+            type='button'
+            disabled={add.isPending}
+            onClick={() => add.mutate()}
+            className={primary}
+          >
             Log
           </button>
         </div>
@@ -256,16 +366,21 @@ const ActivityLog = ({ app, canEdit }: { app: Application; canEdit: boolean }) =
       <ul className='max-h-48 space-y-1 overflow-y-auto text-xs'>
         {log.data?.map((x) => (
           <li key={x.id} className='flex flex-wrap gap-x-2 text-slate-600'>
-            <span className='font-mono text-slate-400'>
-              {new Date(x.happenedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+            <span className='font-mono text-slate-500'>
+              {new Date(x.happenedAt).toLocaleString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
             </span>
             <span className='font-medium'>{ACTIVITY_KIND_LABEL[x.kind]}</span>
             <span>· {ACTIVITY_OUTCOME_LABEL[x.outcome]}</span>
-            <span className='text-slate-400'>· {x.byName}</span>
+            <span className='text-slate-500'>· {x.byName}</span>
             {x.notes && <span className='w-full pl-1 text-slate-500'>{x.notes}</span>}
           </li>
         ))}
-        {log.data?.length === 0 && <li className='text-slate-400'>No contacts logged yet.</li>}
+        {log.data?.length === 0 && <li className='text-slate-500'>No contacts logged yet.</li>}
       </ul>
     </section>
   );
@@ -277,10 +392,15 @@ const ActivityLog = ({ app, canEdit }: { app: Application; canEdit: boolean }) =
  * for the position's recruiter or the line's TA RM.
  */
 const CandidateTracker = ({ app, canEdit }: { app: Application; canEdit: boolean }) => {
-  const c = useQuery({ queryKey: ['candidate', app.candidateId], queryFn: () => candidatesApi.get(app.candidateId) });
+  const c = useQuery({
+    queryKey: ['candidate', app.candidateId],
+    queryFn: () => candidatesApi.get(app.candidateId),
+  });
   return (
     <div className='space-y-3'>
-      {c.data && <Profile key={c.data.id + (c.data.currentCtc ?? '')} c={c.data} canEdit={canEdit} />}
+      {c.data && (
+        <Profile key={c.data.id + (c.data.currentCtc ?? '')} c={c.data} canEdit={canEdit} />
+      )}
       <NextAction key={app.nextAction?.text ?? 'none'} app={app} canEdit={canEdit} />
       <ActivityLog app={app} canEdit={canEdit} />
     </div>

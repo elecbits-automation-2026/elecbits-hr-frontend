@@ -19,12 +19,8 @@ export const onboardingApi = {
     (await api.get<OnboardingJourney[]>('/onboarding/team')).data,
   /** Tick with a note of what was done, or untick (no note). */
   toggleTask: async (taskId: string, note?: string): Promise<OnboardingJourney> =>
-    (
-      await api.post<OnboardingJourney>(
-        `/onboarding/tasks/${taskId}/toggle`,
-        note ? { note } : {},
-      )
-    ).data,
+    (await api.post<OnboardingJourney>(`/onboarding/tasks/${taskId}/toggle`, note ? { note } : {}))
+      .data,
   /** A document step: the raw file as the body; uploading completes the step. */
   uploadTaskFile: async (taskId: string, file: File): Promise<OnboardingJourney> =>
     (

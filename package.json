@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint",
-    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\" --config ./.prettierrc"
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\" --config ./.prettierrc",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md}\" --config ./.prettierrc"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",

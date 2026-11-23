@@ -71,8 +71,7 @@ export const hiringApi = {
   // Admin gives an approved line to a TA RM.
   recruiters: async (): Promise<RecruiterOption[]> =>
     (await api.get<RecruiterOption[]>('/hiring/recruiters')).data,
-  taRms: async (): Promise<TaRmOption[]> =>
-    (await api.get<TaRmOption[]>('/hiring/ta-rms')).data,
+  taRms: async (): Promise<TaRmOption[]> => (await api.get<TaRmOption[]>('/hiring/ta-rms')).data,
   assignTaRm: async (id: string, taRmId: string): Promise<Requisition> =>
     (await api.post<Requisition>(`/hiring/requisitions/${id}/assign-ta`, { taRmId })).data,
   assignPosition: async (

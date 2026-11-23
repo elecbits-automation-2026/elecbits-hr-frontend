@@ -5,6 +5,8 @@ import type { Seat, SeatKind, VacantSeat } from '@app-types/api.types';
 import { employeesApi } from '@services/api/employees.api';
 import { seatsApi } from '@services/api/seats.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const SEAT_LABEL: Record<SeatKind, string> = {
   dept_head: 'Department head',
@@ -53,7 +55,7 @@ const AssignDialog = ({
     },
   });
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-md space-y-3 rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>
           {SEAT_LABEL[slot.seat]}
@@ -66,6 +68,7 @@ const AssignDialog = ({
           </p>
         )}
         <select
+          aria-label='Who'
           value={employeeId}
           onChange={(e) => setEmployeeId(e.target.value)}
           className={input}
@@ -102,7 +105,7 @@ const AssignDialog = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -122,16 +125,16 @@ const SlotRow = ({ slot, onAssign }: { slot: Slot; onAssign: (s: Slot) => void }
           <span className='flex items-center gap-2'>
             {slot.holder.employeeName}
             {slot.holder.acting && (
-              <span className='rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-700'>
+              <span className='rounded-full bg-amber-50 px-1.5 py-0.5 text-xs uppercase tracking-wide text-amber-700'>
                 acting
               </span>
             )}
           </span>
         ) : (
-          <span className='text-slate-400'>Empty</span>
+          <span className='text-slate-500'>Empty</span>
         )}
       </td>
-      <td className='px-4 py-2 text-xs text-slate-400'>
+      <td className='px-4 py-2 text-xs text-slate-500'>
         {slot.holder ? new Date(slot.holder.startedAt).toLocaleDateString('en-IN') : ''}
       </td>
       <td className='px-4 py-2 text-right'>
@@ -182,7 +185,7 @@ const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN');
 const SeatHistory = () => {
   const history = useQuery({ queryKey: ['seats', 'history'], queryFn: seatsApi.history });
   if (history.isLoading) return <p className='text-sm text-slate-500'>Loading history…</p>;
-  if (history.error) return <p className='text-sm text-red-600'>{apiErrorMessage(history.error)}</p>;
+  if (history.error) return <QueryError error={history.error} />;
   const rows = history.data ?? [];
   return (
     <div className='space-y-2'>
@@ -204,7 +207,9 @@ const SeatHistory = () => {
               {rows.map((s) => (
                 <tr key={s.id} className='border-t border-slate-100'>
                   <td className='px-4 py-2 text-slate-800'>
-                    {s.seat === 'dept_head' ? `${s.departmentName ?? 'Department'} head` : SEAT_LABEL[s.seat]}
+                    {s.seat === 'dept_head'
+                      ? `${s.departmentName ?? 'Department'} head`
+                      : SEAT_LABEL[s.seat]}
                   </td>
                   <td className='px-4 py-2'>
                     {s.employeeName}
@@ -244,8 +249,7 @@ const SeatsPage = () => {
   const [assigning, setAssigning] = useState<Slot | null>(null);
 
   if (overview.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (overview.error)
-    return <p className='text-sm text-red-600'>{apiErrorMessage(overview.error)}</p>;
+  if (overview.error) return <QueryError error={overview.error} />;
   if (!overview.data) return null;
 
   const { seats, vacant } = overview.data;
@@ -282,8 +286,8 @@ const SeatsPage = () => {
       <div>
         <h1 className='text-2xl font-semibold text-slate-800'>Seats</h1>
         <p className='text-sm text-slate-500'>
-          Who heads each department, and who is VP. Assigned by Admin only, here — never from
-          level or designation. The HR head is simply the head of the HR department.
+          Who heads each department, and who is VP. Assigned by Admin only, here — never from level
+          or designation. The HR head is simply the head of the HR department.
         </p>
       </div>
 

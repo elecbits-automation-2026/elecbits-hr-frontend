@@ -6,6 +6,7 @@ import { LEAVE_TYPE_LABELS } from '@constants/Common/leaves/leave.constants';
 import { usePublicSettings } from '@hooks/Common/usePublicSettings.hook';
 import { leavesApi } from '@services/api/leaves.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
 const labelClass = 'block text-xs font-medium text-slate-600';
@@ -84,8 +85,7 @@ const RaiseLeaveModal = ({
           ? 'The certificate must be 10 MB or smaller'
           : null;
   // Planned leave has to be raised ahead (the backend enforces the same rule).
-  const noticeDays =
-    type === 'earned' || type === 'vacation_family' ? leaveWindowDays[type] : 0;
+  const noticeDays = type === 'earned' || type === 'vacation_family' ? leaveWindowDays[type] : 0;
   const earliest =
     noticeDays > 0
       ? new Date(Date.now() + noticeDays * 86_400_000).toLocaleDateString('en-CA')
@@ -132,7 +132,7 @@ const RaiseLeaveModal = ({
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <form
         onSubmit={submit}
         className='max-h-full w-full max-w-md space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'
@@ -142,7 +142,7 @@ const RaiseLeaveModal = ({
           <button
             type='button'
             onClick={onClose}
-            className='text-sm text-slate-400 hover:text-slate-600'
+            className='text-sm text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -152,6 +152,7 @@ const RaiseLeaveModal = ({
           <div className='space-y-1'>
             <label className={labelClass}>Type</label>
             <select
+              aria-label='Type'
               value={type}
               onChange={(e) => setType(e.target.value as LeaveType)}
               className={inputClass}
@@ -166,6 +167,7 @@ const RaiseLeaveModal = ({
           <div className='space-y-1'>
             <label className={labelClass}>Duration</label>
             <select
+              aria-label='Duration'
               value={half ? 'half' : 'full'}
               onChange={(e) => setHalf(e.target.value === 'half')}
               className={inputClass}
@@ -180,6 +182,7 @@ const RaiseLeaveModal = ({
           <div className='space-y-1'>
             <label className={labelClass}>{half ? 'Date' : 'From'}</label>
             <input
+              aria-label={half ? 'Date' : 'From'}
               type='date'
               required
               min={earliest}
@@ -192,6 +195,7 @@ const RaiseLeaveModal = ({
             <div className='space-y-1'>
               <label className={labelClass}>Which half</label>
               <select
+                aria-label='Which half'
                 value={dayPart}
                 onChange={(e) => setDayPart(e.target.value as Exclude<LeaveDayPart, 'full'>)}
                 className={inputClass}
@@ -204,6 +208,7 @@ const RaiseLeaveModal = ({
             <div className='space-y-1'>
               <label className={labelClass}>To</label>
               <input
+                aria-label='To'
                 type='date'
                 required
                 value={endDate}
@@ -215,7 +220,7 @@ const RaiseLeaveModal = ({
         </div>
 
         {goesTo && <p className='text-xs font-medium text-slate-600'>{goesTo}</p>}
-        <p className='text-xs text-slate-400'>
+        <p className='text-xs text-slate-500'>
           Weekends and company holidays inside the range don’t count — Fri→Mon costs 2 days.
         </p>
         {noticeDays > 0 && (
@@ -234,6 +239,7 @@ const RaiseLeaveModal = ({
                 : '(optional)'}
             </label>
             <input
+              aria-label='Medical certificate'
               type='file'
               accept={CERT_TYPES.join(',')}
               onChange={(e) => setCertificate(e.target.files?.[0] ?? null)}
@@ -246,6 +252,7 @@ const RaiseLeaveModal = ({
         <div className='space-y-1'>
           <label className={labelClass}>Reason (optional)</label>
           <textarea
+            aria-label='Reason'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className={`${inputClass} min-h-20`}
@@ -272,7 +279,7 @@ const RaiseLeaveModal = ({
           </button>
         </div>
       </form>
-    </div>
+    </ModalShell>
   );
 };
 

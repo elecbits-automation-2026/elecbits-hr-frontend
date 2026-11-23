@@ -19,3 +19,7 @@ export const apiErrorMessage = (err: unknown): string => {
 /** The machine-readable code, for branching (e.g. CLAIM_CLOSED vs INVALID_CREDENTIALS). */
 export const apiErrorCode = (err: unknown): string | undefined =>
   err instanceof AxiosError ? err.response?.data?.error?.code : undefined;
+
+/** True when the server refused the request for lack of access (HTTP 403). */
+export const isForbidden = (err: unknown): boolean =>
+  err instanceof AxiosError && err.response?.status === 403;

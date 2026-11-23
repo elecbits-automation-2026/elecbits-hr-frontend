@@ -2,22 +2,33 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import type { Employee } from '@app-types/api.types';
-import FeedbackModal, { type FeedbackDraft } from '@components/Employee/Home/FeedbackModal.component';
+import FeedbackModal, {
+  type FeedbackDraft,
+} from '@components/Employee/Home/FeedbackModal.component';
 import PersonSheet, { type SheetPerson } from '@components/Employee/MyTeam/PersonSheet.component';
 import { attendanceApi } from '@services/api/attendance.api';
 import { departmentsApi } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
-import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
 
 interface TreeNode {
   person: Employee;
   children: TreeNode[];
+  /** Everyone under this person, at every depth — not just direct reports. */
+  below: number;
 }
 
 interface OrgModel {
   roots: TreeNode[];
+  /**
+   * One tree per reporting loop, drawn from a loop member so the people in it
+   * can be seen (and marked) on the chart instead of only named in the banner.
+   */
+  loopRoots: TreeNode[];
+  /** Person id -> the names around their loop, in reporting order. */
+  loopOf: Map<string, string[]>;
   headcount: number;
   managers: number;
   depth: number;
@@ -60,7 +71,12 @@ const buildOrg = (all: Employee[]): OrgModel => {
     const kids = (children.get(p.id) ?? [])
       .filter((c) => !seen.has(c.id))
       .sort((a, b) => a.name.localeCompare(b.name));
-    return { person: p, children: kids.map((c) => toNode(c, level + 1)) };
+    const nodes = kids.map((c) => toNode(c, level + 1));
+    return {
+      person: p,
+      children: nodes,
+      below: nodes.reduce((n, c) => n + 1 + c.below, 0),
+    };
   };
   // Roots: nobody above them (no manager, or a manager who isn't on the roster).
   const roots = [...noManager, ...dangling]
@@ -71,12 +87,37 @@ const buildOrg = (all: Employee[]): OrgModel => {
   const looped = people.filter((p) => !seen.has(p.id));
   const managers = [...children.keys()].filter((id) => seen.has(id)).length;
   const links = people.length - roots.length - looped.length;
+  const treeDepth = depth;
+
+  // Everyone unreached hangs off a loop (their chain never reaches a top).
+  // Follow each chain until it repeats; the repeated stretch is the loop.
+  const loopOf = new Map<string, string[]>();
+  const loopEntries: Employee[] = [];
+  for (const start of looped) {
+    if (loopOf.has(start.id)) continue;
+    const path: string[] = [];
+    const at = new Map<string, number>();
+    let cur: Employee | undefined = start;
+    while (cur && !at.has(cur.id) && !loopOf.has(cur.id)) {
+      at.set(cur.id, path.length);
+      path.push(cur.id);
+      cur = cur.reportsTo ? byId.get(cur.reportsTo) : undefined;
+    }
+    if (!cur || loopOf.has(cur.id)) continue; // ran into a loop already found
+    const members = path.slice(at.get(cur.id)!).map((id) => byId.get(id)!);
+    const names = members.map((m) => m.name);
+    for (const m of members) loopOf.set(m.id, names);
+    loopEntries.push([...members].sort((a, b) => a.name.localeCompare(b.name))[0]!);
+  }
+  const loopRoots = loopEntries.map((p) => toNode(p, 1)); // depth from these is ignored
 
   return {
     roots,
+    loopRoots,
+    loopOf,
     headcount: people.length,
     managers,
-    depth,
+    depth: treeDepth,
     avgSpan: managers > 0 ? Math.round((links / managers) * 10) / 10 : 0,
     noManager,
     dangling,
@@ -87,7 +128,7 @@ const buildOrg = (all: Employee[]): OrgModel => {
 const statusChip = (p: Employee) =>
   p.status === 'active' ? null : (
     <span
-      className={`rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
+      className={`rounded-full px-1.5 py-0.5 text-xs uppercase tracking-wide ${
         p.status === 'invited' ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'
       }`}
     >
@@ -102,8 +143,10 @@ const Node = ({
   onToggle,
   onOpen,
   parentIsApex = false,
+  loopOf,
 }: {
   node: TreeNode;
+  loopOf: Map<string, string[]>;
   /** True for the people directly under the administration account — the self-governing top. */
   parentIsApex?: boolean;
   deptName: (id: string | null) => string | null;
@@ -113,9 +156,10 @@ const Node = ({
 }) => {
   const open = expanded.has(node.person.id);
   const dept = deptName(node.person.departmentId);
+  const loop = loopOf.get(node.person.id);
   return (
     <div>
-      <div className='flex items-center gap-2 py-1'>
+      <div className='flex min-w-0 flex-wrap items-center gap-2 py-1'>
         {node.children.length > 0 ? (
           <button
             type='button'
@@ -132,27 +176,38 @@ const Node = ({
           type='button'
           onClick={() => onOpen(node.person)}
           title={`Open ${node.person.name}'s sheet`}
-          className='font-medium text-slate-800 hover:text-brand-600 hover:underline'
+          className='min-w-0 text-left font-medium [overflow-wrap:anywhere] text-slate-800 hover:text-brand-600 hover:underline'
         >
           {node.person.name}
         </button>
-        <span className='rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500'>
+        <span className='rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-500'>
           {node.person.level}
         </span>
         {statusChip(node.person)}
         {parentIsApex && (
           <span
             title='Reports to the Admin account: nobody above them, so their leave, remote work and regularizations approve themselves and they set their own goals'
-            className='rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-sky-700'
+            className='rounded-full bg-sky-50 px-1.5 py-0.5 text-xs uppercase tracking-wide text-sky-700'
           >
             self-governing
           </span>
         )}
-        <span className='truncate text-xs text-slate-400'>
+        <span className='truncate text-xs text-slate-500'>
           {[node.person.designation, dept].filter(Boolean).join(' · ')}
         </span>
         {node.children.length > 0 && (
-          <span className='text-[10px] text-slate-300'>({node.children.length})</span>
+          <span className='whitespace-nowrap text-xs text-slate-500'>
+            {node.children.length} direct
+            {node.below > node.children.length && ` · ${node.below} below`}
+          </span>
+        )}
+        {loop && (
+          <span
+            title={`${node.person.name}'s reporting line circles back: ${[...loop, loop[0]].join(' → ')}. Fix a “reports to” in People.`}
+            className='whitespace-nowrap rounded-full bg-red-50 px-1.5 py-0.5 text-xs uppercase tracking-wide text-red-700'
+          >
+            loops back here
+          </span>
         )}
       </div>
       {open && node.children.length > 0 && (
@@ -161,6 +216,7 @@ const Node = ({
             <Node
               key={c.person.id}
               node={c}
+              loopOf={loopOf}
               deptName={deptName}
               expanded={expanded}
               onToggle={onToggle}
@@ -198,6 +254,13 @@ const OrgStructurePage = () => {
       top.add(r.person.id);
       for (const c of r.children) top.add(c.person.id);
     }
+    // Loops open fully — they're short and the point is to see who is in them.
+    const openAll = (nodes: TreeNode[]) =>
+      nodes.forEach((n) => {
+        top.add(n.person.id);
+        openAll(n.children);
+      });
+    openAll(model.loopRoots);
     setExpanded(top);
     setInitialized(true);
   }
@@ -220,9 +283,16 @@ const OrgStructurePage = () => {
   const allIds = (nodes: TreeNode[]): string[] =>
     nodes.flatMap((n) => [n.person.id, ...allIds(n.children)]);
 
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
   if (employees.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (employees.error)
-    return <p className='text-sm text-red-600'>{apiErrorMessage(employees.error)}</p>;
+  if (employees.error) return <QueryError error={employees.error} />;
   if (!model) return null;
 
   return (
@@ -232,7 +302,7 @@ const OrgStructurePage = () => {
         <div className='flex gap-2'>
           <button
             type='button'
-            onClick={() => setExpanded(new Set(allIds(model.roots)))}
+            onClick={() => setExpanded(new Set(allIds([...model.roots, ...model.loopRoots])))}
             className='rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50'
           >
             Expand all
@@ -268,20 +338,21 @@ const OrgStructurePage = () => {
             <p>
               {model.noManager.length} records have no manager:{' '}
               {model.noManager.map((p) => p.name).join(', ')}. Only the Admin account should be at
-              the top — everyone else needs a manager (the top people report to Admin). Set it
-              under People → Edit.
+              the top — everyone else needs a manager (the top people report to Admin). Set it under
+              People → Edit.
             </p>
           )}
           {model.dangling.length > 0 && (
             <p>
-              {model.dangling.length} report to someone not on the live roster (shown as tree
-              tops): {model.dangling.map((p) => p.name).join(', ')}.
+              {model.dangling.length} report to someone not on the live roster (shown as tree tops):{' '}
+              {model.dangling.map((p) => p.name).join(', ')}.
             </p>
           )}
           {model.looped.length > 0 && (
             <p>
               Reporting loop — these people's chains circle back on themselves and never reach a
-              top: {model.looped.map((p) => p.name).join(', ')}. Fix their “reports to” in People.
+              top: {model.looped.map((p) => p.name).join(', ')}. They&rsquo;re drawn below the
+              chart, marked &ldquo;loops back here&rdquo;. Fix their “reports to” in People.
             </p>
           )}
         </div>
@@ -292,27 +363,40 @@ const OrgStructurePage = () => {
           <Node
             key={r.person.id}
             node={r}
+            loopOf={model.loopOf}
             deptName={deptName}
             expanded={expanded}
             onOpen={openSheet}
-            onToggle={(id) =>
-              setExpanded((prev) => {
-                const next = new Set(prev);
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
-                return next;
-              })
-            }
+            onToggle={toggle}
           />
         ))}
       </div>
 
+      {model.loopRoots.length > 0 && (
+        <div className='rounded-xl border border-red-200 bg-white p-5'>
+          <h2 className='text-sm font-semibold text-slate-800'>Caught in a reporting loop</h2>
+          <p className='mb-2 mt-0.5 text-xs text-slate-500'>
+            These lines never reach a top, so they can&rsquo;t hang under anyone above. Each one is
+            drawn from a person in the loop; whoever is marked is part of it.
+          </p>
+          {model.loopRoots.map((r) => (
+            <Node
+              key={r.person.id}
+              node={r}
+              loopOf={model.loopOf}
+              deptName={deptName}
+              expanded={expanded}
+              onOpen={openSheet}
+              onToggle={toggle}
+            />
+          ))}
+        </div>
+      )}
+
       {person && (
         <PersonSheet
           member={person}
-          days={
-            (orgAttendance.data ?? []).find((m) => m.employee.id === person.id)?.days ?? []
-          }
+          days={(orgAttendance.data ?? []).find((m) => m.employee.id === person.id)?.days ?? []}
           onClose={() => setPerson(null)}
           onNote={(m) => {
             setPerson(null);

@@ -5,6 +5,7 @@ import type { Joiner } from '@app-types/api.types';
 import { longDate } from '@constants/Common/hiring.constants';
 import { hireApi } from '@services/api/hire.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const today = () => new Date().toLocaleDateString('en-CA');
 
@@ -111,6 +112,7 @@ const JoinerCard = ({ j }: { j: Joiner }) => {
         <div className='space-y-2'>
           {ending && (
             <textarea
+              aria-label='Why did they not join? Their record is deactivated and the position reopens.'
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
@@ -175,7 +177,7 @@ const JoinersPage = () => {
   const list = useQuery({ queryKey: ['hiring-joiners'], queryFn: hireApi.joiners });
 
   if (list.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (list.error) return <p className='text-sm text-red-600'>{apiErrorMessage(list.error)}</p>;
+  if (list.error) return <QueryError error={list.error} />;
   const all = list.data ?? [];
   const coming = all.filter((j) => j.stage === 'hired');
   const joined = all.filter((j) => j.stage === 'joined');

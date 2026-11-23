@@ -100,7 +100,7 @@ const NotificationBell = () => {
       >
         <BellIcon />
         {unread > 0 && (
-          <span className='absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none text-white'>
+          <span className='absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold leading-none text-white'>
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -123,9 +123,9 @@ const NotificationBell = () => {
             {list.error && (
               <p className='px-4 py-3 text-sm text-red-600'>{apiErrorMessage(list.error)}</p>
             )}
-            {list.isLoading && <p className='px-4 py-3 text-sm text-slate-400'>Loading…</p>}
+            {list.isLoading && <p className='px-4 py-3 text-sm text-slate-500'>Loading…</p>}
             {list.data?.items.length === 0 && (
-              <p className='px-4 py-6 text-center text-sm text-slate-400'>
+              <p className='px-4 py-6 text-center text-sm text-slate-500'>
                 You&rsquo;re all caught up.
               </p>
             )}
@@ -155,7 +155,7 @@ const NotificationBell = () => {
                     >
                       {n.title}
                     </span>
-                    <span className='shrink-0 text-[11px] text-slate-400'>{ago(n.createdAt)}</span>
+                    <span className='shrink-0 text-xs text-slate-500'>{ago(n.createdAt)}</span>
                   </span>
                   {n.body && <span className='mt-0.5 block text-xs text-slate-500'>{n.body}</span>}
                 </span>

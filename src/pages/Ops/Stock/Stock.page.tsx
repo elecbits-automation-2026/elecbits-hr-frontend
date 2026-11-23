@@ -71,7 +71,12 @@ const MoveForm = ({
     <div className='space-y-3 rounded-xl border border-slate-200 bg-white p-4'>
       <h2 className='text-sm font-semibold text-slate-700'>Record a move</h2>
       <div className='grid gap-2 sm:grid-cols-3'>
-        <select value={f.kind} onChange={(e) => set('kind')(e.target.value)} className={inputClass}>
+        <select
+          aria-label='Movement kind'
+          value={f.kind}
+          onChange={(e) => set('kind')(e.target.value)}
+          className={inputClass}
+        >
           {Object.entries(MOVE_LABELS).map(([k, l]) => (
             <option key={k} value={k}>
               {l}
@@ -79,6 +84,7 @@ const MoveForm = ({
           ))}
         </select>
         <select
+          aria-label='Item'
           value={f.itemId}
           onChange={(e) => set('itemId')(e.target.value)}
           className={inputClass}
@@ -90,6 +96,7 @@ const MoveForm = ({
           ))}
         </select>
         <select
+          aria-label='Zone'
           value={f.zoneId}
           onChange={(e) => set('zoneId')(e.target.value)}
           className={inputClass}
@@ -103,6 +110,7 @@ const MoveForm = ({
         </select>
         {f.kind === 'transfer' && (
           <select
+            aria-label='To zone'
             value={f.toZoneId}
             onChange={(e) => set('toZoneId')(e.target.value)}
             className={inputClass}
@@ -119,6 +127,7 @@ const MoveForm = ({
         )}
         {f.kind === 'issue' && (
           <select
+            aria-label='Who takes it'
             value={f.employeeId}
             onChange={(e) => set('employeeId')(e.target.value)}
             className={inputClass}
@@ -132,6 +141,7 @@ const MoveForm = ({
           </select>
         )}
         <input
+          aria-label='Quantity'
           type='number'
           value={f.qty}
           onChange={(e) => set('qty')(e.target.value)}
@@ -139,6 +149,7 @@ const MoveForm = ({
           className={inputClass}
         />
         <input
+          aria-label='Note'
           value={f.note}
           onChange={(e) => set('note')(e.target.value)}
           placeholder={f.kind === 'adjust' ? 'Why the count changed (required)' : 'Note (optional)'}
@@ -192,24 +203,28 @@ const NewItem = ({ onDone }: { onDone: (o: StockOverview) => void }) => {
     <div className='w-full space-y-2 rounded-xl border border-slate-200 bg-white p-4'>
       <div className='grid gap-2 sm:grid-cols-4'>
         <input
+          aria-label='SKU'
           value={f.sku}
           onChange={(e) => setF({ ...f, sku: e.target.value })}
           placeholder='SKU'
           className={inputClass}
         />
         <input
+          aria-label='Name'
           value={f.name}
           onChange={(e) => setF({ ...f, name: e.target.value })}
           placeholder='Name'
           className={inputClass}
         />
         <input
+          aria-label='Category (optional)'
           value={f.category}
           onChange={(e) => setF({ ...f, category: e.target.value })}
           placeholder='Category (optional)'
           className={inputClass}
         />
         <input
+          aria-label='Unit (pcs, m, box)'
           value={f.unit}
           onChange={(e) => setF({ ...f, unit: e.target.value })}
           placeholder='Unit (pcs, m, box)'
@@ -277,7 +292,7 @@ const StockPage = () => {
       {data && (
         <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white p-4'>
           {data.items.length === 0 ? (
-            <p className='text-sm text-slate-400'>No stock items yet — add one.</p>
+            <p className='text-sm text-slate-500'>No stock items yet — add one.</p>
           ) : (
             <table className='w-full text-left text-sm'>
               <thead>
@@ -299,10 +314,10 @@ const StockPage = () => {
                     className={`border-b border-slate-100 ${i.active ? '' : 'opacity-50'}`}
                   >
                     <td className='py-2 pr-3'>
-                      <span className='font-mono text-xs text-slate-400'>{i.sku}</span>{' '}
+                      <span className='font-mono text-xs text-slate-500'>{i.sku}</span>{' '}
                       <span className='text-slate-800'>{i.name}</span>
                       {i.category && (
-                        <span className='text-xs text-slate-400'> · {i.category}</span>
+                        <span className='text-xs text-slate-500'> · {i.category}</span>
                       )}
                     </td>
                     {data.zones.map((z) => (
@@ -311,13 +326,13 @@ const StockPage = () => {
                       </td>
                     ))}
                     <td className='py-2 pr-3 text-right font-medium tabular-nums'>
-                      {i.total} <span className='text-xs font-normal text-slate-400'>{i.unit}</span>
+                      {i.total} <span className='text-xs font-normal text-slate-500'>{i.unit}</span>
                     </td>
                     <td className='py-2 text-right'>
                       <button
                         type='button'
                         onClick={() => archive.mutate({ id: i.id, active: !i.active })}
-                        className='text-xs text-slate-400 hover:text-slate-700'
+                        className='text-xs text-slate-500 hover:text-slate-700'
                       >
                         {i.active ? 'Archive' : 'Restore'}
                       </button>
@@ -338,6 +353,7 @@ const StockPage = () => {
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <h2 className='text-sm font-semibold text-slate-700'>Ledger</h2>
           <select
+            aria-label='Item'
             value={itemFilter}
             onChange={(e) => setItemFilter(e.target.value)}
             className='rounded-md border border-slate-300 px-2 py-1 text-sm'
@@ -350,11 +366,11 @@ const StockPage = () => {
             ))}
           </select>
         </div>
-        {ledger.data?.length === 0 && <p className='text-sm text-slate-400'>No moves yet.</p>}
+        {ledger.data?.length === 0 && <p className='text-sm text-slate-500'>No moves yet.</p>}
         <ul className='divide-y divide-slate-100 text-sm'>
           {ledger.data?.map((m) => (
             <li key={m.id} className='flex flex-wrap items-center gap-x-3 gap-y-0.5 py-2'>
-              <span className='w-28 text-xs text-slate-400'>{fmtWhen(m.createdAt)}</span>
+              <span className='w-28 text-xs text-slate-500'>{fmtWhen(m.createdAt)}</span>
               <span className='w-28 text-slate-600'>{STOCK_KIND_LABELS[m.kind]}</span>
               <span
                 className={`w-16 text-right tabular-nums ${m.qty < 0 ? 'text-red-700' : 'text-green-700'}`}

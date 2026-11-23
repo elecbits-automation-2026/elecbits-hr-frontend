@@ -10,6 +10,12 @@
   --color-brand-500: #2563eb;
   --color-brand-600: #1d4ed8;
   --color-brand-900: #1e3a5f;
+  /*
+   * Secondary text (slate-500) a step darker than Tailwind's default so it
+   * passes WCAG AA 4.5:1 on the slate-50 page and slate-100 chips too, not
+   * just on white (report M17). The dark theme sets its own value below.
+   */
+  --color-slate-500: oklch(50% 0.046 257.417);
 }
 
 :root {
@@ -20,6 +26,25 @@
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/*
+ * Keyboard focus (WCAG 2.4.7). Unlayered on purpose: it outranks Tailwind's
+ * `focus:outline-none` utilities, so every control shows a ring when reached
+ * by keyboard (mouse clicks on buttons don't trigger :focus-visible).
+ */
+:root {
+  --focus-ring: #1d4ed8;
+}
+:root[data-theme='dark'] {
+  --focus-ring: #93b4f8;
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+:is(input, select, textarea):focus-visible {
+  outline-offset: 0;
 }
 
 /*
@@ -124,34 +149,39 @@ body {
   :root[data-theme='dark'] :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) {
     color: oklch(87.9% 0.169 91.605);
   }
-  :root[data-theme='dark'] :is(.text-green-600, .text-green-700, .text-green-800, .text-green-900) {
+  :root[data-theme='dark'] :is(.text-green-700, .text-green-800, .text-green-900) {
     color: oklch(87.1% 0.15 154.449);
   }
-  :root[data-theme='dark'] :is(.text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900) {
+  :root[data-theme='dark']
+    :is(.text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900) {
     color: oklch(84.5% 0.143 164.978);
   }
   :root[data-theme='dark'] :is(.text-sky-600, .text-sky-700, .text-sky-800, .text-sky-900) {
     color: oklch(82.8% 0.111 230.318);
   }
-  :root[data-theme='dark'] :is(.text-violet-600, .text-violet-700, .text-violet-800, .text-violet-900) {
+  :root[data-theme='dark']
+    :is(.text-violet-600, .text-violet-700, .text-violet-800, .text-violet-900) {
     color: oklch(81.1% 0.111 293.571);
   }
   :root[data-theme='dark'] :is(.text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900) {
     color: oklch(80.9% 0.105 251.813);
   }
-  :root[data-theme='dark'] :is(.text-orange-600, .text-orange-700, .text-orange-800, .text-orange-900) {
+  :root[data-theme='dark']
+    :is(.text-orange-600, .text-orange-700, .text-orange-800, .text-orange-900) {
     color: oklch(83.7% 0.128 66.29);
   }
   :root[data-theme='dark'] :is(.text-rose-600, .text-rose-700, .text-rose-800, .text-rose-900) {
     color: oklch(81% 0.117 11.638);
   }
-  :root[data-theme='dark'] :is(.text-purple-600, .text-purple-700, .text-purple-800, .text-purple-900) {
+  :root[data-theme='dark']
+    :is(.text-purple-600, .text-purple-700, .text-purple-800, .text-purple-900) {
     color: oklch(82.7% 0.119 306.383);
   }
   :root[data-theme='dark'] :is(.text-teal-600, .text-teal-700, .text-teal-800, .text-teal-900) {
     color: oklch(85.5% 0.138 181.071);
   }
-  :root[data-theme='dark'] :is(.text-yellow-600, .text-yellow-700, .text-yellow-800, .text-yellow-900) {
+  :root[data-theme='dark']
+    :is(.text-yellow-600, .text-yellow-700, .text-yellow-800, .text-yellow-900) {
     color: oklch(90.5% 0.182 98.111);
   }
   :root[data-theme='dark'] :is(.text-brand-600, .text-brand-700, .text-brand-800, .text-brand-900) {

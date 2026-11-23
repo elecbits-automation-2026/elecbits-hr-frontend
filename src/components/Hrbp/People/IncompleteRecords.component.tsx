@@ -58,7 +58,7 @@ const CompleteRow = ({ record }: { record: IncompleteRecord }) => {
     >
       <span className='min-w-40 flex-1 text-sm'>
         <span className='font-medium text-slate-800'>{employee.name}</span>
-        <span className='ml-2 font-mono text-xs text-slate-400'>{employee.employeeCode}</span>
+        <span className='ml-2 font-mono text-xs text-slate-500'>{employee.employeeCode}</span>
         {missing.length > 0 && (
           <span className='block text-xs text-amber-700'>
             Missing {missing.map((f) => FIELD_LABELS[f]).join(', ')}

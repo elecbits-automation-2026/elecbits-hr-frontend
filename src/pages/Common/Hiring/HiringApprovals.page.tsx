@@ -10,6 +10,7 @@ import { APPROVER_LABEL } from '@constants/Common/hiring.constants';
 import { hiringApi } from '@services/api/hiring.api';
 import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const Decide = ({ req }: { req: Requisition }) => {
   const queryClient = useQueryClient();
@@ -28,6 +29,7 @@ const Decide = ({ req }: { req: Requisition }) => {
     <div className='w-full space-y-2'>
       {rejecting && (
         <textarea
+          aria-label='Why? The head sees this and edits the line.'
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={2}
@@ -76,7 +78,7 @@ const Decide = ({ req }: { req: Requisition }) => {
               type='button'
               disabled={go.isPending}
               onClick={() => go.mutate('approve')}
-              className='rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50'
+              className='rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50'
             >
               Approve
             </button>
@@ -113,6 +115,7 @@ const GiveToTaRm = ({ req, options }: { req: Requisition; options: TaRmOption[] 
       {go.error && <p className='text-sm text-red-600'>{apiErrorMessage(go.error)}</p>}
       <div className='flex justify-end gap-2'>
         <select
+          aria-label='TA RM'
           value={taRmId}
           onChange={(e) => setTaRmId(e.target.value)}
           className='rounded-md border border-slate-300 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none'
@@ -161,7 +164,11 @@ const HiringApprovalsPage = () => {
     queryFn: () => hiringApi.list(),
     enabled: isAdmin,
   });
-  const taRms = useQuery({ queryKey: ['hiring-ta-rms'], queryFn: hiringApi.taRms, enabled: isAdmin });
+  const taRms = useQuery({
+    queryKey: ['hiring-ta-rms'],
+    queryFn: hiringApi.taRms,
+    enabled: isAdmin,
+  });
   const toGive = (lines.data ?? []).filter(
     (r) =>
       r.status === 'approved' &&
@@ -170,8 +177,7 @@ const HiringApprovalsPage = () => {
   );
 
   if (waiting.isLoading || me.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (waiting.error)
-    return <p className='text-sm text-red-600'>{apiErrorMessage(waiting.error)}</p>;
+  if (waiting.error) return <QueryError error={waiting.error} />;
   const roles = me.data?.approverRoles ?? [];
 
   return (
@@ -214,10 +220,10 @@ const HiringApprovalsPage = () => {
         !reviews.data?.length &&
         !decisions.data?.length &&
         toGive.length === 0 && (
-        <p className='rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500'>
-          Nothing waiting for you.
-        </p>
-      )}
+          <p className='rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500'>
+            Nothing waiting for you.
+          </p>
+        )}
       <div className='space-y-3'>
         {waiting.data?.map((r) => (
           <RequisitionCard key={r.id} req={r} showDepartment actions={<Decide req={r} />} />

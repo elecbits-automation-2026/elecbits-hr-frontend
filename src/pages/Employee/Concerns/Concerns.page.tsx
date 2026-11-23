@@ -44,7 +44,9 @@ const QueueStats = ({ q }: { q: ConcernQueueSummary }) => (
     <span>
       Avg. to acknowledge:{' '}
       <b className='text-slate-800'>
-        {q.avgDaysToAck === null ? '—' : `${q.avgDaysToAck} ${q.avgDaysToAck === 1 ? 'day' : 'days'}`}
+        {q.avgDaysToAck === null
+          ? '—'
+          : `${q.avgDaysToAck} ${q.avgDaysToAck === 1 ? 'day' : 'days'}`}
       </b>
     </span>
     <span>
@@ -69,9 +71,9 @@ const CaseList = ({
   onOpen: (id: string) => void;
 }) => (
   <div className='rounded-xl border border-slate-200 bg-white p-5'>
-    {loading && <p className='text-sm text-slate-400'>Loading…</p>}
+    {loading && <p className='text-sm text-slate-500'>Loading…</p>}
     {!!error && <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>}
-    {rows?.length === 0 && <p className='text-sm text-slate-400'>{empty}</p>}
+    {rows?.length === 0 && <p className='text-sm text-slate-500'>{empty}</p>}
     <ul className='divide-y divide-slate-100'>
       {(rows ?? []).map((c) => (
         <li key={c.id}>
@@ -80,21 +82,23 @@ const CaseList = ({
             onClick={() => onOpen(c.id)}
             className='flex w-full flex-wrap items-center gap-2 py-3 text-left hover:bg-slate-50'
           >
-            <span className='font-mono text-xs text-slate-400'>{c.code}</span>
+            <span className='font-mono text-xs text-slate-500'>{c.code}</span>
             <span className='flex-1 truncate text-sm font-medium text-slate-800'>{c.title}</span>
             {c.severity && (
               <span
-                className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${SEVERITY_CLS[c.severity]}`}
+                className={`rounded-full px-2 py-0.5 text-xs capitalize ${SEVERITY_CLS[c.severity]}`}
               >
                 {c.severity}
               </span>
             )}
             <StatusChip c={c} />
-            <span className='w-full text-xs text-slate-400'>
+            <span className='w-full text-xs text-slate-500'>
               {TRACK_LABELS[c.track]} · {categoryLabel(c.track, c.category)}
               {showRaiser ? ` · ${c.anonymous ? 'anonymous' : (c.raisedBy?.name ?? '')}` : ''}
               {dueLine(c) ? ` · ${dueLine(c)}` : ''}
-              {c.can.assign || c.owner ? ` · ${c.owner ? `owner ${c.owner.name}` : 'unassigned'}` : ''}
+              {c.can.assign || c.owner
+                ? ` · ${c.owner ? `owner ${c.owner.name}` : 'unassigned'}`
+                : ''}
             </span>
           </button>
         </li>
@@ -138,6 +142,11 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
     queryClient.invalidateQueries({ queryKey: ['concerns-queues'] });
     queryClient.invalidateQueries({ queryKey: ['concerns-queue'] });
   };
+
+  // Your own named cases still in play (a decided dispute waits on you, so it counts).
+  const openOfMine = (mine.data ?? []).filter(
+    (c) => !['closed', 'resolved', 'declined'].includes(c.status),
+  ).length;
 
   const hrSummary = queues.data?.find((q) => q.queue === 'hr');
   const shownQueue =
@@ -192,6 +201,15 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
             ) : null}
           </button>
         ))}
+        {mine.data && (
+          <span
+            className={`mb-1.5 ml-auto self-center rounded-full px-2.5 py-0.5 text-xs ${
+              openOfMine > 0 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
+            }`}
+          >
+            {openOfMine} of yours open
+          </span>
+        )}
       </div>
 
       {tab === 'raise' && (
@@ -229,6 +247,7 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
             </button>
           ))}
           <select
+            aria-label='Severity'
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value as '' | ConcernSeverity)}
             className='rounded-md border border-slate-300 px-2 py-1 text-sm'
@@ -269,7 +288,7 @@ const ConcernsPage = ({ embedded = false }: { embedded?: boolean }) => {
                 Close ✕
               </button>
             </div>
-            {open.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+            {open.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
             {open.error && <p className='text-sm text-red-600'>{apiErrorMessage(open.error)}</p>}
             {open.data && (
               <ConcernCase

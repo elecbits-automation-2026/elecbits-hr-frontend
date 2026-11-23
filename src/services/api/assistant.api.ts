@@ -1,6 +1,21 @@
-import type { AssistantEvent, AssistantTurn } from '@app-types/api.types';
+import type {
+  AssignTrainingInput,
+  AssistantEvent,
+  AssistantProposal,
+  AssistantQuickQuestion,
+  AssistantQuickResult,
+  AssistantTurn,
+  CreateGoalInput,
+  CreateRecognitionInput,
+  RequisitionInput,
+} from '@app-types/api.types';
 import { useAuthStore } from '@store/auth.store';
-import { apiBaseURL, endSession, renewAccessToken } from '@utils/axiosInstance';
+import { api, apiBaseURL, endSession, renewAccessToken } from '@utils/axiosInstance';
+
+import { hiringApi } from './hiring.api';
+import { performanceApi } from './performance.api';
+import { recognitionsApi } from './recognitions.api';
+import { trainingsApi } from './trainings.api';
 
 /** A refusal from the API before the stream opened (same envelope as axios errors). */
 export type AssistantError = Error & { code: string };
@@ -69,6 +84,40 @@ export const assistantApi = {
           .join('');
         if (data) onEvent(JSON.parse(data) as AssistantEvent);
       }
+    }
+  },
+
+  /** The offline buttons: one whitelisted read, answered without the model. */
+  quick: async (question: AssistantQuickQuestion): Promise<AssistantQuickResult> =>
+    (await api.post<AssistantQuickResult>('/assistant/quick', { question })).data,
+
+  /**
+   * Confirm a proposal: the EXISTING endpoint for that action, called with
+   * the user's own session — the app's own write path and access checks.
+   * The payload was built and validated by the server against that
+   * endpoint's schema; the endpoint validates it again.
+   */
+  /** Resolves to a one-line outcome for the card. */
+  confirm: async (p: AssistantProposal): Promise<string> => {
+    switch (p.action) {
+      case 'add_goal':
+        await performanceApi.createGoal(p.payload as unknown as CreateGoalInput);
+        return 'Goal added.';
+      case 'assign_training': {
+        const r = await trainingsApi.assign(p.payload as unknown as AssignTrainingInput);
+        const skipped = r.skipped.length
+          ? ` Skipped (already has it open): ${r.skipped.map((x) => x.name).join(', ')}.`
+          : '';
+        return `Assigned to ${r.assigned} ${r.assigned === 1 ? 'person' : 'people'}.${skipped}`;
+      }
+      case 'nominate':
+        await recognitionsApi.nominate(p.payload as unknown as CreateRecognitionInput);
+        return 'Nomination sent to HR for approval.';
+      case 'raise_opening':
+        await hiringApi.create(
+          p.payload as unknown as RequisitionInput & { departmentId: string; quarter: string },
+        );
+        return 'Saved as a draft line — submit it from Hiring plan.';
     }
   },
 };

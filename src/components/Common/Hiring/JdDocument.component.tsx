@@ -1,11 +1,7 @@
 import { createPortal } from 'react-dom';
 
 import type { JdContent } from '@app-types/api.types';
-import {
-  JD_ABOUT_ELECBITS,
-  JD_FOOTER,
-  JD_WHY_JOIN,
-} from '@constants/Common/jdTemplate.constants';
+import { JD_ABOUT_ELECBITS, JD_FOOTER, JD_WHY_JOIN } from '@constants/Common/jdTemplate.constants';
 
 /** Old or half-filled content still renders: missing parts show as empty. */
 const list = (v: unknown): string[] => (Array.isArray(v) ? (v as string[]) : []);

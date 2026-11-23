@@ -6,6 +6,7 @@ import { guessStream, STREAM_LABEL, trainingsApi } from '@services/api/trainings
 import { apiErrorMessage } from '@utils/apiError';
 
 import { useTrainingsInvalidate } from './useTrainingsInvalidate';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
 const labelClass = 'block text-xs font-medium text-slate-600';
@@ -29,14 +30,14 @@ const Shell = ({
   onClose: () => void;
   children: ReactNode;
 }) => (
-  <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+  <ModalShell onClose={onClose}>
     <div className='max-h-full w-full max-w-lg space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
       <div className='flex items-start justify-between gap-4'>
         <h2 className='text-lg font-semibold text-slate-800'>{title}</h2>
         <button
           type='button'
           onClick={onClose}
-          className='text-slate-400 hover:text-slate-600'
+          className='text-slate-500 hover:text-slate-600'
           aria-label='Close'
         >
           ✕
@@ -44,7 +45,7 @@ const Shell = ({
       </div>
       {children}
     </div>
-  </div>
+  </ModalShell>
 );
 
 const todayIso = () => new Date().toLocaleDateString('en-CA');
@@ -215,6 +216,7 @@ export const AssignTrainingModal = ({
             </span>
             {departments.length > 1 && (
               <select
+                aria-label='Add a person'
                 className='rounded-md border border-slate-300 px-2 py-1 text-xs'
                 value=''
                 onChange={(e) => {
@@ -242,6 +244,7 @@ export const AssignTrainingModal = ({
           </div>
           {people.length > 6 && (
             <input
+              aria-label='Search people'
               type='search'
               className={inputClass}
               value={search}
@@ -255,11 +258,11 @@ export const AssignTrainingModal = ({
                 <label className='flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-slate-50'>
                   <input type='checkbox' checked={picked.has(p.id)} onChange={() => toggle(p.id)} />
                   <span className='text-slate-800'>{p.name}</span>
-                  <span className='text-xs text-slate-400'>{p.department}</span>
+                  <span className='text-xs text-slate-500'>{p.department}</span>
                 </label>
               </li>
             ))}
-            {shown.length === 0 && <li className='px-3 py-2 text-slate-400'>Nobody matches.</li>}
+            {shown.length === 0 && <li className='px-3 py-2 text-slate-500'>Nobody matches.</li>}
           </ul>
         </div>
 

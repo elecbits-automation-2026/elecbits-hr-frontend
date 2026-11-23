@@ -38,6 +38,9 @@ export const concernsApi = {
   /** HR-level case: internal severity, null clears; never shown to the raiser. */
   setSeverity: async (id: string, severity: ConcernSeverity | null): Promise<Concern> =>
     (await api.post<Concern>(`/concerns/${id}/severity`, { severity })).data,
+  /** HR-level case: re-categorise within the track's list (e.g. apply the AI suggestion). */
+  setCategory: async (id: string, category: string): Promise<Concern> =>
+    (await api.post<Concern>(`/concerns/${id}/category`, { category })).data,
   decide: async (id: string, decision: string): Promise<Concern> =>
     (await api.post<Concern>(`/concerns/${id}/decide`, { decision })).data,
   resolve: async (

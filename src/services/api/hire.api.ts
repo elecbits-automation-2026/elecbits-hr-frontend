@@ -38,13 +38,17 @@ export const hireApi = {
     docId: string,
     status: CandidateDocStatus,
   ): Promise<CandidateDocument[]> =>
-    (await api.put<CandidateDocument[]>(`/hiring/applications/${id}/documents/${docId}`, { status }))
-      .data,
+    (
+      await api.put<CandidateDocument[]>(`/hiring/applications/${id}/documents/${docId}`, {
+        status,
+      })
+    ).data,
   setFolder: async (id: string, link: string | null): Promise<Application> =>
     (await api.put<Application>(`/hiring/applications/${id}/folder`, { link })).data,
   uploadOfferLetter: (id: string, file: File): Promise<Application> =>
     putFile(`/hiring/applications/${id}/offer-letter`, file),
-  openOfferLetter: (id: string): Promise<void> => openFile(`/hiring/applications/${id}/offer-letter`),
+  openOfferLetter: (id: string): Promise<void> =>
+    openFile(`/hiring/applications/${id}/offer-letter`),
   saveOfferDraft: async (
     id: string,
     input: { ctc: number; joiningDate: string; terms?: string },
@@ -57,7 +61,8 @@ export const hireApi = {
     (await api.get<Application[]>('/hiring/offers/pending')).data,
   uploadSignedLetter: (id: string, file: File): Promise<Application> =>
     putFile(`/hiring/applications/${id}/signed-offer`, file),
-  openSignedLetter: (id: string): Promise<void> => openFile(`/hiring/applications/${id}/signed-offer`),
+  openSignedLetter: (id: string): Promise<void> =>
+    openFile(`/hiring/applications/${id}/signed-offer`),
   approveOffer: async (id: string): Promise<Application> =>
     (await api.post<Application>(`/hiring/applications/${id}/offer/approve`)).data,
   returnOffer: async (id: string, reason: string): Promise<Application> =>

@@ -25,7 +25,7 @@ export const ASSET_STATUS_CLASS: Record<AssetStatus, string> = {
   idle: 'bg-slate-100 text-slate-600',
   in_use_shared: 'bg-indigo-50 text-indigo-700',
   needs_repair: 'bg-amber-50 text-amber-800',
-  scrapped: 'bg-slate-100 text-slate-400',
+  scrapped: 'bg-slate-100 text-slate-500',
   gifted: 'bg-green-50 text-green-700',
   lost: 'bg-red-50 text-red-700',
 };

@@ -43,6 +43,7 @@ const LeavesPage = () => {
       <div className='flex items-center justify-between'>
         <h1 className='text-2xl font-semibold text-slate-800'>Leaves</h1>
         <select
+          aria-label='Status'
           value={status}
           onChange={(e) => setStatus(e.target.value as LeaveStatus | '')}
           className='rounded-md border border-slate-300 px-3 py-2 text-sm'

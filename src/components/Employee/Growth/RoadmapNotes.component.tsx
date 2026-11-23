@@ -32,7 +32,7 @@ const RoadmapNotes = ({
   return (
     <div className='space-y-2'>
       {notes.length === 0 ? (
-        <p className='text-sm text-slate-400'>
+        <p className='text-sm text-slate-500'>
           {trackId ? 'No notes yet — what should they work on?' : 'No notes from your manager yet.'}
         </p>
       ) : (
@@ -40,7 +40,7 @@ const RoadmapNotes = ({
           {notes.map((n) => (
             <li key={n.id} className='rounded-lg border border-slate-100 bg-slate-50 p-3'>
               <p className='whitespace-pre-wrap text-sm text-slate-700'>{n.body}</p>
-              <p className='mt-1 text-xs text-slate-400'>
+              <p className='mt-1 text-xs text-slate-500'>
                 {n.authorName ?? 'Someone'} · {n.createdAt.slice(0, 10)}
               </p>
             </li>
@@ -50,6 +50,7 @@ const RoadmapNotes = ({
       {trackId && (
         <div>
           <textarea
+            aria-label='Add a note they will see on their growth page'
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={2}

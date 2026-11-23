@@ -49,21 +49,21 @@ const STRIP: Record<StripStatus, { label: string; mark: string; className: strin
     mark: '·',
     className: 'bg-white text-slate-500 border-slate-300 border-dashed',
   },
-  leave: { label: 'On leave', mark: '–', className: 'bg-slate-50 text-slate-400 border-slate-200' },
+  leave: { label: 'On leave', mark: '–', className: 'bg-slate-50 text-slate-500 border-slate-200' },
   holiday: {
     label: 'Holiday',
     mark: '–',
-    className: 'bg-slate-50 text-slate-400 border-slate-200',
+    className: 'bg-slate-50 text-slate-500 border-slate-200',
   },
   weekend: {
     label: 'Week off',
     mark: '–',
-    className: 'bg-slate-50 text-slate-400 border-slate-200',
+    className: 'bg-slate-50 text-slate-500 border-slate-200',
   },
   not_joined: {
     label: 'Before joining',
     mark: '–',
-    className: 'bg-slate-50 text-slate-300 border-slate-200',
+    className: 'bg-slate-50 text-slate-500 border-slate-200',
   },
 };
 
@@ -132,7 +132,7 @@ const wroteYesterday = (r: DailyKpiRow, date: string) => {
   return prev.status === 'done' || prev.status === 'late_approved';
 };
 
-/** Your own day: the alert banner, the 7-day strip and six tiles. */
+/** Your own day: the alert banner, the 7-day strip and seven tiles. */
 const MyDay = ({
   data,
   today,
@@ -164,7 +164,7 @@ const MyDay = ({
             {r.recentHours.avg === null ? '—' : `${r.recentHours.avg}h a day`}
           </span>
           {r.recentHours.days > 0 && (
-            <span className='text-xs text-slate-400'> (over {r.recentHours.days} days)</span>
+            <span className='text-xs text-slate-500'> (over {r.recentHours.days} days)</span>
           )}
         </span>
       </p>
@@ -207,7 +207,7 @@ const MyDay = ({
                 {new Date(`${d.date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short' })}
               </span>
               <span className='text-base font-semibold'>{s.mark}</span>
-              <span className='text-[10px]'>{Number(d.date.slice(8))}</span>
+              <span className='text-xs'>{Number(d.date.slice(8))}</span>
             </button>
           );
         })}
@@ -244,6 +244,15 @@ const MyDay = ({
           bad={has(r, 'attainment_below_target')}
         />
         <Tile
+          label='Goal progress moved'
+          value={
+            r.goals.count === 0
+              ? 'No goals yet'
+              : `${r.goals.moved} ${r.goals.moved === 1 ? 'goal' : 'goals'}`
+          }
+          note='Goals you moved the progress of on this day'
+        />
+        <Tile
           label='Updates, last 7 working days'
           value={`${r.recentUpdates.done} of ${r.recentUpdates.workingDays}`}
           note={`${pct === null ? 'No working days yet' : `${pct}%`} · target ${r.targets.updatesOnTimePct}%`}
@@ -274,6 +283,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
         .includes(search.trim().toLowerCase()),
   );
   const flagged = data.rows.filter((r) => r.alerts.length > 0).length;
+  const movedGoals = data.rows.filter((r) => r.goals.moved > 0).length;
   const written = data.rows.filter(
     (r) => r.update.status === 'done' || r.update.status === 'late_approved',
   ).length;
@@ -286,8 +296,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
   const hoursRows = data.rows.filter((r) => r.recentHours.avg !== null);
   const teamAvg = hoursRows.length
     ? Math.round(
-        (hoursRows.reduce((n, r) => n + (r.recentHours.avg as number), 0) / hoursRows.length) *
-          10,
+        (hoursRows.reduce((n, r) => n + (r.recentHours.avg as number), 0) / hoursRows.length) * 10,
       ) / 10
     : null;
   const left = daysLeftIn(data);
@@ -312,6 +321,9 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
           avg <span className='font-semibold text-slate-800'>{teamAvg ?? '—'}</span>
           {teamAvg !== null && 'h'} over 7 days
         </span>
+        <span title='People who moved the progress of at least one goal on this day'>
+          <span className='font-semibold text-slate-800'>{movedGoals}</span> moved goal progress
+        </span>
         <span>
           <span className='font-semibold text-red-700'>{flagged}</span> flagged
         </span>
@@ -320,6 +332,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
         </span>
         <span className='ml-auto flex items-center gap-3'>
           <input
+            aria-label='Search name or department'
             type='search'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -360,7 +373,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
               >
                 <td className='px-4 py-3'>
                   <p className='font-medium text-slate-800'>{r.employee.name}</p>
-                  <p className='text-xs text-slate-400'>
+                  <p className='text-xs text-slate-500'>
                     {r.employee.department ?? 'No department'}
                   </p>
                 </td>
@@ -384,14 +397,14 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
                   className={`px-4 py-3 tabular-nums ${has(r, 'updates_below_target') ? 'text-red-700' : 'text-slate-600'}`}
                 >
                   {r.recentUpdates.done}/{r.recentUpdates.workingDays}
-                  <span className='text-xs text-slate-400'>
+                  <span className='text-xs text-slate-500'>
                     {' '}
                     · target {r.targets.updatesOnTimePct}%
                   </span>
                 </td>
                 <td className='px-4 py-3'>
                   {r.goals.attainment === null ? (
-                    <span className='text-slate-400'>{r.goals.count === 0 ? 'No goals' : '—'}</span>
+                    <span className='text-slate-500'>{r.goals.count === 0 ? 'No goals' : '—'}</span>
                   ) : (
                     <div className='w-28'>
                       <div className='flex justify-between text-xs tabular-nums'>
@@ -402,7 +415,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
                         >
                           {r.goals.attainment}%
                         </span>
-                        <span className='text-slate-400'>target {r.targets.attainmentPct}%</span>
+                        <span className='text-slate-500'>target {r.targets.attainmentPct}%</span>
                       </div>
                       <div className='relative mt-1 h-1.5 rounded-full bg-slate-100'>
                         <div
@@ -433,7 +446,7 @@ const PeopleTable = ({ data }: { data: DailyKpi }) => {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className='px-4 py-6 text-center text-slate-400'>
+                <td colSpan={8} className='px-4 py-6 text-center text-slate-500'>
                   Nobody matches.
                 </td>
               </tr>
@@ -496,6 +509,7 @@ const DailyKpiPage = () => {
           ◀
         </button>
         <input
+          aria-label='Date'
           type='date'
           value={date}
           min={oldest}

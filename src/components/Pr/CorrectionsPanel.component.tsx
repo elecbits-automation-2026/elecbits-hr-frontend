@@ -30,7 +30,7 @@ const CorrectionsPanel = () => {
   return (
     <div className='rounded-xl border border-slate-200 bg-white p-5'>
       <h2 className='text-sm font-semibold text-slate-700'>Corrections to published payslips</h2>
-      <p className='mt-0.5 text-xs text-slate-400'>
+      <p className='mt-0.5 text-xs text-slate-500'>
         Pending ones ride on the next payroll run for that person and are marked applied when it is
         finalized.
       </p>
@@ -59,7 +59,7 @@ const CorrectionsPanel = () => {
                 </td>
                 <td className='py-2 pr-3 text-slate-600'>
                   {c.reason}
-                  <span className='block text-xs text-slate-400'>
+                  <span className='block text-xs text-slate-500'>
                     by {c.createdByName} · {c.createdAt.slice(0, 10)}
                   </span>
                 </td>

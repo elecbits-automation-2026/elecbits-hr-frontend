@@ -51,7 +51,7 @@ export const REQ_STATUS_CLASS: Record<RequisitionStatus, string> = {
   submitted: 'bg-sky-50 text-sky-700',
   returned: 'bg-amber-50 text-amber-700',
   approved: 'bg-emerald-50 text-emerald-700',
-  cancelled: 'bg-slate-100 text-slate-400',
+  cancelled: 'bg-slate-100 text-slate-500',
   rejected: 'bg-red-50 text-red-700',
 };
 
@@ -80,7 +80,11 @@ export const rupees = (n: number): string => `₹${n.toLocaleString('en-IN')}`;
 
 /** A line's budget per hire, e.g. '₹12,00,000 – ₹18,00,000'. */
 export const budgetText = (min: number | null, max: number | null): string | null =>
-  min === null || max === null ? null : min === max ? rupees(min) : `${rupees(min)} – ${rupees(max)}`;
+  min === null || max === null
+    ? null
+    : min === max
+      ? rupees(min)
+      : `${rupees(min)} – ${rupees(max)}`;
 
 /** '2026-12-22' → '22 Dec 2026'. */
 export const longDate = (iso: string): string =>
@@ -142,7 +146,7 @@ export const STAGE_CLASS: Record<ApplicationStage, string> = {
   offer_withdrawn: 'bg-red-50 text-red-600',
   no_show: 'bg-slate-100 text-slate-500',
   rejected: 'bg-red-50 text-red-600',
-  withdrawn: 'bg-slate-100 text-slate-400',
+  withdrawn: 'bg-slate-100 text-slate-500',
   joined: 'bg-green-700 text-white',
 };
 

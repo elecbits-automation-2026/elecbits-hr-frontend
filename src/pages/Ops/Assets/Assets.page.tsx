@@ -19,6 +19,7 @@ import {
 } from '@constants/Common/ops.constants';
 import { opsApi } from '@services/api/ops.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 type Tab = 'register' | 'loans' | 'incidents';
 
@@ -163,12 +164,14 @@ const AssetsPage = () => {
         <div className='space-y-3 rounded-xl border border-slate-200 bg-white p-4'>
           <div className='grid gap-2 sm:grid-cols-4'>
             <input
+              aria-label='Search tag, name, serial, holder'
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder='Search tag, name, serial, holder'
               className={inputClass}
             />
             <select
+              aria-label='Category'
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className={inputClass}
@@ -181,6 +184,7 @@ const AssetsPage = () => {
               ))}
             </select>
             <select
+              aria-label='Status'
               value={status}
               onChange={(e) => setStatus(e.target.value as typeof status)}
               className={inputClass}
@@ -193,7 +197,12 @@ const AssetsPage = () => {
                 </option>
               ))}
             </select>
-            <select value={zone} onChange={(e) => setZone(e.target.value)} className={inputClass}>
+            <select
+              aria-label='Zone'
+              value={zone}
+              onChange={(e) => setZone(e.target.value)}
+              className={inputClass}
+            >
               <option value=''>All zones</option>
               {options.data?.zones.map((z) => (
                 <option key={z.id} value={z.id}>
@@ -202,9 +211,9 @@ const AssetsPage = () => {
               ))}
             </select>
           </div>
-          {assets.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+          {assets.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
           {assets.data && rows.length === 0 && (
-            <p className='text-sm text-slate-400'>
+            <p className='text-sm text-slate-500'>
               {assets.data.length === 0
                 ? 'No assets yet — add one or import your list.'
                 : 'Nothing matches these filters.'}
@@ -258,7 +267,7 @@ const AssetsPage = () => {
       {tab === 'loans' && (
         <div className='rounded-xl border border-slate-200 bg-white p-4'>
           {loans.length === 0 ? (
-            <p className='text-sm text-slate-400'>No lab items are out on loan.</p>
+            <p className='text-sm text-slate-500'>No lab items are out on loan.</p>
           ) : (
             <ul className='divide-y divide-slate-100'>
               {loans.map((a) => (
@@ -268,7 +277,7 @@ const AssetsPage = () => {
                     onClick={() => setOpenId(a.id)}
                     className='flex w-full flex-wrap items-center gap-2 py-2.5 text-left hover:bg-slate-50'
                   >
-                    <span className='font-mono text-xs text-slate-400'>{a.assetCode}</span>
+                    <span className='font-mono text-xs text-slate-500'>{a.assetCode}</span>
                     <span className='flex-1 text-sm text-slate-800'>
                       {a.name} — {a.holder?.name}
                     </span>
@@ -287,12 +296,12 @@ const AssetsPage = () => {
 
       {tab === 'incidents' && (
         <div className='space-y-2 rounded-xl border border-slate-200 bg-white p-4'>
-          {incidents.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+          {incidents.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
           {incidents.error && (
             <p className='text-sm text-red-600'>{apiErrorMessage(incidents.error)}</p>
           )}
           {incidents.data?.length === 0 && (
-            <p className='text-sm text-slate-400'>No damage, loss or theft recorded.</p>
+            <p className='text-sm text-slate-500'>No damage, loss or theft recorded.</p>
           )}
           {incidents.data?.map((i) => (
             <div key={i.id} className='rounded-lg border border-slate-200 p-3 text-sm'>
@@ -310,7 +319,7 @@ const AssetsPage = () => {
                 >
                   {i.asset.assetCode} {i.asset.name}
                 </button>
-                <span className='text-xs text-slate-400'>
+                <span className='text-xs text-slate-500'>
                   {fmtWhen(i.createdAt)} · reported by {i.reportedBy.name}
                   {i.employee ? ` · with ${i.employee.name}` : ''}
                 </span>
@@ -335,7 +344,7 @@ const AssetsPage = () => {
       )}
 
       {adding && options.data && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+        <ModalShell onClose={() => setAdding(false)}>
           <div className='max-h-full w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
             <h2 className='mb-4 text-lg font-semibold text-slate-800'>Add an asset</h2>
             <AssetForm
@@ -348,7 +357,7 @@ const AssetsPage = () => {
               }}
             />
           </div>
-        </div>
+        </ModalShell>
       )}
       {importing && <ImportAssetsModal onClose={() => setImporting(false)} />}
       {openId && options.data && (

@@ -5,6 +5,7 @@ import type { Goal, GoalCategory } from '@app-types/api.types';
 import { GOAL_CATEGORY_LABELS } from '@constants/Common/quarter.constants';
 import { performanceApi } from '@services/api/performance.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
@@ -47,7 +48,7 @@ const GoalRow = ({ goal, onChanged }: { goal: Goal; onChanged: () => void }) => 
           <span className='font-medium text-slate-800'>{goal.title}</span>
           <span className='text-sm tabular-nums text-slate-600'>{goal.progress}%</span>
         </div>
-        <p className='mt-0.5 text-xs text-slate-400'>
+        <p className='mt-0.5 text-xs text-slate-500'>
           {goal.metric && (
             <>
               {goal.metric}
@@ -57,27 +58,27 @@ const GoalRow = ({ goal, onChanged }: { goal: Goal; onChanged: () => void }) => 
           {GOAL_CATEGORY_LABELS[goal.category].label} · weight {goal.weight} · due {goal.dueOn}
         </p>
         {goal.positionId ? (
-          <p className='mt-2 text-xs text-slate-400'>
+          <p className='mt-2 text-xs text-slate-500'>
             Hiring goal — reassigned and progressed from Hiring, not here.
           </p>
         ) : (
-        <div className='mt-2 flex gap-3'>
-          <button
-            type='button'
-            onClick={() => setEditing(true)}
-            className='text-xs text-brand-600 hover:underline'
-          >
-            Edit
-          </button>
-          <button
-            type='button'
-            disabled={remove.isPending}
-            onClick={() => (confirmDelete ? remove.mutate() : setConfirmDelete(true))}
-            className={`text-xs hover:underline ${confirmDelete ? 'font-medium text-red-600' : 'text-slate-400'}`}
-          >
-            {confirmDelete ? 'Click again to delete' : 'Delete'}
-          </button>
-        </div>
+          <div className='mt-2 flex gap-3'>
+            <button
+              type='button'
+              onClick={() => setEditing(true)}
+              className='text-xs text-brand-600 hover:underline'
+            >
+              Edit
+            </button>
+            <button
+              type='button'
+              disabled={remove.isPending}
+              onClick={() => (confirmDelete ? remove.mutate() : setConfirmDelete(true))}
+              className={`text-xs hover:underline ${confirmDelete ? 'font-medium text-red-600' : 'text-slate-500'}`}
+            >
+              {confirmDelete ? 'Click again to delete' : 'Delete'}
+            </button>
+          </div>
         )}
         {remove.error && (
           <p className='mt-1 text-xs text-red-600'>{apiErrorMessage(remove.error)}</p>
@@ -192,13 +193,13 @@ const ManageGoalsModal = ({
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
         <div className='flex items-start justify-between gap-3'>
           <div>
             <h2 className='text-lg font-semibold text-slate-800'>{person.name}&rsquo;s goals</h2>
             {goals.data && (
-              <p className='text-xs text-slate-400'>
+              <p className='text-xs text-slate-500'>
                 {goals.data.cycle.name} · weights total {goals.data.weightTotal}
                 {goals.data.weightTotal !== 100 ? ' (should be 100)' : ''}
               </p>
@@ -212,7 +213,7 @@ const ManageGoalsModal = ({
             Close
           </button>
         </div>
-        {goals.isLoading && <p className='mt-4 text-sm text-slate-400'>Loading…</p>}
+        {goals.isLoading && <p className='mt-4 text-sm text-slate-500'>Loading…</p>}
         {goals.error && <p className='mt-4 text-sm text-red-600'>{apiErrorMessage(goals.error)}</p>}
         {goals.data && goals.data.goals.length === 0 && (
           <p className='mt-4 text-sm text-slate-500'>No goals this quarter yet.</p>
@@ -227,7 +228,7 @@ const ManageGoalsModal = ({
           ))}
         </ul>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

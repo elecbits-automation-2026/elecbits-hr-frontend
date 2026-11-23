@@ -20,7 +20,8 @@ export const MODULE_INFO: Record<
   'hrbp.org': {
     label: 'Departments & org chart',
     group: 'HR',
-    unlocks: 'View: the department list and org chart (everyone has this). Add / Edit: create and change departments.',
+    unlocks:
+      'View: the department list and org chart (everyone has this). Add / Edit: create and change departments.',
   },
   'hrbp.policies': {
     label: 'Policies',
@@ -30,7 +31,8 @@ export const MODULE_INFO: Record<
   'hrbp.leaves': {
     label: 'Leave approvals',
     group: 'HR',
-    unlocks: 'View: leave requests and balances. Edit: HR’s approval step on leave, and leave settings.',
+    unlocks:
+      'View: leave requests and balances. Edit: HR’s approval step on leave, and leave settings.',
   },
   'hrbp.attendance': {
     label: 'Attendance',
@@ -64,7 +66,8 @@ export const MODULE_INFO: Record<
   'pr.payroll.compensation': {
     label: 'Salaries (CTC)',
     group: 'Payroll',
-    unlocks: 'Salary / CTC records and the TDS calculator. Not part of “Payroll runs” — give it separately.',
+    unlocks:
+      'Salary / CTC records and the TDS calculator. Not part of “Payroll runs” — give it separately.',
   },
   'pr.payroll.bank_details': {
     label: 'Employee bank details',
@@ -136,9 +139,18 @@ export const ROLE_INFO: Record<string, { label: string; blurb: string }> = {
     label: 'Everyone (basic)',
     blurb: 'Every employee has this: their own profile, leave, attendance and pay.',
   },
-  HRBP: { label: 'HR team', blurb: 'Employee records, leave, attendance, policies, concerns and exits.' },
-  TA: { label: 'Hiring team', blurb: 'Hiring lines, JDs and scorecards, candidates, interviews and offers.' },
-  PR: { label: 'Payroll team', blurb: 'Monthly payroll, payslips, salaries, bank details and expense claims.' },
+  HRBP: {
+    label: 'HR team',
+    blurb: 'Employee records, leave, attendance, policies, concerns and exits.',
+  },
+  TA: {
+    label: 'Hiring team',
+    blurb: 'Hiring lines, JDs and scorecards, candidates, interviews and offers.',
+  },
+  PR: {
+    label: 'Payroll team',
+    blurb: 'Monthly payroll, payslips, salaries, bank details and expense claims.',
+  },
   OPS: {
     label: 'Operations / assets team',
     blurb: 'The asset register, asset requests, gate passes and stock.',

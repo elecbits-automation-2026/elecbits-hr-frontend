@@ -88,6 +88,7 @@ const TrainingsPage = () => {
 
       <div className='flex flex-wrap items-center gap-2'>
         <input
+          aria-label='Search training or person'
           type='search'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -95,6 +96,7 @@ const TrainingsPage = () => {
           className={selectClass}
         />
         <select
+          aria-label='Stream'
           className={selectClass}
           value={stream}
           onChange={(e) => setStream(e.target.value as TrainingStream | '')}
@@ -107,6 +109,7 @@ const TrainingsPage = () => {
           ))}
         </select>
         <select
+          aria-label='Department'
           className={selectClass}
           value={department}
           onChange={(e) => setDepartment(e.target.value)}

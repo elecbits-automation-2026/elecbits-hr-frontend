@@ -47,7 +47,7 @@ const TaskCard = ({
 
 const Group = ({ title, children }: { title: string; children: ReactNode }) => (
   <section>
-    <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400'>{title}</h2>
+    <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500'>{title}</h2>
     <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>{children}</div>
   </section>
 );
@@ -55,7 +55,8 @@ const Group = ({ title, children }: { title: string; children: ReactNode }) => (
 const SETUP_STEPS = [
   {
     step: 'Add your punch zones',
-    detail: 'Every office and the warehouse, each with its radius and working hours — attendance reads everything from these.',
+    detail:
+      'Every office and the warehouse, each with its radius and working hours — attendance reads everything from these.',
   },
   {
     step: 'Set the holiday calendar',
@@ -63,15 +64,18 @@ const SETUP_STEPS = [
   },
   {
     step: 'Review the roles',
-    detail: 'HR team, Payroll team, Hiring team and Operations team come built in; duplicate and trim one for a tailored role before giving it out.',
+    detail:
+      'HR team, Payroll team, Hiring team and Operations team come built in; duplicate and trim one for a tailored role before giving it out.',
   },
   {
     step: 'Invite people top-down',
-    detail: 'Managers before their reports — the org chart can never be born broken. Copy each one-time claim link.',
+    detail:
+      'Managers before their reports — the org chart can never be born broken. Copy each one-time claim link.',
   },
   {
     step: 'Enter salary terms',
-    detail: 'Payroll skips anyone without a CTC, so PR should fill compensation before the first month-end run.',
+    detail:
+      'Payroll skips anyone without a CTC, so PR should fill compensation before the first month-end run.',
   },
 ];
 
@@ -87,8 +91,8 @@ const AdminHomePage = () => (
     <div>
       <h1 className='text-2xl font-semibold text-slate-800'>Admin console</h1>
       <p className='mt-1 max-w-2xl text-sm text-slate-500'>
-        This account sets the rules the whole portal runs on. Find your task below — each card
-        says where to go and what will happen.
+        This account sets the rules the whole portal runs on. Find your task below — each card says
+        where to go and what will happen.
       </p>
     </div>
 
@@ -103,9 +107,9 @@ const AdminHomePage = () => (
         task='Look after existing records'
         how={
           <>
-            The People roster: reissue a lost or expired invite link (the old one stops
-            working), fill in records missing a joining date, department or designation, and
-            request extra access for someone.
+            The People roster: reissue a lost or expired invite link (the old one stops working),
+            fill in records missing a joining date, department or designation, and request extra
+            access for someone.
           </>
         }
         to={HR_PEOPLE_ROUTE}
@@ -173,7 +177,7 @@ const AdminHomePage = () => (
         <ol className='mt-3 space-y-2.5'>
           {SETUP_STEPS.map((s, i) => (
             <li key={s.step} className='flex gap-3 text-sm'>
-              <span className='flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 font-mono text-[11px] text-brand-600'>
+              <span className='flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 font-mono text-xs text-brand-600'>
                 {i + 1}
               </span>
               <span>

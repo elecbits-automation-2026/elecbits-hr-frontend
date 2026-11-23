@@ -19,7 +19,7 @@ const MyLoans = () => {
   if (list.length === 0) return null;
   return (
     <section className='space-y-2 rounded-xl border border-slate-200 bg-white p-5'>
-      <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+      <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
         Loans and advances
       </h2>
       <ul className='space-y-2'>
@@ -35,7 +35,9 @@ const MyLoans = () => {
               </span>
               <span className='text-xs text-slate-500'>
                 {l.interestRatePct}% · {l.months} mo from {l.startMonth}
-                {l.status !== 'active' ? ` · ${l.status === 'closed' ? 'closed' : 'recovered in F&F'}` : ''}
+                {l.status !== 'active'
+                  ? ` · ${l.status === 'closed' ? 'closed' : 'recovered in F&F'}`
+                  : ''}
               </span>
               <span className='ml-auto text-xs text-slate-600'>
                 EMI {money(l.emi)} · left <b>{money(l.balance)}</b>

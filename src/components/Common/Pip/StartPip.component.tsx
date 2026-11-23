@@ -42,8 +42,8 @@ const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => vo
   return (
     <div className='space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm'>
       <p className='text-xs text-slate-500'>
-        Runs for 60 days from the start date. It starts straight away — the employee and HR
-        get a bell. At the end you record passed, one 30-day extension, or not passed.
+        Runs for 60 days from the start date. It starts straight away — the employee and HR get a
+        bell. At the end you record passed, one 30-day extension, or not passed.
       </p>
       <label className='block text-xs font-medium text-slate-600'>
         Why a PIP
@@ -59,12 +59,14 @@ const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => vo
         {targets.map((t, i) => (
           <div key={i} className='flex flex-wrap gap-2'>
             <input
+              aria-label='Target'
               value={t.title}
               onChange={(e) => setTarget(i, 'title', e.target.value)}
               placeholder='Target'
               className={`min-w-[12rem] flex-1 ${inputClass}`}
             />
             <input
+              aria-label='How it is measured'
               value={t.measure}
               onChange={(e) => setTarget(i, 'measure', e.target.value)}
               placeholder='How it is measured'
@@ -74,7 +76,7 @@ const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => vo
               <button
                 type='button'
                 onClick={() => setTargets(targets.filter((_, j) => j !== i))}
-                className='text-xs text-slate-400 hover:text-red-600'
+                className='text-xs text-slate-500 hover:text-red-600'
               >
                 Remove
               </button>
@@ -119,7 +121,11 @@ const StartPip = ({ employeeId, onDone }: { employeeId: string; onDone: () => vo
         >
           Start the PIP
         </button>
-        <button type='button' onClick={onDone} className='text-xs text-slate-400 hover:text-slate-600'>
+        <button
+          type='button'
+          onClick={onDone}
+          className='text-xs text-slate-500 hover:text-slate-600'
+        >
           Cancel
         </button>
       </div>

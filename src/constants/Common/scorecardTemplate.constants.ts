@@ -23,7 +23,9 @@ export const SCREENING_TEMPLATE: ScorecardRound['attributes'] = [
   },
   {
     name: 'Role Understanding',
-    questions: ['Have you read the JD? What 3 things about your background make you a strong fit for this role?'],
+    questions: [
+      'Have you read the JD? What 3 things about your background make you a strong fit for this role?',
+    ],
   },
   {
     name: 'Organizational Fitment',

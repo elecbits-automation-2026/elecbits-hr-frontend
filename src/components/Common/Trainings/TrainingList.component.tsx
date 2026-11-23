@@ -123,7 +123,7 @@ const TrainingList = ({
                   <span className='text-sm text-slate-600'>
                     · {t.employee.name}
                     {t.employee.department && (
-                      <span className='text-xs text-slate-400'> ({t.employee.department})</span>
+                      <span className='text-xs text-slate-500'> ({t.employee.department})</span>
                     )}
                   </span>
                 )}

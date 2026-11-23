@@ -1,4 +1,5 @@
 import BackgroundJobs from '@components/Admin/BackgroundJobs.component';
+import DataPrivacy from '@components/Admin/DataPrivacy.component';
 import EmailDelivery from '@components/Admin/EmailDelivery.component';
 import { SettingsBrowser } from '@components/Common/Settings/SettingsBrowser.component';
 
@@ -15,15 +16,16 @@ const OrgSettingsPage = () => (
     <div>
       <h1 className='text-2xl font-semibold text-slate-800'>Org settings</h1>
       <p className='text-sm text-slate-500'>
-        Pick an area, or search. Each setting uses its built-in default until changed
-        (<b>changed</b> marks the ones that aren&rsquo;t); every change is recorded in the audit
-        log. Payroll and HR can also edit their own areas from their consoles.
+        Pick an area, or search. Each setting uses its built-in default until changed (
+        <b>changed</b> marks the ones that aren&rsquo;t); every change is recorded in the audit log.
+        Payroll and HR can also edit their own areas from their consoles.
       </p>
     </div>
     <SettingsBrowser
       extra={[
         { key: 'jobs', title: 'Background jobs', node: <BackgroundJobs /> },
         { key: 'email', title: 'Email delivery', node: <EmailDelivery /> },
+        { key: 'privacy', title: 'Data privacy', node: <DataPrivacy /> },
       ]}
     />
   </div>

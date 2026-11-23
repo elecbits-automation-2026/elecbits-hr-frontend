@@ -34,8 +34,7 @@ export const employeesApi = {
   /** The next free code, to pre-fill Add employee (hrbp.people create). */
   nextCode: async (): Promise<{ employeeCode: string }> =>
     (await api.get<{ employeeCode: string }>('/employees/next-code')).data,
-  get: async (id: string): Promise<Employee> =>
-    (await api.get<Employee>(`/employees/${id}`)).data,
+  get: async (id: string): Promise<Employee> => (await api.get<Employee>(`/employees/${id}`)).data,
   create: async (input: CreateEmployeeInput): Promise<EmployeeWithClaim> =>
     (await api.post<EmployeeWithClaim>('/employees', input)).data,
   invite: async (input: InviteEmployeeInput): Promise<EmployeeWithClaim> =>

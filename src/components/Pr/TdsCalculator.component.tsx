@@ -23,8 +23,13 @@ const TdsCalculator = () => {
   });
 
   const update = useMutation({
-    mutationFn: ({ employeeId, input }: { employeeId: string; input: { tdsAmount?: number; cnpsPercent?: number } }) =>
-      payrollApi.updateTds(employeeId, input),
+    mutationFn: ({
+      employeeId,
+      input,
+    }: {
+      employeeId: string;
+      input: { tdsAmount?: number; cnpsPercent?: number };
+    }) => payrollApi.updateTds(employeeId, input),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['payroll-tds'] }),
   });
 
@@ -41,11 +46,11 @@ const TdsCalculator = () => {
 
   return (
     <div className='rounded-xl border border-slate-200 bg-white p-5'>
-      <p className='mb-3 text-xs text-slate-400'>
+      <p className='mb-3 text-xs text-slate-500'>
         New-regime slabs with 4% cess on FY-prorated CTC, less the ₹75,000 standard deduction,
-        employer PF (₹1,800/month) and CNPS (CNPS% of the 50% basic share). Marginal relief
-        applies just above the ₹12L rebate line — tax never exceeds the income above it. “Apply”
-        writes the revised monthly TDS onto the salary record — every new draft run picks it up.
+        employer PF (₹1,800/month) and CNPS (CNPS% of the 50% basic share). Marginal relief applies
+        just above the ₹12L rebate line — tax never exceeds the income above it. “Apply” writes the
+        revised monthly TDS onto the salary record — every new draft run picks it up.
       </p>
       {isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {error && <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>}
@@ -57,22 +62,34 @@ const TdsCalculator = () => {
               <tr className='border-b border-slate-200 text-xs text-slate-500'>
                 <th className='py-2 pr-3 font-medium'>Employee</th>
                 <th className='py-2 pr-3 text-right font-medium'>CTC</th>
-                <th className='py-2 pr-3 text-right font-medium' title='(FY close − joining)/30, capped 12'>
+                <th
+                  className='py-2 pr-3 text-right font-medium'
+                  title='(FY close − joining)/30, capped 12'
+                >
                   FY months
                 </th>
                 <th className='py-2 pr-3 text-right font-medium'>CNPS %</th>
-                <th className='py-2 pr-3 text-right font-medium' title='FY share of the annual variable-pay target — taxable'>
+                <th
+                  className='py-2 pr-3 text-right font-medium'
+                  title='FY share of the annual variable-pay target — taxable'
+                >
                   Variable
                 </th>
                 <th className='py-2 pr-3 text-right font-medium'>Taxable</th>
-                <th className='py-2 pr-3 text-right font-medium' title='(Slab tax + surcharge above ₹50L) × 1.04 cess; nil up to 12L, marginal relief at every line'>
+                <th
+                  className='py-2 pr-3 text-right font-medium'
+                  title='(Slab tax + surcharge above ₹50L) × 1.04 cess; nil up to 12L, marginal relief at every line'
+                >
                   Total tax
                 </th>
                 <th className='py-2 pr-3 text-right font-medium'>TDS/month</th>
                 <th className='py-2 pr-3 text-right font-medium' title='In published slips this FY'>
                   Deducted
                 </th>
-                <th className='py-2 pr-3 text-right font-medium' title='(total − deducted) ÷ months left'>
+                <th
+                  className='py-2 pr-3 text-right font-medium'
+                  title='(total − deducted) ÷ months left'
+                >
                   Revised/mo
                 </th>
                 <th className='py-2 pr-3 text-right font-medium'>Current</th>
@@ -86,7 +103,7 @@ const TdsCalculator = () => {
                   <tr key={r.employee.id} className='border-b border-slate-100'>
                     <td className='py-2 pr-3'>
                       {r.employee.name}
-                      <span className='ml-1 font-mono text-xs text-slate-400'>
+                      <span className='ml-1 font-mono text-xs text-slate-500'>
                         {r.employee.employeeCode}
                       </span>
                     </td>
@@ -94,6 +111,7 @@ const TdsCalculator = () => {
                     <td className='py-2 pr-3 text-right'>{r.fyMonths}</td>
                     <td className='py-2 pr-3 text-right'>
                       <input
+                        aria-label='CNPS %'
                         type='number'
                         min={0}
                         max={100}
@@ -115,13 +133,19 @@ const TdsCalculator = () => {
                     <td className='py-2 pr-3 text-right'>{money(r.taxableIncome)}</td>
                     <td className='py-2 pr-3 text-right'>
                       {r.totalTax === 0 ? (
-                        <span className='text-green-600' title='Within the 12L rebate'>
+                        <span className='text-green-700' title='Within the 12L rebate'>
                           nil
                         </span>
                       ) : (
-                        <span title={r.surcharge > 0 ? `incl. surcharge ${money(r.surcharge)}` : undefined}>
+                        <span
+                          title={
+                            r.surcharge > 0 ? `incl. surcharge ${money(r.surcharge)}` : undefined
+                          }
+                        >
                           {money(r.totalTax)}
-                          {r.surcharge > 0 && <span className='ml-1 text-xs text-amber-600'>+SC</span>}
+                          {r.surcharge > 0 && (
+                            <span className='ml-1 text-xs text-amber-600'>+SC</span>
+                          )}
                         </span>
                       )}
                     </td>
@@ -130,7 +154,9 @@ const TdsCalculator = () => {
                     <td className='py-2 pr-3 text-right font-medium'>
                       {money(r.revisedTdsPerMonth)}
                     </td>
-                    <td className={`py-2 pr-3 text-right ${stale ? 'text-amber-600' : 'text-slate-500'}`}>
+                    <td
+                      className={`py-2 pr-3 text-right ${stale ? 'text-amber-600' : 'text-slate-500'}`}
+                    >
                       {money(r.currentTdsAmount)}
                     </td>
                     <td className='py-2 text-right'>

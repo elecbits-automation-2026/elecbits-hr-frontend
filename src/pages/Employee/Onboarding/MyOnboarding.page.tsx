@@ -4,8 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OnboardingJourney } from '@app-types/api.types';
 import OnboardingChecklist from '@components/Common/Onboarding/OnboardingChecklist.component';
 import { MyProbation } from '@components/Common/Probation/Probation.component';
+import { fmtDay } from '@constants/Common/onboarding.constants';
 import { onboardingApi } from '@services/api/onboarding.api';
-import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
+
+const todayStr = () => new Date().toLocaleDateString('en-CA');
 
 const tabBtn = (on: boolean) =>
   `rounded-full px-3 py-1 text-sm ${
@@ -17,8 +20,8 @@ const Mine = ({ data, onChanged }: { data: OnboardingJourney | null; onChanged: 
   if (!data) {
     return (
       <p className='text-sm text-slate-500'>
-        Onboarding does not apply to your record — you joined before this checklist existed. If
-        that looks wrong, ask HR to start a journey for you.
+        Onboarding does not apply to your record — you joined before this checklist existed. If that
+        looks wrong, ask HR to start a journey for you.
       </p>
     );
   }
@@ -27,13 +30,58 @@ const Mine = ({ data, onChanged }: { data: OnboardingJourney | null; onChanged: 
   const waitingOn = pending.find((t) => t.owner !== 'employee' && !t.auto);
   const nextMine = pending.find((t) => t.owner === 'employee' && !t.auto);
   const who = (o: string) =>
-    o === 'hr' ? 'HR' : o === 'manager' ? 'your manager' : o === 'ops' ? 'OPS' : o === 'payroll' ? 'payroll' : 'admin';
+    o === 'hr'
+      ? 'HR'
+      : o === 'manager'
+        ? 'your manager'
+        : o === 'ops'
+          ? 'OPS'
+          : o === 'payroll'
+            ? 'payroll'
+            : 'admin';
+
+  const complete = data.status === 'done';
+  const pct =
+    data.progress.total > 0 ? Math.round((data.progress.done / data.progress.total) * 100) : 0;
+  const pastDay30 = Math.round((Date.parse(todayStr()) - Date.parse(data.dueOn)) / 86_400_000);
 
   return (
     <div className='space-y-4'>
-      <p className='text-sm text-slate-500'>
-        {data.progress.done}/{data.progress.total} done · started {data.startedOn}
-      </p>
+      <div className='rounded-xl border border-slate-200 bg-white p-4'>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <p className='text-sm text-slate-500'>
+            {data.progress.done}/{data.progress.total} steps done · started {fmtDay(data.startedOn)}
+          </p>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              complete
+                ? 'bg-green-50 text-green-700'
+                : pastDay30 > 0
+                  ? 'bg-red-50 text-red-700'
+                  : 'bg-brand-50 text-brand-600'
+            }`}
+          >
+            {complete
+              ? 'Journey complete'
+              : pastDay30 > 0
+                ? `${pastDay30} ${pastDay30 === 1 ? 'day' : 'days'} past day 30`
+                : `Day 30 is ${fmtDay(data.dueOn)}`}
+          </span>
+        </div>
+        <div className='mt-3 flex items-center gap-3'>
+          <div className='h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100'>
+            <div
+              className={`h-full rounded-full ${
+                pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-brand-600' : 'bg-amber-500'
+              }`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className='w-10 text-right text-sm font-semibold tabular-nums text-slate-600'>
+            {pct}%
+          </span>
+        </div>
+      </div>
       {data.status === 'done' ? (
         <p className='rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800'>
           All done — welcome aboard.
@@ -63,7 +111,9 @@ const Mine = ({ data, onChanged }: { data: OnboardingJourney | null; onChanged: 
 
 /** "My team": the RM's joiners — their checklists, with the manager steps to tick. */
 const MyTeam = ({ team, onChanged }: { team: OnboardingJourney[]; onChanged: () => void }) => {
-  const [openId, setOpenId] = useState<string | null>(team.find((j) => j.status === 'open')?.id ?? null);
+  const [openId, setOpenId] = useState<string | null>(
+    team.find((j) => j.status === 'open')?.id ?? null,
+  );
   return (
     <div className='space-y-3'>
       <p className='text-sm text-slate-500'>
@@ -82,7 +132,9 @@ const MyTeam = ({ team, onChanged }: { team: OnboardingJourney[]; onChanged: () 
             >
               <span className='font-medium text-slate-800'>
                 {j.employee.name}
-                <span className='ml-2 font-mono text-xs text-slate-400'>{j.employee.employeeCode}</span>
+                <span className='ml-2 font-mono text-xs text-slate-500'>
+                  {j.employee.employeeCode}
+                </span>
               </span>
               <span className='flex items-center gap-3 text-xs text-slate-500'>
                 {mine > 0 && (
@@ -124,7 +176,7 @@ const MyOnboardingPage = () => {
 
   if (mine.isLoading || team.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
   const err = mine.error ?? team.error;
-  if (err) return <p className='text-sm text-red-600'>{apiErrorMessage(err)}</p>;
+  if (err) return <QueryError error={err} />;
 
   return (
     <div className='w-full space-y-4'>

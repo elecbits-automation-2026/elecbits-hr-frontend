@@ -53,17 +53,20 @@ const JoinerTasks = ({ owner }: { owner: 'ops' | 'payroll' }) => {
             className='flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm'
           >
             <span className='font-medium text-slate-800'>{t.employee.name}</span>
-            <span className='text-xs text-slate-400'>
+            <span className='text-xs text-slate-500'>
               {t.employee.designation ?? t.employee.employeeCode}
               {t.employee.dateOfJoining ? ` · joins ${t.employee.dateOfJoining}` : ''}
             </span>
             <span className='text-xs text-slate-500'>{t.title}</span>
             {owner === 'payroll' ? (
               // No hand tick: it completes when the CTC + bank details are saved.
-              <span className='ml-auto text-xs text-amber-700'>Waiting for CTC and bank details</span>
+              <span className='ml-auto text-xs text-amber-700'>
+                Waiting for CTC and bank details
+              </span>
             ) : noting === t.taskId ? (
               <span className='ml-auto flex flex-wrap items-center gap-2 text-xs'>
                 <input
+                  aria-label='What was issued? e.g. laptop EB-LAP-0012, ID card'
                   autoFocus
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -79,7 +82,11 @@ const JoinerTasks = ({ owner }: { owner: 'ops' | 'payroll' }) => {
                 >
                   Mark done
                 </button>
-                <button type='button' onClick={() => setNoting(null)} className='text-slate-400 hover:text-slate-600'>
+                <button
+                  type='button'
+                  onClick={() => setNoting(null)}
+                  className='text-slate-500 hover:text-slate-600'
+                >
                   Cancel
                 </button>
               </span>

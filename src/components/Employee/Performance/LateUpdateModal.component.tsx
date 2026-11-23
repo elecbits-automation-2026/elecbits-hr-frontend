@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Goal } from '@app-types/api.types';
 import { performanceApi } from '@services/api/performance.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 /**
  * Fill in a MISSED day's update after the fact. It goes to your manager for
@@ -38,15 +39,16 @@ const LateUpdateModal = ({
   });
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-md rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>Missed update · {date}</h2>
-        <p className='mt-1 text-xs text-slate-400'>
+        <p className='mt-1 text-xs text-slate-500'>
           {selfGoverned
             ? 'Saved as written — it clears the miss.'
             : 'Goes to your manager. Approved, it clears the miss; declined, the day stays missed.'}
         </p>
         <textarea
+          aria-label='What did you actually work on that day?'
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={4}
@@ -94,7 +96,7 @@ const LateUpdateModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

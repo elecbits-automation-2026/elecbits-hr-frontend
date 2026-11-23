@@ -16,7 +16,8 @@ const scalar = (v: unknown): string => {
   if (typeof v === 'boolean') return v ? 'Yes' : 'No';
   if (typeof v === 'number') return v.toLocaleString('en-IN');
   if (typeof v === 'string') return LEAVE_TYPE_LABELS[v] ?? SATURDAY_LABELS[v] ?? v;
-  if (Array.isArray(v)) return v.length === 0 ? 'none' : `${v.length} item${v.length === 1 ? '' : 's'}`;
+  if (Array.isArray(v))
+    return v.length === 0 ? 'none' : `${v.length} item${v.length === 1 ? '' : 's'}`;
   return `${Object.keys(v as object).length} entries`;
 };
 
@@ -34,7 +35,11 @@ export const settingSummary = (key: string, value: unknown): string => {
     const v = value as { workStart?: string; workEnd?: string; graceMinutes?: number };
     text = `${v.workStart ?? '—'}–${v.workEnd ?? '—'}, grace ${v.graceMinutes ?? 0} min`;
   } else if (key === 'performance.departmentTargets' && value && typeof value === 'object') {
-    const v = value as { updatesOnTimePct?: number; attainmentPct?: number; departments?: unknown[] };
+    const v = value as {
+      updatesOnTimePct?: number;
+      attainmentPct?: number;
+      departments?: unknown[];
+    };
     const n = v.departments?.length ?? 0;
     text = `Updates ${v.updatesOnTimePct ?? '—'}% · attainment ${v.attainmentPct ?? '—'}%${
       n > 0 ? ` · ${n} department${n === 1 ? '' : 's'} with their own` : ''
@@ -47,12 +52,27 @@ export const settingSummary = (key: string, value: unknown): string => {
       .join(' · ');
   } else if (key === 'assistant.enabled' && value && typeof value === 'object') {
     text = (value as { enabled?: boolean }).enabled ? 'On for HR and managers' : 'Off';
+  } else if (key === 'concerns.aiTriage' && value && typeof value === 'object') {
+    text = (value as { enabled?: boolean }).enabled ? 'On — handlers see a suggestion' : 'Off';
+  } else if (key === 'privacy.notice' && value && typeof value === 'object') {
+    text = `Version ${(value as { version?: string }).version ?? '—'}`;
+  } else if (key === 'privacy.purge' && value && typeof value === 'object') {
+    text = (value as { enabled?: boolean }).enabled ? 'On — daily purge' : 'Off';
+  } else if (key === 'email.delivery' && value && typeof value === 'object') {
+    text = (value as { enabled?: boolean }).enabled ? 'On — HR emails are sent' : 'Off';
   } else if (key === 'attendance.maxLocationErrorM' && typeof value === 'number') {
     text = value === 0 ? 'Any accuracy accepted' : `Within ${value} m`;
+  } else if (key === 'attendance.remoteWorkMaxDays' && typeof value === 'number') {
+    text = `Up to ${value} day${value === 1 ? '' : 's'} per request`;
   } else if (key === 'payroll.reimbursementDigestDay' && typeof value === 'number') {
     text = `Day ${value} of each month`;
+  } else if (key === 'payroll.filingFolders' && value && typeof value === 'object') {
+    const v = value as { pfEsic?: string; pt?: string };
+    text = `PF & ESIC: ${v.pfEsic ? 'linked' : 'not set'} · PT: ${v.pt ? 'linked' : 'not set'}`;
   } else if (key === 'payroll.autoCoverLeaveTypes' && Array.isArray(value)) {
-    text = value.length ? value.map((t) => LEAVE_TYPE_LABELS[t as string] ?? t).join(', then ') : 'No auto-cover';
+    text = value.length
+      ? value.map((t) => LEAVE_TYPE_LABELS[t as string] ?? t).join(', then ')
+      : 'No auto-cover';
   } else if (Array.isArray(value)) {
     text = scalar(value);
   } else if (value && typeof value === 'object') {

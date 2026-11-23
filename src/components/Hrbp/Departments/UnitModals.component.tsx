@@ -5,6 +5,7 @@ import type { Department, DepartmentMembership, Employee, UnitKind } from '@app-
 import { departmentsApi, homeUnits, KIND_LABEL } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
 const labelClass = 'block text-xs font-medium text-slate-600';
@@ -37,14 +38,14 @@ const Shell = ({
   onClose: () => void;
   children: ReactNode;
 }) => (
-  <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+  <ModalShell onClose={onClose}>
     <div className='max-h-full w-full max-w-lg space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
       <div className='flex items-start justify-between gap-4'>
         <h2 className='text-lg font-semibold text-slate-800'>{title}</h2>
         <button
           type='button'
           onClick={onClose}
-          className='text-slate-400 hover:text-slate-600'
+          className='text-slate-500 hover:text-slate-600'
           aria-label='Close'
         >
           ✕
@@ -52,7 +53,7 @@ const Shell = ({
       </div>
       {children}
     </div>
-  </div>
+  </ModalShell>
 );
 
 const ErrorLine = ({ error }: { error: unknown }) =>
@@ -383,7 +384,7 @@ export const MembersModal = ({
       {!isChapter && (
         <section className='space-y-2'>
           <h3 className='text-sm font-semibold text-slate-700'>
-            Home members <span className='font-normal text-slate-400'>({home.length})</span>
+            Home members <span className='font-normal text-slate-500'>({home.length})</span>
           </h3>
           {home.length === 0 ? (
             <p className='text-sm text-slate-500'>Nobody calls this unit home yet.</p>
@@ -392,7 +393,7 @@ export const MembersModal = ({
               {home.map((p) => (
                 <li key={p.id} className='flex justify-between gap-2 px-3 py-1.5'>
                   <span className='text-slate-800'>{p.name}</span>
-                  <span className='truncate text-xs text-slate-400'>{p.designation}</span>
+                  <span className='truncate text-xs text-slate-500'>{p.designation}</span>
                 </li>
               ))}
             </ul>
@@ -405,6 +406,7 @@ export const MembersModal = ({
             className='flex gap-2'
           >
             <select
+              aria-label='Move someone here'
               className={inputClass}
               value={homeId}
               onChange={(e) => setHomeId(e.target.value)}
@@ -435,7 +437,7 @@ export const MembersModal = ({
       <section className='space-y-2'>
         <h3 className='text-sm font-semibold text-slate-700'>
           {isChapter ? 'Chapter members' : 'Also in this unit'}{' '}
-          <span className='font-normal text-slate-400'>({extras.length})</span>
+          <span className='font-normal text-slate-500'>({extras.length})</span>
         </h3>
         <p className='text-xs text-slate-500'>
           {isChapter
@@ -451,11 +453,11 @@ export const MembersModal = ({
                   <span className='text-slate-800'>
                     {m.employeeName}
                     {m.isLead && (
-                      <span className='ml-2 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-violet-700'>
+                      <span className='ml-2 rounded-full bg-violet-50 px-1.5 py-0.5 text-xs uppercase tracking-wide text-violet-700'>
                         lead
                       </span>
                     )}
-                    <span className='ml-2 text-xs text-slate-400'>
+                    <span className='ml-2 text-xs text-slate-500'>
                       sits in {nameOf(person?.departmentId ?? null) ?? 'no department'}
                     </span>
                   </span>
@@ -502,6 +504,7 @@ export const MembersModal = ({
           className='flex gap-2'
         >
           <select
+            aria-label='Add someone'
             className={inputClass}
             value={extraId}
             onChange={(e) => setExtraId(e.target.value)}

@@ -15,10 +15,7 @@ export const leavesSource: InsightSource = ({ leaves, months, today }) => {
   for (const m of months) {
     const person = { id: m.employee.id, name: m.employee.name };
     const theirApproved = leaves.filter(
-      (l) =>
-        l.employee.id === person.id &&
-        l.status === 'approved' &&
-        l.startDate.startsWith(year),
+      (l) => l.employee.id === person.id && l.status === 'approved' && l.startDate.startsWith(year),
     );
 
     if (month >= THRESHOLDS.NO_LEAVE_FROM_MONTH && theirApproved.length === 0) {
@@ -27,7 +24,8 @@ export const leavesSource: InsightSource = ({ leaves, months, today }) => {
         severity: 'info',
         person,
         title: 'No leave taken this year',
-        detail: 'Zero approved leave so far — worth a nudge before year-end burnout and balance lapse',
+        detail:
+          'Zero approved leave so far — worth a nudge before year-end burnout and balance lapse',
         to: TEAM_LEAVES_ROUTE,
       });
     }

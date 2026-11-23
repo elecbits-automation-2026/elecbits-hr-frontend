@@ -99,7 +99,9 @@ const InviteEmployeePage = () => {
   const copy = async (what: 'text' | 'link') => {
     if (!invited) return;
     try {
-      await navigator.clipboard.writeText(what === 'link' ? inviteLink(invited) : inviteText(invited));
+      await navigator.clipboard.writeText(
+        what === 'link' ? inviteLink(invited) : inviteText(invited),
+      );
       setCopied(what);
       setTimeout(() => setCopied(null), 2000);
     } catch {
@@ -129,7 +131,7 @@ const InviteEmployeePage = () => {
             <span className='font-medium'>{invited.name}</span> — {invited.employeeCode} ·{' '}
             {invited.level} · {invited.email}
           </p>
-          <p className='mt-1 text-xs text-slate-400'>
+          <p className='mt-1 text-xs text-slate-500'>
             Status: {invited.status} — becomes active when they claim their record.
             {invited.claim &&
               ' The invite link below is shown once — copy it now. If it expires, issue a new one under "Waiting to claim" on this page.'}
@@ -169,15 +171,16 @@ const InviteEmployeePage = () => {
     <div className='max-w-xl space-y-4'>
       <h1 className='text-2xl font-semibold text-slate-800'>Invite employee</h1>
       <p className='text-sm text-slate-500'>
-        Access-first onboarding: you choose who joins and what they can do. The employee code
-        is assigned automatically, and they fill in their own details after claiming their
-        record. (HR&apos;s full add-employee form lives under HR → People.)
+        Access-first onboarding: you choose who joins and what they can do. The employee code is
+        assigned automatically, and they fill in their own details after claiming their record.
+        (HR&apos;s full add-employee form lives under HR → People.)
       </p>
 
       <form onSubmit={submit} className='space-y-4 rounded-xl border border-slate-200 bg-white p-5'>
         <div className='space-y-1'>
           <label className={labelClass}>Company email</label>
           <input
+            aria-label='Company email'
             type='email'
             required
             value={email}
@@ -190,6 +193,7 @@ const InviteEmployeePage = () => {
         <div className='space-y-1'>
           <label className={labelClass}>Full name</label>
           <input
+            aria-label='Full name'
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -202,6 +206,7 @@ const InviteEmployeePage = () => {
           <div className='space-y-1'>
             <label className={labelClass}>Reporting manager</label>
             <select
+              aria-label='Reporting manager'
               required
               value={reportsTo}
               onChange={(e) => setReportsTo(e.target.value)}
@@ -218,6 +223,7 @@ const InviteEmployeePage = () => {
           <div className='space-y-1'>
             <label className={labelClass}>Level</label>
             <select
+              aria-label='Level'
               value={level}
               onChange={(e) => setLevel(e.target.value as Level)}
               className={inputClass}
@@ -235,6 +241,7 @@ const InviteEmployeePage = () => {
           <div className='space-y-1'>
             <label className={labelClass}>Department (optional)</label>
             <select
+              aria-label='Department'
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
               className={inputClass}
@@ -250,6 +257,7 @@ const InviteEmployeePage = () => {
           <div className='space-y-1'>
             <label className={labelClass}>Designation (optional)</label>
             <input
+              aria-label='Designation'
               value={designation}
               maxLength={120}
               onChange={(e) => setDesignation(e.target.value)}
@@ -262,20 +270,22 @@ const InviteEmployeePage = () => {
         <div className='space-y-1'>
           <label className={labelClass}>Joining date (optional)</label>
           <input
+            aria-label='Joining date'
             type='date'
             value={dateOfJoining}
             onChange={(e) => setDateOfJoining(e.target.value)}
             className={inputClass}
           />
-          <p className='text-xs text-slate-400'>
-            With a joining date, the onboarding checklist and the probation default apply from
-            day one. Without it, the record shows up under HR&rsquo;s incomplete records.
+          <p className='text-xs text-slate-500'>
+            With a joining date, the onboarding checklist and the probation default apply from day
+            one. Without it, the record shows up under HR&rsquo;s incomplete records.
           </p>
         </div>
 
         <div className='space-y-1'>
           <label className={labelClass}>Base location</label>
           <select
+            aria-label='Base location'
             value={baseZoneId}
             onChange={(e) => setBaseZoneId(e.target.value)}
             className={inputClass}
@@ -292,9 +302,7 @@ const InviteEmployeePage = () => {
 
         <div className='space-y-1'>
           <label className={labelClass}>Roles to give</label>
-          <p className='text-xs text-slate-400'>
-            Everyone (basic) is given automatically.
-          </p>
+          <p className='text-xs text-slate-500'>Everyone (basic) is given automatically.</p>
           <div className='mt-1 space-y-1.5'>
             {grantableBatches.map((b) => (
               <label key={b.id} className='flex items-center gap-2 text-sm text-slate-700'>
@@ -306,21 +314,19 @@ const InviteEmployeePage = () => {
                 />
                 {roleLabel(b.name)}
                 {(ROLE_INFO[b.name]?.blurb ?? b.description) && (
-                  <span className='text-xs text-slate-400'>
+                  <span className='text-xs text-slate-500'>
                     — {ROLE_INFO[b.name]?.blurb ?? b.description}
                   </span>
                 )}
               </label>
             ))}
             {grantableBatches.length === 0 && (
-              <p className='text-xs text-slate-400'>No other roles yet.</p>
+              <p className='text-xs text-slate-500'>No other roles yet.</p>
             )}
           </div>
         </div>
 
-        {invite.error && (
-          <p className='text-sm text-red-600'>{apiErrorMessage(invite.error)}</p>
-        )}
+        {invite.error && <p className='text-sm text-red-600'>{apiErrorMessage(invite.error)}</p>}
 
         <div className='flex justify-end'>
           <button
@@ -343,7 +349,9 @@ const InviteEmployeePage = () => {
  * (the old one stops working) — for an expired or lost invite.
  */
 const WaitingToClaim = ({ people }: { people: Employee[] }) => {
-  const [issued, setIssued] = useState<{ id: string; link: string; expiresAt: string } | null>(null);
+  const [issued, setIssued] = useState<{ id: string; link: string; expiresAt: string } | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
   const reissue = useMutation({
     mutationFn: employeesApi.issueClaimLink,
@@ -364,7 +372,7 @@ const WaitingToClaim = ({ people }: { people: Employee[] }) => {
   return (
     <div className='space-y-2 rounded-xl border border-slate-200 bg-white p-5'>
       <h2 className='text-sm font-semibold text-slate-700'>Waiting to claim ({people.length})</h2>
-      <p className='text-xs text-slate-400'>
+      <p className='text-xs text-slate-500'>
         A new link replaces the old one, which stops working.
       </p>
       {reissue.error && <p className='text-sm text-red-600'>{apiErrorMessage(reissue.error)}</p>}
@@ -373,7 +381,7 @@ const WaitingToClaim = ({ people }: { people: Employee[] }) => {
           <li key={p.id} className='space-y-2 py-2 text-sm'>
             <div className='flex flex-wrap items-center gap-2'>
               <span className='font-medium text-slate-800'>{p.name}</span>
-              <span className='text-xs text-slate-400'>{p.email}</span>
+              <span className='text-xs text-slate-500'>{p.email}</span>
               <button
                 type='button'
                 disabled={reissue.isPending}
@@ -385,7 +393,9 @@ const WaitingToClaim = ({ people }: { people: Employee[] }) => {
             </div>
             {issued?.id === p.id && (
               <div className='flex flex-wrap items-center gap-2 rounded-md bg-slate-50 p-2'>
-                <code className='min-w-0 flex-1 break-all text-xs text-slate-600'>{issued.link}</code>
+                <code className='min-w-0 flex-1 break-all text-xs text-slate-600'>
+                  {issued.link}
+                </code>
                 <button
                   type='button'
                   onClick={() => void copyLink(issued.link)}
@@ -393,7 +403,7 @@ const WaitingToClaim = ({ people }: { people: Employee[] }) => {
                 >
                   {copied ? 'Copied!' : 'Copy link'}
                 </button>
-                <span className='w-full text-xs text-slate-400'>
+                <span className='w-full text-xs text-slate-500'>
                   Expires {new Date(issued.expiresAt).toLocaleDateString()}
                 </span>
               </div>

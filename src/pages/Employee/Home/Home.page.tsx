@@ -18,8 +18,8 @@ import { attendanceApi } from '@services/api/attendance.api';
 import { feedbackApi } from '@services/api/feedback.api';
 import { leavesApi } from '@services/api/leaves.api';
 import { meApi } from '@services/api/me.api';
-import { apiErrorMessage } from '@utils/apiError';
 import { holdsPortal } from '@utils/sections';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
 const todayStr = () => new Date().toLocaleDateString('en-CA');
@@ -42,7 +42,7 @@ const greeting = () => {
 /** Pure information — navigation lives in Quick actions, not in these cards. */
 const StatCard = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className='rounded-xl border border-slate-200 bg-white p-4'>
-    <div className='text-xs font-medium uppercase tracking-wide text-slate-400'>{label}</div>
+    <div className='text-xs font-medium uppercase tracking-wide text-slate-500'>{label}</div>
     <div className='mt-1.5 text-sm text-slate-700'>{children}</div>
   </div>
 );
@@ -80,7 +80,7 @@ const HomePage = () => {
   });
   const notes = useQuery({ queryKey: ['feedback-mine'], queryFn: feedbackApi.mine });
   if (isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (error) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
+  if (error) return <QueryError error={error} />;
   if (!me) return null;
 
   const today = attendance.data?.today ?? null;
@@ -89,14 +89,11 @@ const HomePage = () => {
   const myOpenRequests =
     (myLeaves.data ?? []).filter((l) => live.includes(l.status)).length +
     (myWfh.data ?? []).filter((w) => live.includes(w.status)).length;
-  const upcomingHolidays = (holidays.data ?? [])
-    .filter((h) => h.date >= todayStr())
-    .slice(0, 3);
+  const upcomingHolidays = (holidays.data ?? []).filter((h) => h.date >= todayStr()).slice(0, 3);
   const nextLeave = (myLeaves.data ?? [])
     .filter((l) => l.status === 'approved' && l.startDate >= todayStr())
     .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
-  const remaining = (type: string) =>
-    balances.data?.find((b) => b.type === type)?.remaining ?? '—';
+  const remaining = (type: string) => balances.data?.find((b) => b.type === type)?.remaining ?? '—';
 
   const subtitleParts = [
     me.designation,
@@ -131,14 +128,15 @@ const HomePage = () => {
                 In <b>{time(today.checkInAt)}</b>
                 {today.checkedOut ? (
                   <>
-                    {' '}· Out <b>{time(today.checkOutAt)}</b>
+                    {' '}
+                    · Out <b>{time(today.checkOutAt)}</b>
                   </>
                 ) : (
-                  <span className='text-slate-400'> · not checked out</span>
+                  <span className='text-slate-500'> · not checked out</span>
                 )}
               </>
             ) : (
-              <span className='text-slate-400'>Not checked in yet</span>
+              <span className='text-slate-500'>Not checked in yet</span>
             )}
           </div>
           <div className='mt-1 text-xs text-slate-500'>
@@ -160,7 +158,7 @@ const HomePage = () => {
 
         <StatCard label='My open requests'>
           {myOpenRequests === 0 ? (
-            <span className='text-slate-400'>Nothing awaiting approval</span>
+            <span className='text-slate-500'>Nothing awaiting approval</span>
           ) : (
             <>
               <b>{myOpenRequests}</b> awaiting approval
@@ -170,7 +168,7 @@ const HomePage = () => {
       </div>
 
       <div>
-        <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400'>
+        <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500'>
           Quick actions
         </h2>
         {/* Role-based: everyone gets the self-service four; RMs gain their
@@ -247,9 +245,7 @@ const HomePage = () => {
               <li className='flex items-center justify-between'>
                 <span>
                   Your <span className='capitalize'>{nextLeave.type}</span> leave
-                  {nextLeave.startDate === nextLeave.endDate
-                    ? ''
-                    : ` (${nextLeave.days} days)`}
+                  {nextLeave.startDate === nextLeave.endDate ? '' : ` (${nextLeave.days} days)`}
                 </span>
                 <span className='text-slate-500'>{longDate(nextLeave.startDate)}</span>
               </li>
@@ -261,7 +257,7 @@ const HomePage = () => {
               </li>
             ))}
             {!nextLeave && upcomingHolidays.length === 0 && (
-              <li className='text-slate-400'>No holidays or approved leave ahead this year.</li>
+              <li className='text-slate-500'>No holidays or approved leave ahead this year.</li>
             )}
           </ul>
         </div>
@@ -286,13 +282,13 @@ const HomePage = () => {
                   >
                     {n.type}
                   </span>
-                  <span className='text-xs text-slate-400'>
+                  <span className='text-xs text-slate-500'>
                     {n.author.name} · {longDate(n.createdAt.slice(0, 10))}
                   </span>
                 </div>
                 <p className='mt-1 text-slate-700'>{n.body}</p>
                 {n.evidence && (
-                  <p className='mt-0.5 text-xs text-slate-400'>Based on: {n.evidence}</p>
+                  <p className='mt-0.5 text-xs text-slate-500'>Based on: {n.evidence}</p>
                 )}
               </li>
             ))}

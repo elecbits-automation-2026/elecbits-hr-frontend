@@ -96,7 +96,7 @@ const ClaimRow = ({
           <span className='font-semibold tabular-nums text-slate-800'>{inr(claim.amount)}</span>
         </span>
       </div>
-      <p className='mt-0.5 text-xs text-slate-400'>
+      <p className='mt-0.5 text-xs text-slate-500'>
         {CATEGORY_LABELS[claim.category]} · spent {claim.spentOn}
         {claim.receiptNote ? ` · receipt: ${claim.receiptNote}` : ''}
         {claim.payrollDecidedByName ? ` · PR: ${claim.payrollDecidedByName}` : ''}
@@ -106,6 +106,7 @@ const ClaimRow = ({
       {(claim.receipt || canAttach || waiting) && (
         <div className='mt-1 flex flex-wrap items-center gap-2 text-xs'>
           <input
+            aria-label='Upload receipt'
             ref={file}
             type='file'
             accept='application/pdf,image/jpeg,image/png'
@@ -127,7 +128,7 @@ const ClaimRow = ({
                 : 'Receipt missing — upload it to get this approved'}
             </span>
           ) : (
-            <span className='text-slate-400'>No receipt file</span>
+            <span className='text-slate-500'>No receipt file</span>
           )}
           {canAttach && (
             <button
@@ -169,7 +170,7 @@ const ClaimRow = ({
             disabled={decide.isPending || !claim.receipt}
             title={claim.receipt ? undefined : 'Receipts are required — ask them to upload it'}
             onClick={() => decide.mutate('approve')}
-            className='rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-50'
+            className='rounded-md bg-green-700 px-3 py-1 text-xs font-medium text-white hover:bg-green-600 disabled:opacity-50'
           >
             Approve
           </button>
@@ -185,6 +186,7 @@ const ClaimRow = ({
       {mode === 'approver' && declining && (
         <div className='mt-2 flex flex-wrap items-center gap-2'>
           <input
+            aria-label='Why? (they see this)'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder='Why? (they see this)'
@@ -201,7 +203,7 @@ const ClaimRow = ({
           <button
             type='button'
             onClick={() => setDeclining(false)}
-            className='text-xs text-slate-400 hover:text-slate-600'
+            className='text-xs text-slate-500 hover:text-slate-600'
           >
             Back
           </button>

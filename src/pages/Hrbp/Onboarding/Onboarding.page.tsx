@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { OnboardingQueueRow } from '@app-types/api.types';
 import OnboardingChecklist from '@components/Common/Onboarding/OnboardingChecklist.component';
+import { addDays, fmtDay, phaseTitle } from '@constants/Common/onboarding.constants';
 import { employeesApi } from '@services/api/employees.api';
 import { onboardingApi } from '@services/api/onboarding.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 /** HR drill-in: the full checklist; HR acts on the HR steps only (owners tick their own). */
 const JourneyModal = ({ row, onClose }: { row: OnboardingQueueRow; onClose: () => void }) => {
@@ -26,7 +28,9 @@ const JourneyModal = ({ row, onClose }: { row: OnboardingQueueRow; onClose: () =
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold text-slate-800'>
             {row.employee.name}
-            <span className='ml-2 text-sm font-normal text-slate-400'>{row.employee.employeeCode}</span>
+            <span className='ml-2 text-sm font-normal text-slate-500'>
+              {row.employee.employeeCode}
+            </span>
           </h2>
           <button
             type='button'
@@ -36,19 +40,19 @@ const JourneyModal = ({ row, onClose }: { row: OnboardingQueueRow; onClose: () =
             Close
           </button>
         </div>
-        <p className='mt-1 text-xs text-slate-400'>
-          Started {row.startedOn} · due {row.dueOn}. Each step is done by its owner: you tick the
-          HR steps (with a note of what was done) and upload the signed offer letter; the joiner
+        <p className='mt-1 text-xs text-slate-500'>
+          Started {row.startedOn} · due {row.dueOn}. Each step is done by its owner: you tick the HR
+          steps (with a note of what was done) and upload the signed offer letter; the joiner
           uploads their documents and acknowledges the Code of Conduct; their manager ticks the
           manager steps (you do, if they have no manager of their own); OPS and payroll do theirs.
           You can open every uploaded document with View.
         </p>
         <div className='mt-4'>
           {journey.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
-          {journey.error && <p className='text-sm text-red-600'>{apiErrorMessage(journey.error)}</p>}
-          {journey.data && (
-            <OnboardingChecklist journey={journey.data} onChanged={refresh} />
+          {journey.error && (
+            <p className='text-sm text-red-600'>{apiErrorMessage(journey.error)}</p>
           )}
+          {journey.data && <OnboardingChecklist journey={journey.data} onChanged={refresh} />}
         </div>
       </div>
     </div>
@@ -62,9 +66,11 @@ const StartModal = ({ onClose }: { onClose: () => void }) => {
   const [startedOn, setStartedOn] = useState('');
 
   const employees = useQuery({ queryKey: ['employees'], queryFn: employeesApi.list });
+  // The date the journey will run from: the picked date, else their joining date.
+  const startFrom =
+    startedOn || (employees.data ?? []).find((e) => e.id === employeeId)?.dateOfJoining || '';
   const start = useMutation({
-    mutationFn: () =>
-      onboardingApi.start({ employeeId, ...(startedOn ? { startedOn } : {}) }),
+    mutationFn: () => onboardingApi.start({ employeeId, ...(startedOn ? { startedOn } : {}) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hr-onboarding'] });
       queryClient.invalidateQueries({ queryKey: ['hr-onboarding-overview'] });
@@ -73,10 +79,10 @@ const StartModal = ({ onClose }: { onClose: () => void }) => {
   });
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-md rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>Start an onboarding journey</h2>
-        <p className='mt-1 text-xs text-slate-400'>
+        <p className='mt-1 text-xs text-slate-500'>
           Recent joiners get one automatically on their first visit — this is for everyone else.
         </p>
         <label className='mt-4 block text-sm'>
@@ -103,6 +109,18 @@ const StartModal = ({ onClose }: { onClose: () => void }) => {
             className='mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
         </label>
+        {startFrom && (
+          <p className='mt-3 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600'>
+            Before-you-start steps are dated {fmtDay(addDays(startFrom, -7))}; the 30-day check-in
+            lands on{' '}
+            <span className='font-medium text-slate-800'>{fmtDay(addDays(startFrom, 30))}</span>.
+          </p>
+        )}
+        {employeeId && !startFrom && (
+          <p className='mt-3 text-xs text-amber-700'>
+            No joining date on file — pick a start date to see the phase dates.
+          </p>
+        )}
         {start.error && <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(start.error)}</p>}
         <div className='mt-4 flex justify-end gap-2'>
           <button
@@ -122,13 +140,15 @@ const StartModal = ({ onClose }: { onClose: () => void }) => {
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
 const daysChip = (row: OnboardingQueueRow) => {
   if (row.status === 'done')
-    return <span className='rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700'>done</span>;
+    return (
+      <span className='rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700'>done</span>
+    );
   if (row.daysLeft < 0)
     return (
       <span className='rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700'>
@@ -146,6 +166,27 @@ const daysChip = (row: OnboardingQueueRow) => {
   );
 };
 
+/** Where the journey is: the phase of its next open step, or not started / complete. */
+const phaseChip = (row: OnboardingQueueRow) => {
+  if (row.status === 'done' || row.currentPhase === null)
+    return (
+      <span className='rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700'>
+        ✓ Complete
+      </span>
+    );
+  if (row.progress.done === 0)
+    return (
+      <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'>
+        Not started
+      </span>
+    );
+  return (
+    <span className='rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-600'>
+      {phaseTitle(row.currentPhase)}
+    </span>
+  );
+};
+
 /** Nudge one open journey — once a day; the button says so afterwards. */
 const NudgeButton = ({ row }: { row: OnboardingQueueRow }) => {
   const queryClient = useQueryClient();
@@ -155,7 +196,7 @@ const NudgeButton = ({ row }: { row: OnboardingQueueRow }) => {
   });
   if (row.status === 'done') return null;
   if (row.nudgedToday || nudge.isSuccess)
-    return <span className='text-xs text-slate-400'>Nudged today</span>;
+    return <span className='text-xs text-slate-500'>Nudged today</span>;
   return (
     <button
       type='button'
@@ -253,27 +294,29 @@ const HrOnboardingPage = () => {
           <p className='text-xs text-amber-700'>
             Joined in the last 90 days or joining soon, but no onboarding started.
           </p>
-          <table className='mt-2 min-w-full text-sm'>
-            <tbody>
-              {noJourney.map((p) => (
-                <tr key={p.employee.id} className='border-t border-amber-100'>
-                  <td className='py-2 pr-4'>
-                    <span className='font-medium text-slate-700'>{p.employee.name}</span>
-                    <span className='ml-2 text-xs text-slate-400'>{p.employee.employeeCode}</span>
-                    {p.status === 'invited' && (
-                      <span className='ml-2 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] text-violet-700'>
-                        invited
-                      </span>
-                    )}
-                  </td>
-                  <td className='py-2 pr-4 text-slate-600'>joins {p.dateOfJoining}</td>
-                  <td className='py-2 text-right'>
-                    <StartNowButton employeeId={p.employee.id} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className='overflow-x-auto'>
+            <table className='mt-2 min-w-full text-sm'>
+              <tbody>
+                {noJourney.map((p) => (
+                  <tr key={p.employee.id} className='border-t border-amber-100'>
+                    <td className='py-2 pr-4'>
+                      <span className='font-medium text-slate-700'>{p.employee.name}</span>
+                      <span className='ml-2 text-xs text-slate-500'>{p.employee.employeeCode}</span>
+                      {p.status === 'invited' && (
+                        <span className='ml-2 rounded-full bg-violet-50 px-2 py-0.5 text-xs text-violet-700'>
+                          invited
+                        </span>
+                      )}
+                    </td>
+                    <td className='py-2 pr-4 text-slate-600'>joins {p.dateOfJoining}</td>
+                    <td className='py-2 text-right'>
+                      <StartNowButton employeeId={p.employee.id} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -287,56 +330,60 @@ const HrOnboardingPage = () => {
           </p>
         )}
         {data && data.length > 0 && (
-          <table className='min-w-full text-sm'>
-            <thead>
-              <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
-                <th className='py-2 pr-4'>Person</th>
-                <th className='py-2 pr-4'>Started</th>
-                <th className='py-2 pr-4'>Progress</th>
-                <th className='py-2 pr-4'>Due</th>
-                <th className='py-2'></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((r) => (
-                <tr key={r.id} className='border-t border-slate-100'>
-                  <td className='py-2.5 pr-4'>
-                    <span className='font-medium text-slate-700'>{r.employee.name}</span>
-                    <span className='ml-2 text-xs text-slate-400'>{r.employee.employeeCode}</span>
-                  </td>
-                  <td className='py-2.5 pr-4 text-slate-600'>{r.startedOn}</td>
-                  <td className='py-2.5 pr-4'>
-                    <div className='flex items-center gap-2'>
-                      <div className='h-1.5 w-24 overflow-hidden rounded-full bg-slate-100'>
-                        <div
-                          className='h-full rounded-full bg-brand-600'
-                          style={{
-                            width: `${r.progress.total > 0 ? (r.progress.done / r.progress.total) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                      <span className='text-xs text-slate-500'>
-                        {r.progress.done}/{r.progress.total}
-                      </span>
-                    </div>
-                  </td>
-                  <td className='py-2.5 pr-4'>{daysChip(r)}</td>
-                  <td className='py-2.5 text-right'>
-                    <span className='inline-flex items-center gap-3'>
-                      <NudgeButton row={r} />
-                      <button
-                        type='button'
-                        onClick={() => setOpen(r)}
-                        className='text-xs text-brand-600 hover:underline'
-                      >
-                        Open
-                      </button>
-                    </span>
-                  </td>
+          <div className='overflow-x-auto'>
+            <table className='min-w-full text-sm'>
+              <thead>
+                <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
+                  <th className='py-2 pr-4'>Person</th>
+                  <th className='py-2 pr-4'>Started</th>
+                  <th className='py-2 pr-4'>Phase</th>
+                  <th className='py-2 pr-4'>Progress</th>
+                  <th className='py-2 pr-4'>Due</th>
+                  <th className='py-2'></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map((r) => (
+                  <tr key={r.id} className='border-t border-slate-100'>
+                    <td className='py-2.5 pr-4'>
+                      <span className='font-medium text-slate-700'>{r.employee.name}</span>
+                      <span className='ml-2 text-xs text-slate-500'>{r.employee.employeeCode}</span>
+                    </td>
+                    <td className='py-2.5 pr-4 text-slate-600'>{r.startedOn}</td>
+                    <td className='py-2.5 pr-4 whitespace-nowrap'>{phaseChip(r)}</td>
+                    <td className='py-2.5 pr-4'>
+                      <div className='flex items-center gap-2'>
+                        <div className='h-1.5 w-24 overflow-hidden rounded-full bg-slate-100'>
+                          <div
+                            className='h-full rounded-full bg-brand-600'
+                            style={{
+                              width: `${r.progress.total > 0 ? (r.progress.done / r.progress.total) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                        <span className='text-xs text-slate-500'>
+                          {r.progress.done}/{r.progress.total}
+                        </span>
+                      </div>
+                    </td>
+                    <td className='py-2.5 pr-4'>{daysChip(r)}</td>
+                    <td className='py-2.5 text-right'>
+                      <span className='inline-flex items-center gap-3'>
+                        <NudgeButton row={r} />
+                        <button
+                          type='button'
+                          onClick={() => setOpen(r)}
+                          className='text-xs text-brand-600 hover:underline'
+                        >
+                          Open
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

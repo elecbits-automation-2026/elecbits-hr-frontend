@@ -18,15 +18,12 @@ import {
   HRBP_ONLY_ROUTES,
   type NavItem,
 } from '@constants/Common/navigation/nav.constants';
-import {
-  ADMIN_ROUTE,
-  AUTH_ROUTE,
-  HR_ROUTE,
-} from '@constants/Common/navigation/routes.constants';
+import { ADMIN_ROUTE, AUTH_ROUTE, HR_ROUTE } from '@constants/Common/navigation/routes.constants';
 import { meApi } from '@services/api/me.api';
 import { authService } from '@services/auth.service';
 import { canEnterSection, hrItemsFor } from '@utils/sections';
 import { cn } from '@utils/cn';
+import { toast } from '@utils/toast';
 
 import NotificationBell from './NotificationBell.component';
 import ThemeToggle from './ThemeToggle.component';
@@ -36,6 +33,14 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     'block rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100',
     isActive && 'bg-brand-50 text-brand-600',
   );
+
+/** "Asha Rao" → "AR"; one name → its first two letters. */
+const initialsOf = (name: string): string => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0]}${parts[parts.length - 1]![0]}`.toUpperCase();
+};
 
 const NavLinks = ({ items }: { items: NavItem[] }) => (
   <>
@@ -62,7 +67,7 @@ const GroupedLinks = ({ items }: { items: NavItem[] }) => {
         return (
           <div key={g} className={label ? 'pt-3' : undefined}>
             {label && (
-              <p className='px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400'>
+              <p className='px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500'>
                 {label}
               </p>
             )}
@@ -94,10 +99,10 @@ const NavGroup = ({
       <button
         type='button'
         onClick={() => setOpen(!open)}
-        className='flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-400 hover:bg-slate-100'
+        className='flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:bg-slate-100'
       >
         {label}
-        <span className='text-[10px]'>{open ? '▾' : '▸'}</span>
+        <span className='text-xs'>{open ? '▾' : '▸'}</span>
       </button>
       {open && (
         <div className='mt-1 space-y-1 border-l border-slate-200 pl-2'>
@@ -115,13 +120,7 @@ const NavGroup = ({
  * sidebar can never offer a screen the guard would bounce. The backend still
  * enforces access on every request; hiding here is UX, not security (§10).
  */
-const PortalShell = ({
-  sectionLabel,
-  children,
-}: {
-  sectionLabel: string;
-  children: ReactNode;
-}) => {
+const PortalShell = ({ sectionLabel, children }: { sectionLabel: string; children: ReactNode }) => {
   const navigate = useNavigate();
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -146,6 +145,12 @@ const PortalShell = ({
   // the backend enforces the real rules regardless.
   useEffect(() => {
     if (me?.isOwner && !pathname.startsWith(ADMIN_ROUTE) && !pathname.startsWith(HR_ROUTE)) {
+      // Say why when a real page was asked for (not the bare home after sign-in).
+      if (pathname !== '/') {
+        toast.info(
+          'The Owner account has no personal pages. Sign in with your own employee account for leave, pay and attendance.',
+        );
+      }
       navigate(ADMIN_ROUTE, { replace: true });
     }
   }, [me?.isOwner, pathname, navigate]);
@@ -201,7 +206,7 @@ const PortalShell = ({
         <div className='flex items-start justify-between border-b border-slate-200 px-5 py-4'>
           <div>
             <div className='text-lg font-bold text-brand-600'>Elecbits HR</div>
-            <div className='text-xs uppercase tracking-wide text-slate-400'>{sectionLabel}</div>
+            <div className='text-xs uppercase tracking-wide text-slate-500'>{sectionLabel}</div>
           </div>
           <span className='hidden md:block'>
             <NotificationBell />
@@ -210,7 +215,7 @@ const PortalShell = ({
             type='button'
             aria-label='Close the menu'
             onClick={() => setMenuOpen(false)}
-            className='text-slate-400 hover:text-slate-600 md:hidden'
+            className='text-slate-500 hover:text-slate-600 md:hidden'
           >
             ✕
           </button>
@@ -220,6 +225,22 @@ const PortalShell = ({
           {showHr && <NavGroup label='HR' basePath={HR_ROUTE} items={hrItems} />}
           {showAdmin && <NavGroup label='Admin' basePath={ADMIN_ROUTE} items={ADMIN_NAV} />}
         </nav>
+        {me && !me.isOwner && (
+          <div className='mx-3 mb-2 flex items-center gap-3 border-t border-slate-200 px-2 pt-3'>
+            <span
+              aria-hidden
+              className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-600'
+            >
+              {initialsOf(me.name)}
+            </span>
+            <div className='min-w-0'>
+              <p className='truncate text-sm font-medium text-slate-800'>{me.name}</p>
+              {me.designation && (
+                <p className='truncate text-xs text-slate-500'>{me.designation}</p>
+              )}
+            </div>
+          </div>
+        )}
         <ThemeToggle />
         <button
           type='button'

@@ -15,6 +15,7 @@ import { meApi } from '@services/api/me.api';
 import { recognitionsApi } from '@services/api/recognitions.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { holdsPortal } from '@utils/sections';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
 
@@ -83,10 +84,10 @@ const NominateModal = ({ onClose }: { onClose: () => void }) => {
   const share = award && picked.length > 1 ? Math.floor(award.valueInr / picked.length) : null;
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='max-h-full w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>Nominate</h2>
-        <p className='mt-1 text-xs text-slate-400'>
+        <p className='mt-1 text-xs text-slate-500'>
           You can nominate people who report to you. HR gives the final approval; an approved award
           is paid in next month&rsquo;s payslip.
         </p>
@@ -123,12 +124,13 @@ const NominateModal = ({ onClose }: { onClose: () => void }) => {
                     className='h-4 w-4'
                   />
                   {p.name}
-                  {p.designation && <span className='text-xs text-slate-400'>{p.designation}</span>}
+                  {p.designation && <span className='text-xs text-slate-500'>{p.designation}</span>}
                 </label>
               ))}
             </div>
           ) : (
             <select
+              aria-label='Who'
               value={picked[0] ?? ''}
               onChange={(e) => setPicked(e.target.value ? [e.target.value] : [])}
               className='mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
@@ -158,7 +160,7 @@ const NominateModal = ({ onClose }: { onClose: () => void }) => {
             placeholder='What did they do, and what did it change?'
             className='mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
-          <span className={`text-xs ${short ? 'text-amber-600' : 'text-green-600'}`}>
+          <span className={`text-xs ${short ? 'text-amber-600' : 'text-green-700'}`}>
             {citation.trim().length}/{citationMinLength} characters minimum · {CITATION_MAX_LENGTH}{' '}
             max
           </span>
@@ -186,7 +188,7 @@ const NominateModal = ({ onClose }: { onClose: () => void }) => {
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -219,7 +221,7 @@ const CitationCard = ({
       ) : (
         <span className='font-medium text-slate-800'>{r.employee.name}</span>
       )}
-      <span className='text-xs text-slate-400'>
+      <span className='text-xs text-slate-500'>
         nominated by {r.nominatedBy.name}
         {r.cycle ? ` · ${r.cycle}` : ''}
       </span>
@@ -255,6 +257,12 @@ const RecognitionPage = () => {
     queryKey: ['recognitions-mine'],
     queryFn: recognitionsApi.mine,
     enabled: tab === 'mine',
+  });
+  // The award catalogue, for the empty "My awards" screen — open to everyone.
+  const catalog = useQuery({
+    queryKey: ['recognition-catalog'],
+    queryFn: recognitionsApi.catalog,
+    enabled: tab === 'mine' && mine.data?.length === 0,
   });
   const sent = useQuery({
     queryKey: ['recognitions-sent'],
@@ -427,10 +435,21 @@ const RecognitionPage = () => {
             )}
             {board.data && board.data.ranking.length > 0 && (
               <div className='space-y-4'>
+                <p className='text-sm text-slate-500'>
+                  <span className='font-semibold text-slate-800'>
+                    {board.data.ranking.reduce((n, r) => n + r.count, 0)}
+                  </span>{' '}
+                  in total, across {board.data.ranking.length}{' '}
+                  {board.data.ranking.length === 1 ? 'person' : 'people'}
+                  <span className='text-xs text-slate-500'>
+                    {' '}
+                    (a team award counts once per person)
+                  </span>
+                </p>
                 <div className='overflow-x-auto'>
                   <table className='min-w-full text-sm'>
                     <thead>
-                      <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
+                      <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
                         <th className='py-2 pr-4'>#</th>
                         <th className='py-2 pr-4'>Person</th>
                         <th className='py-2 pr-4'>Awards</th>
@@ -442,7 +461,7 @@ const RecognitionPage = () => {
                         const open = openerFor(r.employee.id);
                         return (
                           <tr key={r.employee.id} className='border-t border-slate-100'>
-                            <td className='py-2 pr-4 text-slate-400'>{i + 1}</td>
+                            <td className='py-2 pr-4 text-slate-500'>{i + 1}</td>
                             <td className='py-2 pr-4 font-medium text-slate-700'>
                               {open ? (
                                 <button
@@ -462,7 +481,7 @@ const RecognitionPage = () => {
                               {Object.entries(r.byType).map(([key, n]) => (
                                 <span
                                   key={key}
-                                  className='mr-1 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700'
+                                  className='mr-1 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700'
                                 >
                                   {board.data!.typeNames[key] ?? key}
                                   {n > 1 ? ` ×${n}` : ''}
@@ -477,7 +496,7 @@ const RecognitionPage = () => {
                   </table>
                 </div>
                 <div>
-                  <h2 className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400'>
+                  <h2 className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
                     Recent citations
                   </h2>
                   <div className='space-y-2'>
@@ -495,7 +514,37 @@ const RecognitionPage = () => {
           <>
             {mine.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
             {mine.data && mine.data.length === 0 && (
-              <p className='text-sm text-slate-500'>No awards yet.</p>
+              <div className='space-y-3'>
+                <div>
+                  <p className='text-sm font-medium text-slate-700'>No awards in your name yet.</p>
+                  <p className='mt-0.5 text-sm text-slate-500'>
+                    That isn&rsquo;t a verdict. An award only exists when someone who saw the work
+                    writes it up, and you can&rsquo;t nominate yourself.
+                    {catalog.data && catalog.data.length > 0 && ' These are the awards on offer:'}
+                  </p>
+                </div>
+                {catalog.data && catalog.data.length > 0 && (
+                  <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                    {catalog.data.map((a) => (
+                      <div
+                        key={a.key}
+                        className='rounded-lg border border-slate-200 bg-slate-50 p-3'
+                      >
+                        <div className='flex flex-wrap items-center justify-between gap-2'>
+                          {typeChip(a.name)}
+                          <span className='text-sm font-semibold tabular-nums text-slate-700'>
+                            {inr(a.valueInr)}
+                          </span>
+                        </div>
+                        <p className='mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                          {CADENCE_LABEL[a.cadence]}
+                          {a.team && ' · can go to a team, value split equally'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             <div className='space-y-2'>
               {(mine.data ?? []).map((r) => (
@@ -537,7 +586,7 @@ const RecognitionPage = () => {
                       type='button'
                       disabled={decide.isPending}
                       onClick={() => decide.mutate({ id: r.id, decision: 'approve' })}
-                      className='rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-50'
+                      className='rounded-md bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 disabled:opacity-50'
                     >
                       Approve
                       {r.recipients.length > 1
@@ -580,13 +629,14 @@ const RecognitionPage = () => {
       {noteDraft && <FeedbackModal draft={noteDraft} onClose={() => setNoteDraft(null)} />}
 
       {declining && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+        <ModalShell onClose={() => setDeclining(null)}>
           <div className='w-full max-w-md rounded-xl bg-white p-6 shadow-lg'>
             <h2 className='text-lg font-semibold text-slate-800'>
               Decline the nomination for {declining.recipients.map((p) => p.name).join(', ')}?
             </h2>
-            <p className='mt-1 text-xs text-slate-400'>The nominator will see this reason.</p>
+            <p className='mt-1 text-xs text-slate-500'>The nominator will see this reason.</p>
             <textarea
+              aria-label='The nominator will see this reason.'
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
               rows={3}
@@ -616,7 +666,7 @@ const RecognitionPage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

@@ -1,16 +1,16 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
-import type { OnboardingJourney, OnboardingTask, OnboardingPhase } from '@app-types/api.types';
+import type { OnboardingJourney, OnboardingTask } from '@app-types/api.types';
+import {
+  ONBOARDING_PHASES as PHASES,
+  addDays,
+  currentPhaseOf,
+  fmtDay,
+} from '@constants/Common/onboarding.constants';
 import { onboardingApi } from '@services/api/onboarding.api';
 import { policiesApi } from '@services/api/policies.api';
 import { apiErrorMessage } from '@utils/apiError';
-
-const PHASES: Array<{ key: OnboardingPhase; title: string; offset: string }> = [
-  { key: 'before_start', title: 'Before you start', offset: 'joining −7 days' },
-  { key: 'week_one', title: 'Week one', offset: 'joining day' },
-  { key: 'first_30', title: 'First 30 days', offset: 'joining +30 days' },
-];
 
 const OWNER_LABEL: Record<OnboardingTask['owner'], string> = {
   employee: 'the joiner',
@@ -68,6 +68,7 @@ const FileStep = ({ task, onChanged }: { task: OnboardingTask; onChanged: () => 
         {task.canAct && (
           <>
             <input
+              aria-label='Upload document'
               ref={input}
               type='file'
               accept='application/pdf,image/jpeg,image/png'
@@ -99,7 +100,7 @@ const PolicyStep = ({ task, onChanged }: { task: OnboardingTask; onChanged: () =
     onSuccess: onChanged,
   });
   if (!task.policyId) {
-    return <span className='shrink-0 text-xs text-slate-400'>Not published yet — ask HR</span>;
+    return <span className='shrink-0 text-xs text-slate-500'>Not published yet — ask HR</span>;
   }
   return (
     <div className='flex shrink-0 flex-col items-end gap-1'>
@@ -148,13 +149,14 @@ const TickStep = ({ task, onChanged }: { task: OnboardingTask; onChanged: () => 
           type='button'
           disabled={toggle.isPending}
           onClick={() => toggle.mutate(undefined)}
-          className='text-xs text-slate-400 hover:text-slate-600 disabled:opacity-50'
+          className='text-xs text-slate-500 hover:text-slate-600 disabled:opacity-50'
         >
           Undo
         </button>
       ) : noting ? (
         <div className='flex flex-wrap items-center justify-end gap-2'>
           <input
+            aria-label='What was done? e.g. induction held on 6 Nov'
             autoFocus
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -173,7 +175,7 @@ const TickStep = ({ task, onChanged }: { task: OnboardingTask; onChanged: () => 
           <button
             type='button'
             onClick={() => setNoting(false)}
-            className='text-xs text-slate-400 hover:text-slate-600'
+            className='text-xs text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -212,41 +214,63 @@ const OnboardingChecklist = ({
   onChanged: () => void;
 }) => {
   const labels = selfView ? OWNER_LABEL_SELF : OWNER_LABEL;
+  // The phase of the next open step — the old tool's "you are here".
+  const current = currentPhaseOf(journey.tasks);
   return (
     <div className='space-y-4'>
       {PHASES.map((phase) => {
         const tasks = journey.tasks.filter((t) => t.phase === phase.key);
         if (tasks.length === 0) return null;
         const done = tasks.filter((t) => t.done).length;
+        const complete = done === tasks.length;
+        const here = !complete && current === phase.key;
         return (
-          <div key={phase.key} className='rounded-xl border border-slate-200 bg-white p-5'>
-            <div className='flex items-center justify-between'>
+          <div
+            key={phase.key}
+            className={`rounded-xl border bg-white p-5 ${here ? 'border-brand-500' : 'border-slate-200'}`}
+          >
+            <div className='flex items-center justify-between gap-2'>
               <h2 className='text-sm font-semibold text-slate-700'>
                 {phase.title}{' '}
-                <span className='ml-1 text-xs font-normal text-slate-400'>({phase.offset})</span>
+                <span className='ml-1 text-xs font-normal text-slate-500'>
+                  ({phase.offset} · {fmtDay(addDays(journey.startedOn, phase.days))})
+                </span>
               </h2>
-              <span className='text-xs text-slate-400'>
+              <span className='flex items-center gap-2 text-xs text-slate-500'>
+                {here && (
+                  <span className='rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600'>
+                    You are here
+                  </span>
+                )}
+                {complete && (
+                  <span className='rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700'>
+                    ✓ Complete
+                  </span>
+                )}
                 {done}/{tasks.length}
               </span>
             </div>
             <div className='mt-3 divide-y divide-slate-100'>
               {tasks.map((t) => (
-                <div key={t.id} className='flex flex-wrap items-center justify-between gap-3 py-2.5'>
+                <div
+                  key={t.id}
+                  className='flex flex-wrap items-center justify-between gap-3 py-2.5'
+                >
                   <div className='flex min-w-0 items-start gap-3'>
                     <span
-                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
-                        t.done ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${
+                        t.done ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
                       }`}
                     >
                       {t.done ? '✓' : t.policyCode ? '§' : t.needsFile ? '⇪' : '•'}
                     </span>
                     <div className='min-w-0'>
                       <p
-                        className={`text-sm ${t.done ? 'text-slate-400 line-through' : 'text-slate-700'}`}
+                        className={`text-sm ${t.done ? 'text-slate-500 line-through' : 'text-slate-700'}`}
                       >
                         {t.title}
                       </p>
-                      <p className='text-xs text-slate-400'>
+                      <p className='text-xs text-slate-500'>
                         {t.needsFile && t.file
                           ? `${t.file.fileName} · uploaded ${day(t.file.uploadedAt)}${
                               t.doneByName ? ` by ${t.doneByName}` : ''

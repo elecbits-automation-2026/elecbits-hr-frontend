@@ -6,6 +6,7 @@ import { attendanceApi } from '@services/api/attendance.api';
 import { departmentsApi, homeUnits } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const LEVELS: Level[] = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
 const EMPLOYMENT_TYPES: EmploymentType[] = ['intern', 'permanent', 'contract'];
@@ -101,7 +102,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <form
         onSubmit={submit}
         className='max-h-full w-full max-w-lg space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'
@@ -111,7 +112,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <button
             type='button'
             onClick={onClose}
-            className='text-sm text-slate-400 hover:text-slate-600'
+            className='text-sm text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -121,6 +122,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>First name</label>
             <input
+              aria-label='First name'
               required
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -131,6 +133,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Middle name</label>
             <input
+              aria-label='Middle name'
               value={middleName}
               onChange={(e) => setMiddleName(e.target.value)}
               className={inputClass}
@@ -139,6 +142,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Last name</label>
             <input
+              aria-label='Last name'
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               className={inputClass}
@@ -150,6 +154,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
         <div className='space-y-1'>
           <label className={labelClass}>Company email</label>
           <input
+            aria-label='Company email'
             type='email'
             required
             value={email}
@@ -163,6 +168,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Employee code</label>
             <input
+              aria-label='Employee code'
               required
               value={employeeCode}
               onChange={(e) => setTypedCode(e.target.value)}
@@ -173,6 +179,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Level</label>
             <select
+              aria-label='Level'
               value={level}
               onChange={(e) => setLevel(e.target.value as Level)}
               className={inputClass}
@@ -189,6 +196,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
         <div className='space-y-1'>
           <label className={labelClass}>Phone (optional)</label>
           <input
+            aria-label='Phone'
             value={phone}
             inputMode='numeric'
             maxLength={10}
@@ -201,6 +209,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
         <div className='space-y-1'>
           <label className={labelClass}>Reporting manager</label>
           <select
+            aria-label='Reporting manager'
             required
             value={reportsTo}
             onChange={(e) => setReportsTo(e.target.value)}
@@ -218,6 +227,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
         <div className='space-y-1'>
           <label className={labelClass}>Department</label>
           <select
+            aria-label='Department'
             value={departmentId}
             onChange={(e) => setDepartmentId(e.target.value)}
             className={inputClass}
@@ -231,6 +241,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           </select>
           <div className='flex gap-2 pt-1'>
             <input
+              aria-label='New department name'
               value={newDeptName}
               onChange={(e) => setNewDeptName(e.target.value)}
               className={inputClass}
@@ -253,6 +264,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
         <div className='space-y-1'>
           <label className={labelClass}>Base location</label>
           <select
+            aria-label='Base location'
             value={baseZoneId}
             onChange={(e) => setBaseZoneId(e.target.value)}
             className={inputClass}
@@ -271,6 +283,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Designation</label>
             <input
+              aria-label='Designation'
               value={designation}
               onChange={(e) => setDesignation(e.target.value)}
               className={inputClass}
@@ -280,6 +293,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Employment type</label>
             <select
+              aria-label='Employment type'
               value={employmentType}
               onChange={(e) => setEmploymentType(e.target.value as '' | EmploymentType)}
               className={inputClass}
@@ -298,6 +312,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Date of joining</label>
             <input
+              aria-label='Date of joining'
               type='date'
               value={dateOfJoining}
               onChange={(e) => setDateOfJoining(e.target.value)}
@@ -307,6 +322,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Offer date</label>
             <input
+              aria-label='Offer date'
               type='date'
               value={offerDate}
               onChange={(e) => setOfferDate(e.target.value)}
@@ -316,6 +332,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Confirmation date</label>
             <input
+              aria-label='Confirmation date'
               type='date'
               value={confirmationDate}
               onChange={(e) => setConfirmationDate(e.target.value)}
@@ -325,6 +342,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-1'>
             <label className={labelClass}>Notice (days)</label>
             <input
+              aria-label='Notice (days)'
               type='number'
               min={0}
               value={noticeDays}
@@ -356,7 +374,7 @@ const AddEmployeeModal = ({ onClose }: { onClose: () => void }) => {
           </button>
         </div>
       </form>
-    </div>
+    </ModalShell>
   );
 };
 

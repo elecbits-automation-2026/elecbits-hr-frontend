@@ -78,13 +78,16 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
               type='button'
               onClick={() => setView(v)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize ${
-                view === v ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                view === v
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {v}
             </button>
           ))}
           <input
+            aria-label='Month'
             type='month'
             value={month}
             onChange={(e) => setMonth(e.target.value || currentMonth())}
@@ -105,7 +108,8 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
           <TeamCalendarGrid months={team.data} today={new Date().toLocaleDateString('en-CA')} />
         )}
         {team.data && team.data.length > 0 && view === 'summary' && (
-          <table className='w-full text-left text-sm'>
+          <div className='overflow-x-auto'>
+            <table className='w-full text-left text-sm'>
               <thead>
                 <tr className='border-b border-slate-200 text-xs text-slate-500'>
                   <th className='py-2 pr-3 font-medium'>Employee</th>
@@ -122,7 +126,7 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
                   <tr key={t.employee.id} className='border-b border-slate-100'>
                     <td className='py-2 pr-3'>
                       {t.employee.name}
-                      <span className='ml-1 font-mono text-xs text-slate-400'>
+                      <span className='ml-1 font-mono text-xs text-slate-500'>
                         {t.employee.employeeCode}
                       </span>
                     </td>
@@ -140,6 +144,7 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
                 ))}
               </tbody>
             </table>
+          </div>
         )}
       </div>
 
@@ -158,18 +163,19 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
           </h2>
           {pendingWfh.length === 0 && <p className='text-sm text-slate-500'>Nothing pending.</p>}
           {pendingWfh.map((w) => (
-            <div key={w.id} className='flex items-center justify-between gap-3 border-b border-slate-100 py-2 text-sm'>
+            <div
+              key={w.id}
+              className='flex items-center justify-between gap-3 border-b border-slate-100 py-2 text-sm'
+            >
               <span>
                 <b>{w.employee.name}</b> ·{' '}
                 {w.startDate === w.endDate ? w.startDate : `${w.startDate} → ${w.endDate}`}
                 {w.reason && <span className='ml-1 text-slate-500'>({w.reason})</span>}
-                <span className='ml-2 text-xs text-slate-400'>
-                  {wfhSlots(w)}
-                </span>
+                <span className='ml-2 text-xs text-slate-500'>{wfhSlots(w)}</span>
               </span>
               {w.rmApprovedBy ? (
                 // The RM slot is already filled — nothing left to do here.
-                <span className='text-xs text-slate-400'>you approved — awaiting HR</span>
+                <span className='text-xs text-slate-500'>you approved — awaiting HR</span>
               ) : (
                 <ApprovalActions
                   disabled={decideWfh.isPending}

@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { OpenDoorBookingStatus, OpenDoorSlot } from '@app-types/api.types';
+import type { OpenDoorBookingStatus, OpenDoorSlot, OpenDoorSlotType } from '@app-types/api.types';
 import { openDoorApi } from '@services/api/openDoor.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { toast } from '@utils/toast';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
@@ -40,12 +41,34 @@ const chip = (s: OpenDoorBookingStatus) => (
   <span className={`rounded-full px-2 py-0.5 text-xs ${BOOKING_CLASS[s]}`}>{BOOKING_LABEL[s]}</span>
 );
 
+/** The old tool's three kinds of open door. */
+const SLOT_TYPE_LABEL: Record<OpenDoorSlotType, string> = {
+  hr_open_door: 'HR open door',
+  dept_head: 'Department head',
+  skip_level: 'Skip level',
+};
+const SLOT_TYPE_CLASS: Record<OpenDoorSlotType, string> = {
+  hr_open_door: 'bg-sky-50 text-sky-700',
+  dept_head: 'bg-violet-50 text-violet-700',
+  skip_level: 'bg-orange-50 text-orange-700',
+};
+const typeChip = (t: OpenDoorSlotType) => (
+  <span className={`rounded-full px-2 py-0.5 text-xs ${SLOT_TYPE_CLASS[t]}`}>
+    {SLOT_TYPE_LABEL[t]}
+  </span>
+);
+
+/** "Head of Sales · Sales" — whatever of title and department is known. */
+const ownerLine = (o: OpenDoorSlot['owner']) =>
+  [o.designation, o.department].filter(Boolean).join(' · ');
+
 /** Book a seat on someone's slot, with an optional private topic. */
 const SlotRow = ({ slot, onDone }: { slot: OpenDoorSlot; onDone: () => void }) => {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState('');
   const book = useMutation({
     mutationFn: () => openDoorApi.book(slot.id, topic.trim() || undefined),
+    meta: { successMessage: `Booked with ${slot.owner.name}`, silentError: true },
     onSuccess: () => {
       setOpen(false);
       setTopic('');
@@ -59,7 +82,8 @@ const SlotRow = ({ slot, onDone }: { slot: OpenDoorSlot; onDone: () => void }) =
         <span className='text-sm font-medium text-slate-800'>
           {fmtDay(slot.date)} · {slot.startTime}–{slot.endTime}
         </span>
-        <span className='text-xs text-slate-400'>
+        {typeChip(slot.slotType)}
+        <span className='text-xs text-slate-500'>
           {slot.booked}/{slot.capacity} booked
         </span>
         <span className='ml-auto'>
@@ -81,6 +105,7 @@ const SlotRow = ({ slot, onDone }: { slot: OpenDoorSlot; onDone: () => void }) =
       {open && (
         <div className='mt-2 space-y-2'>
           <textarea
+            aria-label='Topic'
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             rows={2}
@@ -109,11 +134,21 @@ const SlotRow = ({ slot, onDone }: { slot: OpenDoorSlot; onDone: () => void }) =
 };
 
 /** Publishers: offer a slot. */
-const NewSlotForm = ({ horizonDays, onDone }: { horizonDays: number; onDone: () => void }) => {
+const NewSlotForm = ({
+  horizonDays,
+  slotTypes,
+  onDone,
+}: {
+  horizonDays: number;
+  /** What this person may publish, their default first. */
+  slotTypes: OpenDoorSlotType[];
+  onDone: () => void;
+}) => {
   const [date, setDate] = useState(today());
   const [startTime, setStartTime] = useState('16:00');
   const [endTime, setEndTime] = useState('16:30');
   const [capacity, setCapacity] = useState('1');
+  const [slotType, setSlotType] = useState<OpenDoorSlotType | ''>(slotTypes[0] ?? '');
   const [note, setNote] = useState('');
   const create = useMutation({
     mutationFn: () =>
@@ -122,8 +157,10 @@ const NewSlotForm = ({ horizonDays, onDone }: { horizonDays: number; onDone: () 
         startTime,
         endTime,
         capacity: Number(capacity) || 1,
+        ...(slotType ? { slotType } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       }),
+    meta: { successMessage: 'Slot published', silentError: true },
     onSuccess: () => {
       setNote('');
       onDone();
@@ -178,6 +215,22 @@ const NewSlotForm = ({ horizonDays, onDone }: { horizonDays: number; onDone: () 
           />
         </label>
       </div>
+      {slotTypes.length > 0 && (
+        <label className='block text-xs text-slate-500'>
+          Kind of slot
+          <select
+            value={slotType}
+            onChange={(e) => setSlotType(e.target.value as OpenDoorSlotType)}
+            className={`${inputClass} mt-1`}
+          >
+            {slotTypes.map((t) => (
+              <option key={t} value={t}>
+                {SLOT_TYPE_LABEL[t]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className='block text-xs text-slate-500'>
         Note (optional — where, how)
         <input
@@ -190,7 +243,7 @@ const NewSlotForm = ({ horizonDays, onDone }: { horizonDays: number; onDone: () 
       </label>
       {create.error && <p className='text-sm text-red-600'>{apiErrorMessage(create.error)}</p>}
       <div className='flex items-center justify-between gap-2'>
-        <span className='text-xs text-slate-400'>
+        <span className='text-xs text-slate-500'>
           People can book up to {horizonDays} days ahead.
         </span>
         <button
@@ -223,13 +276,24 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
     queryClient.invalidateQueries({ queryKey: ['open-door-me'] });
   };
   const act = useMutation({
-    mutationFn: (fn: () => Promise<unknown>) => fn(),
-    onSuccess: refresh,
+    mutationFn: ({ fn }: { fn: () => Promise<unknown>; done: string }) => fn(),
+    // The error shows inline at the top of the page.
+    meta: { silentError: true },
+    onSuccess: (_out, { done }) => {
+      refresh();
+      toast.success(done);
+    },
   });
+  /** Run one action; `done` is its success toast. */
+  const run = (fn: () => Promise<unknown>, done: string) => act.mutate({ fn, done });
 
-  const byOwner = new Map<string, { name: string; slots: OpenDoorSlot[] }>();
+  const byOwner = new Map<string, { name: string; title: string; slots: OpenDoorSlot[] }>();
   for (const s of slots.data ?? []) {
-    const e = byOwner.get(s.owner.id) ?? { name: s.owner.name, slots: [] };
+    const e = byOwner.get(s.owner.id) ?? {
+      name: s.owner.name,
+      title: ownerLine(s.owner),
+      slots: [],
+    };
     e.slots.push(s);
     byOwner.set(s.owner.id, e);
   }
@@ -252,7 +316,7 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='text-sm font-semibold text-slate-700'>My bookings</h2>
-        {upcoming.length === 0 && <p className='mt-2 text-sm text-slate-400'>Nothing booked.</p>}
+        {upcoming.length === 0 && <p className='mt-2 text-sm text-slate-500'>Nothing booked.</p>}
         <ul className='mt-3 space-y-2'>
           {upcoming.map((b) => (
             <li
@@ -262,17 +326,21 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
               <span className='text-sm font-medium text-slate-800'>
                 {b.slot.owner.name} · {fmtDay(b.slot.date)} · {b.slot.startTime}–{b.slot.endTime}
               </span>
+              {typeChip(b.slot.slotType)}
               {chip(b.status)}
               <button
                 type='button'
                 disabled={act.isPending}
-                onClick={() => act.mutate(() => openDoorApi.cancelBooking(b.id))}
+                onClick={() => run(() => openDoorApi.cancelBooking(b.id), 'Booking cancelled')}
                 className={`${secondary} ml-auto`}
               >
                 Cancel
               </button>
+              {ownerLine(b.slot.owner) && (
+                <p className='w-full text-xs text-slate-500'>{ownerLine(b.slot.owner)}</p>
+              )}
               {b.slot.note && <p className='w-full text-xs text-slate-500'>{b.slot.note}</p>}
-              {b.topic && <p className='w-full text-xs text-slate-400'>Topic: {b.topic}</p>}
+              {b.topic && <p className='w-full text-xs text-slate-500'>Topic: {b.topic}</p>}
             </li>
           ))}
         </ul>
@@ -294,17 +362,20 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='text-sm font-semibold text-slate-700'>Available slots</h2>
-        {slots.isLoading && <p className='mt-2 text-sm text-slate-400'>Loading…</p>}
+        {slots.isLoading && <p className='mt-2 text-sm text-slate-500'>Loading…</p>}
         {slots.error && <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(slots.error)}</p>}
         {slots.data?.length === 0 && (
-          <p className='mt-2 text-sm text-slate-400'>
+          <p className='mt-2 text-sm text-slate-500'>
             No open slots in the next {me.data?.horizonDays ?? 21} days.
           </p>
         )}
         <div className='mt-3 space-y-4'>
           {[...byOwner.entries()].map(([id, o]) => (
             <div key={id}>
-              <h3 className='text-sm font-medium text-slate-700'>{o.name}</h3>
+              <h3 className='text-sm font-medium text-slate-700'>
+                {o.name}
+                {o.title && <span className='font-normal text-slate-500'> · {o.title}</span>}
+              </h3>
               <ul className='mt-2 space-y-2'>
                 {o.slots.map((s) => (
                   <SlotRow key={s.id} slot={s} onDone={refresh} />
@@ -327,6 +398,7 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
             <div className='mt-3'>
               <NewSlotForm
                 horizonDays={me.data.horizonDays}
+                slotTypes={me.data.slotTypes}
                 onDone={() => {
                   setShowNew(false);
                   refresh();
@@ -335,7 +407,7 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
             </div>
           )}
           {me.data.slots.length === 0 && (
-            <p className='mt-2 text-sm text-slate-400'>You haven&rsquo;t offered any slots.</p>
+            <p className='mt-2 text-sm text-slate-500'>You haven&rsquo;t offered any slots.</p>
           )}
           <ul className='mt-3 space-y-2'>
             {me.data.slots.map((s) => {
@@ -351,7 +423,33 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
                     <span className='text-sm font-medium text-slate-800'>
                       {fmtDay(s.date)} · {s.startTime}–{s.endTime}
                     </span>
-                    <span className='text-xs text-slate-400'>
+                    {s.cancelled || me.data.slotTypes.length === 0 ? (
+                      typeChip(s.slotType)
+                    ) : (
+                      <select
+                        aria-label='Kind of slot'
+                        value={s.slotType}
+                        disabled={act.isPending}
+                        onChange={(e) =>
+                          run(
+                            () =>
+                              openDoorApi.updateSlot(s.id, {
+                                slotType: e.target.value as OpenDoorSlotType,
+                              }),
+                            'Slot updated',
+                          )
+                        }
+                        className={`rounded-full border-0 px-2 py-0.5 text-xs ${SLOT_TYPE_CLASS[s.slotType]}`}
+                      >
+                        {/* An HR open-door slot stays selectable for its owner even if they lost HR access. */}
+                        {[...new Set([s.slotType, ...me.data.slotTypes])].map((t) => (
+                          <option key={t} value={t}>
+                            {SLOT_TYPE_LABEL[t]}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <span className='text-xs text-slate-500'>
                       {s.booked}/{s.capacity} booked
                     </span>
                     {s.cancelled ? (
@@ -361,7 +459,12 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
                         <button
                           type='button'
                           disabled={act.isPending}
-                          onClick={() => act.mutate(() => openDoorApi.cancelSlot(s.id))}
+                          onClick={() =>
+                            run(
+                              () => openDoorApi.cancelSlot(s.id),
+                              'Slot cancelled — anyone booked has been told',
+                            )
+                          }
                           className={`${secondary} ml-auto`}
                         >
                           Cancel slot
@@ -383,7 +486,9 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
                               <button
                                 type='button'
                                 disabled={act.isPending}
-                                onClick={() => act.mutate(() => openDoorApi.mark(b.id, 'done'))}
+                                onClick={() =>
+                                  run(() => openDoorApi.mark(b.id, 'done'), 'Marked as met')
+                                }
                                 className={secondary}
                               >
                                 Met
@@ -391,7 +496,9 @@ const OpenDoorPage = ({ embedded = false }: { embedded?: boolean }) => {
                               <button
                                 type='button'
                                 disabled={act.isPending}
-                                onClick={() => act.mutate(() => openDoorApi.mark(b.id, 'no_show'))}
+                                onClick={() =>
+                                  run(() => openDoorApi.mark(b.id, 'no_show'), 'Marked as no-show')
+                                }
                                 className={secondary}
                               >
                                 No-show

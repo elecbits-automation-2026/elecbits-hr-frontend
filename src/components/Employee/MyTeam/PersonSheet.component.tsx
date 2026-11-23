@@ -18,9 +18,17 @@ import { tenureOf } from '@utils/tenure';
 
 const todayStr = () => new Date().toLocaleDateString('en-CA');
 const niceDate = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+  new Date(`${d}T00:00:00`).toLocaleDateString([], {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 const shortDate = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+  new Date(`${d}T00:00:00`).toLocaleDateString([], {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
 const initialsOf = (name: string): string =>
   name
@@ -31,13 +39,17 @@ const initialsOf = (name: string): string =>
     .join('');
 
 const scoreTone = (score: number): string =>
-  score >= 70 ? 'bg-green-50 text-green-700' : score >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700';
+  score >= 70
+    ? 'bg-green-50 text-green-700'
+    : score >= 40
+      ? 'bg-amber-50 text-amber-700'
+      : 'bg-red-50 text-red-700';
 
 const barTone = (p: number): string =>
   p >= 70 ? 'bg-green-500' : p >= 40 ? 'bg-amber-400' : 'bg-red-400';
 
 const pctTone = (p: number): string =>
-  p >= 90 ? 'text-green-600' : p >= 75 ? 'text-amber-600' : 'text-red-600';
+  p >= 90 ? 'text-green-700' : p >= 75 ? 'text-amber-600' : 'text-red-600';
 
 /**
  * The minimum a caller must know about somebody to open their sheet — both
@@ -75,7 +87,7 @@ const Card = ({
 }) => (
   <section className={`rounded-xl border border-slate-200 bg-white p-4 ${className}`}>
     <div className='flex flex-wrap items-baseline justify-between gap-2'>
-      <h3 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>{title}</h3>
+      <h3 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>{title}</h3>
       {right}
     </div>
     <div className='mt-3'>{children}</div>
@@ -214,12 +226,10 @@ const PersonSheet = ({
               <p className='mt-0.5 truncate text-sm text-slate-500'>
                 {member.designation ?? 'No designation'}
                 {member.department && <> · {member.department}</>}
-                <span className='ml-2 font-mono text-xs text-slate-400'>
-                  {member.employeeCode}
-                </span>
+                <span className='ml-2 font-mono text-xs text-slate-500'>{member.employeeCode}</span>
               </p>
               {member.dateOfJoining && (
-                <p className='mt-0.5 text-xs text-slate-400'>
+                <p className='mt-0.5 text-xs text-slate-500'>
                   joined {niceDate(member.dateOfJoining)} · {tenureOf(member.dateOfJoining)} with us
                 </p>
               )}
@@ -228,9 +238,17 @@ const PersonSheet = ({
               type='button'
               onClick={onClose}
               aria-label='Close'
-              className='rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+              className='rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-600'
             >
-              <svg width='18' height='18' viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round'>
+              <svg
+                width='18'
+                height='18'
+                viewBox='0 0 20 20'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+              >
                 <path d='M5 5l10 10M15 5L5 15' />
               </svg>
             </button>
@@ -242,8 +260,10 @@ const PersonSheet = ({
           <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
             {stats.map((s) => (
               <div key={s.label} className='rounded-xl border border-slate-200 bg-white px-4 py-3'>
-                <p className={`text-xl font-semibold tabular-nums ${s.tone ?? 'text-slate-800'}`}>{s.n}</p>
-                <p className='mt-0.5 text-[11px] leading-tight text-slate-400'>{s.label}</p>
+                <p className={`text-xl font-semibold tabular-nums ${s.tone ?? 'text-slate-800'}`}>
+                  {s.n}
+                </p>
+                <p className='mt-0.5 text-xs leading-tight text-slate-500'>{s.label}</p>
               </div>
             ))}
           </div>
@@ -259,7 +279,7 @@ const PersonSheet = ({
               ) : undefined
             }
           >
-            {goals.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+            {goals.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
             {goals.error && <p className='text-sm text-red-600'>{apiErrorMessage(goals.error)}</p>}
             {g && g.goals.length === 0 && (
               <p className='text-sm text-slate-500'>
@@ -278,12 +298,12 @@ const PersonSheet = ({
                   <div key={goal.id} className='rounded-lg bg-slate-50 px-3.5 py-2.5'>
                     <div className='flex flex-wrap items-baseline justify-between gap-2 text-sm'>
                       <span className='font-medium text-slate-700'>{goal.title}</span>
-                      <span className='font-mono text-[11px] text-slate-400'>
+                      <span className='font-mono text-xs text-slate-500'>
                         w{goal.weight} · due {shortDate(goal.dueOn)}
                       </span>
                     </div>
                     {goal.metric && (
-                      <p className='mt-0.5 text-xs text-slate-400'>
+                      <p className='mt-0.5 text-xs text-slate-500'>
                         {goal.metric}
                         {goal.target ? ` → ${goal.target}` : ''}
                       </p>
@@ -318,13 +338,17 @@ const PersonSheet = ({
                   {theirUpdates.map((u) => (
                     <li key={u.id} className='border-l-2 border-slate-200 pl-3'>
                       <div className='flex items-center gap-2'>
-                        <span className='font-mono text-[11px] text-slate-400'>{shortDate(u.date)}</span>
+                        <span className='font-mono text-xs text-slate-500'>
+                          {shortDate(u.date)}
+                        </span>
                         {u.score !== null ? (
-                          <span className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${scoreTone(u.score)}`}>
+                          <span
+                            className={`rounded-full px-1.5 py-px text-xs font-semibold ${scoreTone(u.score)}`}
+                          >
                             {u.score}
                           </span>
                         ) : (
-                          <span className='rounded-full bg-slate-100 px-1.5 py-px text-[10px] text-slate-500'>
+                          <span className='rounded-full bg-slate-100 px-1.5 py-px text-xs text-slate-500'>
                             unscored
                           </span>
                         )}
@@ -342,7 +366,7 @@ const PersonSheet = ({
                 title='Attendance this month'
                 right={
                   working > 0 ? (
-                    <span className='text-xs text-slate-400'>{working} working days so far</span>
+                    <span className='text-xs text-slate-500'>{working} working days so far</span>
                   ) : undefined
                 }
               >
@@ -352,18 +376,68 @@ const PersonSheet = ({
                   <>
                     {/* One stacked bar — every state owns its app-wide hue. */}
                     <div className='flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100'>
-                      {counts.present > 0 && <div className='bg-green-500' style={{ width: `${(counts.present / working) * 100}%` }} />}
-                      {counts.wfh > 0 && <div className='bg-blue-400' style={{ width: `${(counts.wfh / working) * 100}%` }} />}
-                      {counts.half > 0 && <div className='bg-orange-400' style={{ width: `${(counts.half / working) * 100}%` }} />}
-                      {counts.leave > 0 && <div className='bg-blue-600' style={{ width: `${(counts.leave / working) * 100}%` }} />}
-                      {counts.absent > 0 && <div className='bg-red-500' style={{ width: `${(counts.absent / working) * 100}%` }} />}
+                      {counts.present > 0 && (
+                        <div
+                          className='bg-green-500'
+                          style={{ width: `${(counts.present / working) * 100}%` }}
+                        />
+                      )}
+                      {counts.wfh > 0 && (
+                        <div
+                          className='bg-blue-400'
+                          style={{ width: `${(counts.wfh / working) * 100}%` }}
+                        />
+                      )}
+                      {counts.half > 0 && (
+                        <div
+                          className='bg-orange-400'
+                          style={{ width: `${(counts.half / working) * 100}%` }}
+                        />
+                      )}
+                      {counts.leave > 0 && (
+                        <div
+                          className='bg-blue-600'
+                          style={{ width: `${(counts.leave / working) * 100}%` }}
+                        />
+                      )}
+                      {counts.absent > 0 && (
+                        <div
+                          className='bg-red-500'
+                          style={{ width: `${(counts.absent / working) * 100}%` }}
+                        />
+                      )}
                     </div>
-                    <div className='mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500'>
-                      {counts.present > 0 && <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-green-500' />present {counts.present}</span>}
-                      {counts.wfh > 0 && <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-blue-400' />remote {counts.wfh}</span>}
-                      {counts.half > 0 && <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-orange-400' />half-day {counts.half}</span>}
-                      {counts.leave > 0 && <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-blue-600' />leave {counts.leave}</span>}
-                      {counts.absent > 0 && <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-red-500' />absent {counts.absent}</span>}
+                    <div className='mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500'>
+                      {counts.present > 0 && (
+                        <span>
+                          <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-green-500' />
+                          present {counts.present}
+                        </span>
+                      )}
+                      {counts.wfh > 0 && (
+                        <span>
+                          <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-blue-400' />
+                          remote {counts.wfh}
+                        </span>
+                      )}
+                      {counts.half > 0 && (
+                        <span>
+                          <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-orange-400' />
+                          half-day {counts.half}
+                        </span>
+                      )}
+                      {counts.leave > 0 && (
+                        <span>
+                          <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-blue-600' />
+                          leave {counts.leave}
+                        </span>
+                      )}
+                      {counts.absent > 0 && (
+                        <span>
+                          <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-red-500' />
+                          absent {counts.absent}
+                        </span>
+                      )}
                     </div>
                   </>
                 )}
@@ -371,14 +445,15 @@ const PersonSheet = ({
 
               {/* ── leave balances ── */}
               <Card title='Leave balances'>
-                {balances.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+                {balances.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
                 {balances.error && (
                   <p className='text-sm text-red-600'>{apiErrorMessage(balances.error)}</p>
                 )}
                 {balances.data && (
                   <div className='space-y-2'>
                     {balances.data.map((b) => {
-                      const total = b.allocated === null ? null : Math.min(b.opening + b.allocated, 30);
+                      const total =
+                        b.allocated === null ? null : Math.min(b.opening + b.allocated, 30);
                       const usedPct = total ? Math.min(100, (b.used / total) * 100) : 0;
                       return (
                         <div key={b.type}>
@@ -413,7 +488,7 @@ const PersonSheet = ({
               title={latestReport ? `Quarter report · ${latestReport.cycleName}` : 'Quarter report'}
             >
               {!latestReport ? (
-                <p className='text-sm text-slate-400'>No closed quarter yet.</p>
+                <p className='text-sm text-slate-500'>No closed quarter yet.</p>
               ) : (
                 <div className='space-y-1.5 text-sm'>
                   <div className='flex flex-wrap items-center gap-2'>
@@ -430,7 +505,8 @@ const PersonSheet = ({
                   </div>
                   <p className='text-xs text-slate-500'>
                     computed {latestReport.computedScore ?? '—'}
-                    {latestReport.adjustedByName && ` · final set by ${latestReport.adjustedByName}`}
+                    {latestReport.adjustedByName &&
+                      ` · final set by ${latestReport.adjustedByName}`}
                     {' · '}updates {latestReport.updates.submitted}/{latestReport.updates.expected}
                     {' · '}attendance{' '}
                     {latestReport.attendance.attendancePct === null
@@ -438,7 +514,7 @@ const PersonSheet = ({
                       : `${latestReport.attendance.attendancePct}%`}
                   </p>
                   {(quarterReports.data?.length ?? 0) > 1 && (
-                    <p className='text-xs text-slate-400'>
+                    <p className='text-xs text-slate-500'>
                       Earlier:{' '}
                       {quarterReports
                         .data!.slice(1, 4)
@@ -459,26 +535,28 @@ const PersonSheet = ({
             title='Trainings'
             right={
               trainings.data ? (
-                <span className='text-xs text-slate-400'>
+                <span className='text-xs text-slate-500'>
                   {openTrainings.length} open · {doneTrainings} done
                 </span>
               ) : undefined
             }
           >
             {trainings.error ? (
-              <p className='text-sm text-slate-400'>{apiErrorMessage(trainings.error)}</p>
+              <p className='text-sm text-slate-500'>{apiErrorMessage(trainings.error)}</p>
             ) : openTrainings.length === 0 ? (
-              <p className='text-sm text-slate-400'>No open trainings.</p>
+              <p className='text-sm text-slate-500'>No open trainings.</p>
             ) : (
               <ul className='space-y-1.5 text-sm'>
                 {openTrainings.map((t) => (
                   <li key={t.id} className='flex flex-wrap items-baseline justify-between gap-2'>
                     <span className='text-slate-800'>
                       {t.title}
-                      <span className='ml-2 text-xs text-slate-400'>{STREAM_LABEL[t.stream]}</span>
+                      <span className='ml-2 text-xs text-slate-500'>{STREAM_LABEL[t.stream]}</span>
                     </span>
                     <span className={`text-xs ${t.overdue ? 'text-red-600' : 'text-slate-500'}`}>
-                      {t.dueOn ? `${t.overdue ? 'overdue · was due' : 'due'} ${t.dueOn}` : 'no due date'}
+                      {t.dueOn
+                        ? `${t.overdue ? 'overdue · was due' : 'due'} ${t.dueOn}`
+                        : 'no due date'}
                     </span>
                   </li>
                 ))}
@@ -488,15 +566,15 @@ const PersonSheet = ({
 
           <Card title='Notes history'>
             {notes.error ? (
-              <p className='text-sm text-slate-400'>{apiErrorMessage(notes.error)}</p>
+              <p className='text-sm text-slate-500'>{apiErrorMessage(notes.error)}</p>
             ) : (notes.data?.length ?? 0) === 0 ? (
-              <p className='text-sm text-slate-400'>No notes sent to {member.name} yet.</p>
+              <p className='text-sm text-slate-500'>No notes sent to {member.name} yet.</p>
             ) : (
               <ul className='space-y-2'>
                 {notes.data!.slice(0, 8).map((n) => (
                   <li key={n.id} className='text-sm'>
                     <span
-                      className={`mr-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                      className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${
                         n.type === 'appreciation'
                           ? 'bg-green-50 text-green-700'
                           : 'bg-amber-50 text-amber-700'
@@ -510,7 +588,7 @@ const PersonSheet = ({
                     {n.body ? (
                       <p className='mt-0.5 text-slate-700'>{n.body}</p>
                     ) : (
-                      <p className='mt-0.5 text-xs italic text-slate-400'>
+                      <p className='mt-0.5 text-xs italic text-slate-500'>
                         Between {n.author.name} and {member.name}.
                       </p>
                     )}
@@ -536,7 +614,7 @@ const PersonSheet = ({
                 {band ? `${band.code} · ${band.name}` : member.level}
               </span>
               {nextBand && (
-                <span className='text-xs text-slate-400'>
+                <span className='text-xs text-slate-500'>
                   next up: {nextBand.code} · {nextBand.name}
                 </span>
               )}
@@ -548,7 +626,8 @@ const PersonSheet = ({
               {careerRow && (
                 <span className='rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700'>
                   {awards} award{awards === 1 ? '' : 's'}
-                  {careerRow.lastRecognizedAt && ` · last ${shortDate(careerRow.lastRecognizedAt.slice(0, 10))}`}
+                  {careerRow.lastRecognizedAt &&
+                    ` · last ${shortDate(careerRow.lastRecognizedAt.slice(0, 10))}`}
                 </span>
               )}
             </div>
@@ -586,7 +665,7 @@ const PersonSheet = ({
 
           {/* ── footer ── */}
           <div className='flex flex-wrap items-center justify-between gap-3 pb-1'>
-            <p className='max-w-md text-xs text-slate-400'>
+            <p className='max-w-md text-xs text-slate-500'>
               No pay on this sheet, and nothing here changes their record — roadmap notes are the
               one thing you can add. None of it replaces asking them.
             </p>

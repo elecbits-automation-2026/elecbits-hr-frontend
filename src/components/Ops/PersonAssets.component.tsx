@@ -22,13 +22,13 @@ const PersonAssets = ({ employeeId }: { employeeId: string }) => {
   return (
     <section className='rounded-xl border border-slate-200 bg-white p-4'>
       <h3 className='mb-2 text-sm font-semibold text-slate-700'>Assets held</h3>
-      {held.data?.length === 0 && <p className='text-sm text-slate-400'>Nothing assigned.</p>}
+      {held.data?.length === 0 && <p className='text-sm text-slate-500'>Nothing assigned.</p>}
       <ul className='space-y-1 text-sm'>
         {held.data?.map((a) => (
           <li key={a.id} className='flex flex-wrap items-center gap-2'>
-            <span className='font-mono text-xs text-slate-400'>{a.assetCode}</span>
+            <span className='font-mono text-xs text-slate-500'>{a.assetCode}</span>
             <span className='text-slate-700'>{a.name}</span>
-            <span className='text-xs text-slate-400'>{a.category.name}</span>
+            <span className='text-xs text-slate-500'>{a.category.name}</span>
             {a.loanDueOn && (
               <span
                 className={`${chipClass} ${a.loanOverdue ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600'}`}

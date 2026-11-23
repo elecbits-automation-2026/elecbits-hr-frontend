@@ -22,7 +22,7 @@ const ScorecardSummary = ({ app }: { app: Application }) => {
       </p>
       <div className='overflow-x-auto'>
         <table className='w-full min-w-[420px] text-left'>
-          <thead className='text-[10px] uppercase tracking-wide text-slate-400'>
+          <thead className='text-xs uppercase tracking-wide text-slate-500'>
             <tr>
               <th className='py-1 pr-2 font-semibold'>Round</th>
               <th className='py-1 pr-2 font-semibold'>Interviewer</th>
@@ -42,7 +42,7 @@ const ScorecardSummary = ({ app }: { app: Application }) => {
                   {ROUND_LABEL[r.round]}
                   {r.score && (
                     <span
-                      className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${
+                      className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${
                         r.score.recommendation === 'hire'
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'bg-red-50 text-red-700'
@@ -57,7 +57,7 @@ const ScorecardSummary = ({ app }: { app: Application }) => {
                   {r.score ? (
                     r.score.roundScore
                   ) : (
-                    <span className='font-sans text-[11px] text-slate-400'>
+                    <span className='font-sans text-xs text-slate-500'>
                       {app.currentRound === r.round ? 'open now' : 'not scored yet'}
                     </span>
                   )}
@@ -75,7 +75,7 @@ const ScorecardSummary = ({ app }: { app: Application }) => {
             <tr className='border-t-2 border-slate-200 font-semibold'>
               <td className='py-1.5 pr-2' colSpan={4}>
                 Total{' '}
-                <span className='font-normal text-slate-400'>
+                <span className='font-normal text-slate-500'>
                   ({scored} of {app.rounds.length} rounds scored)
                 </span>
               </td>

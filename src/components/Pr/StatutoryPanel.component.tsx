@@ -2,7 +2,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 
 import type { PayrollRun } from '@app-types/api.types';
 import { payrollApi } from '@services/api/payroll.api';
-import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const money = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const monthLabel = (ym: string) =>
@@ -56,7 +56,7 @@ const StatutoryPanel = () => {
   });
 
   if (runs.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (runs.error) return <p className='text-sm text-red-600'>{apiErrorMessage(runs.error)}</p>;
+  if (runs.error) return <QueryError error={runs.error} />;
   if (last12.length === 0) {
     return <p className='text-sm text-slate-500'>No payroll runs yet.</p>;
   }
@@ -160,7 +160,7 @@ const StatutoryPanel = () => {
               return (
                 <tr
                   key={m.run.id}
-                  className={`border-t border-slate-100 tabular-nums ${draft ? 'italic text-slate-400' : 'text-slate-700'}`}
+                  className={`border-t border-slate-100 tabular-nums ${draft ? 'italic text-slate-500' : 'text-slate-700'}`}
                 >
                   <td className='px-4 py-3 not-italic'>{monthLabel(m.run.month)}</td>
                   <td className='px-4 py-3 text-xs'>{STATUS[m.run.status]}</td>

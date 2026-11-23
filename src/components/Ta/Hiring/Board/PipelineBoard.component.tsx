@@ -50,14 +50,25 @@ const REJECTABLE: ApplicationStage[] = [
 ];
 
 /** Stages a step back is allowed from (a correction; hired / joined never go back). */
-const MOVABLE_BACK: ApplicationStage[] = ['interviewing', 'interviewed', 'decision', 'selected', 'offered'];
+const MOVABLE_BACK: ApplicationStage[] = [
+  'interviewing',
+  'interviewed',
+  'decision',
+  'selected',
+  'offered',
+];
 
 type CardAction = 'reject' | 'back' | 'restore';
 
 /** The inline reason form per action: prompt, button, colour, call. */
 const ACTIONS: Record<
   CardAction,
-  { prompt: string; button: string; cls: string; run: (id: string, reason: string) => Promise<Application> }
+  {
+    prompt: string;
+    button: string;
+    cls: string;
+    run: (id: string, reason: string) => Promise<Application>;
+  }
 > = {
   reject: { prompt: 'Why not?', button: 'Reject', cls: 'bg-red-600', run: candidatesApi.reject },
   back: {
@@ -114,7 +125,9 @@ const CandidateCard = ({
       role='button'
       tabIndex={0}
       onClick={onOpen}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget && onOpen()}
+      onKeyDown={(e) =>
+        (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget && onOpen()
+      }
       title='Open the summary and scorecard'
       className={`cursor-pointer space-y-1.5 rounded-[10px] border border-l-[3px] border-slate-200 bg-white px-2.5 py-2 hover:border-blue-300 hover:shadow-sm ${STAGE_ACCENT[a.stage]}`}
     >
@@ -122,14 +135,14 @@ const CandidateCard = ({
         <div className='min-w-0'>
           <p className='truncate text-[12.5px] font-bold text-slate-800'>{a.candidateName}</p>
           {showRole && (
-            <p className='truncate text-[11px] text-slate-500'>
+            <p className='truncate text-xs text-slate-500'>
               {a.roleTitle} #{a.positionNumber}
             </p>
           )}
         </div>
-        <span className='shrink-0 text-[10.5px] font-medium text-blue-700'>View →</span>
+        <span className='shrink-0 text-xs font-medium text-blue-700'>View →</span>
       </div>
-      <div className='flex flex-wrap items-center gap-1 text-[10.5px]'>
+      <div className='flex flex-wrap items-center gap-1 text-xs'>
         <span
           className={`rounded-full px-2 py-0.5 font-semibold ${SOURCE_CLASS[a.candidateSource] ?? 'bg-slate-100 text-slate-600'}`}
         >
@@ -143,7 +156,7 @@ const CandidateCard = ({
       </div>
       {a.nextAction && (
         <p
-          className={`text-[10.5px] ${
+          className={`text-xs ${
             a.nextAction.due && a.nextAction.due < new Date().toLocaleDateString('en-CA')
               ? 'font-semibold text-red-600'
               : 'text-slate-600'
@@ -153,26 +166,31 @@ const CandidateCard = ({
           {a.nextAction.due && <> · {a.nextAction.due.slice(5)}</>}
         </p>
       )}
-      <p className='font-mono text-[10.5px] text-slate-400'>
+      <p className='font-mono text-xs text-slate-500'>
         {a.candidateNoticeDays !== null && <>{a.candidateNoticeDays}d notice · </>}
-        {a.contactCount > 0 && <>{a.contactCount} contact{a.contactCount === 1 ? '' : 's'} · </>}
+        {a.contactCount > 0 && (
+          <>
+            {a.contactCount} contact{a.contactCount === 1 ? '' : 's'} ·{' '}
+          </>
+        )}
         {a.candidateExperienceYears !== null && <>{a.candidateExperienceYears} yrs · </>}
         {days === 0 ? 'moved today' : `${days}d since it last moved`}
       </p>
       {a.stage === 'interviewing' && a.currentRound && (
-        <p className='text-[10.5px] font-medium text-violet-700'>
+        <p className='text-xs font-medium text-violet-700'>
           Round open: {ROUND_LABEL[a.currentRound]}
         </p>
       )}
       {(go.error || act.error) && (
-        <p className='text-[11px] text-red-600'>{apiErrorMessage(go.error ?? act.error)}</p>
+        <p className='text-xs text-red-600'>{apiErrorMessage(go.error ?? act.error)}</p>
       )}
       {ended && a.preEndStage && (
-        <p className='text-[10.5px] text-slate-500'>Ended at: {STAGE_LABEL[a.preEndStage]}</p>
+        <p className='text-xs text-slate-500'>Ended at: {STAGE_LABEL[a.preEndStage]}</p>
       )}
       {acting ? (
         <div className='space-y-1' onClick={(e) => e.stopPropagation()}>
           <input
+            aria-label='Reason'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={ACTIONS[acting].prompt}
@@ -182,7 +200,7 @@ const CandidateCard = ({
             <button
               type='button'
               onClick={() => setActing(null)}
-              className='rounded px-2 py-0.5 text-[11px] text-slate-500 hover:bg-slate-100'
+              className='rounded px-2 py-0.5 text-xs text-slate-500 hover:bg-slate-100'
             >
               Back
             </button>
@@ -190,20 +208,23 @@ const CandidateCard = ({
               type='button'
               disabled={!reason.trim() || act.isPending}
               onClick={() => act.mutate(acting)}
-              className={`rounded px-2 py-0.5 text-[11px] font-medium text-white disabled:opacity-50 ${ACTIONS[acting].cls}`}
+              className={`rounded px-2 py-0.5 text-xs font-medium text-white disabled:opacity-50 ${ACTIONS[acting].cls}`}
             >
               {ACTIONS[acting].button}
             </button>
           </div>
         </div>
       ) : (
-        <div className='flex items-center justify-between gap-1' onClick={(e) => e.stopPropagation()}>
+        <div
+          className='flex items-center justify-between gap-1'
+          onClick={(e) => e.stopPropagation()}
+        >
           <span className='flex gap-2'>
             {works && REJECTABLE.includes(a.stage) && (
               <button
                 type='button'
                 onClick={() => setActing('reject')}
-                className='text-[11px] text-slate-400 hover:text-red-600'
+                className='text-xs text-slate-500 hover:text-red-600'
               >
                 ✕ not going ahead
               </button>
@@ -213,7 +234,7 @@ const CandidateCard = ({
                 type='button'
                 onClick={() => setActing('back')}
                 title='One stage back — a correction'
-                className='text-[11px] text-slate-400 hover:text-slate-700'
+                className='text-xs text-slate-500 hover:text-slate-700'
               >
                 ↩ back
               </button>
@@ -223,7 +244,7 @@ const CandidateCard = ({
                 type='button'
                 onClick={() => setActing('restore')}
                 title='Bring them back to the stage they ended at'
-                className='text-[11px] text-blue-600 hover:underline'
+                className='text-xs text-blue-600 hover:underline'
               >
                 ↺ restore
               </button>
@@ -235,7 +256,7 @@ const CandidateCard = ({
               disabled={go.isPending}
               onClick={() => go.mutate()}
               title={move.label}
-              className='rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-blue-700 disabled:opacity-50'
+              className='rounded-md bg-blue-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50'
             >
               {move.label} →
             </button>
@@ -275,13 +296,13 @@ const PipelineBoard = ({
         className={`flex shrink-0 flex-col gap-2 ${closed ? 'w-44 opacity-60' : 'w-[232px]'}`}
       >
         <div
-          className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide ${STAGE_HEAD[stage]}`}
+          className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide ${STAGE_HEAD[stage]}`}
         >
           <span className='truncate'>{STAGE_LABEL[stage]}</span>
           <span className='font-mono'>{here.length}</span>
         </div>
         {here.length === 0 ? (
-          <p className='rounded-lg border border-dashed border-slate-200 px-2 py-4 text-center text-[11px] text-slate-400'>
+          <p className='rounded-lg border border-dashed border-slate-200 px-2 py-4 text-center text-xs text-slate-500'>
             empty
           </p>
         ) : (

@@ -15,6 +15,7 @@ import { exitsApi } from '@services/api/exits.api';
 import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { holdsPortal } from '@utils/sections';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 type Tab = 'submitted' | 'accepted' | 'relieved' | 'closed';
 const TAB_LABELS: Record<Tab, string> = {
@@ -54,10 +55,11 @@ const TerminateModal = ({
     onSuccess: onDone,
   });
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-lg space-y-3 rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>Start a termination</h2>
         <select
+          aria-label='Employee'
           value={employeeId}
           onChange={(e) => {
             setEmployeeId(e.target.value);
@@ -106,6 +108,7 @@ const TerminateModal = ({
           />
         </label>
         <textarea
+          aria-label='Last working day'
           rows={3}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
@@ -127,7 +130,7 @@ const TerminateModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -196,10 +199,10 @@ const ExitsPage = () => {
           );
         })}
       </div>
-      {list.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+      {list.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {list.error && <p className='text-sm text-red-600'>{apiErrorMessage(list.error)}</p>}
       {list.data && rows.length === 0 && (
-        <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-400'>
+        <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500'>
           Nothing here.
         </p>
       )}
@@ -215,7 +218,7 @@ const ExitsPage = () => {
                   className='flex w-full flex-wrap items-center gap-2 px-4 py-3 text-left hover:bg-slate-50'
                 >
                   <span className='font-medium text-slate-800'>{x.employee.name}</span>
-                  <span className='text-xs text-slate-400'>
+                  <span className='text-xs text-slate-500'>
                     {x.kind === 'resignation' ? 'Resignation' : 'Termination'}
                     {x.employee.department ? ` · ${x.employee.department}` : ''}
                   </span>
@@ -266,7 +269,7 @@ const ExitsPage = () => {
                 Close ✕
               </button>
             </div>
-            {open.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+            {open.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
             {open.error && <p className='text-sm text-red-600'>{apiErrorMessage(open.error)}</p>}
             {open.data && <ExitCard key={open.data.id} exit={open.data} onChanged={refresh} />}
           </div>

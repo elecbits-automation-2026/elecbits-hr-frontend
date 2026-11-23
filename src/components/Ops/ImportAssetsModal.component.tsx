@@ -6,6 +6,7 @@ import { primaryBtn, secondaryBtn } from '@constants/Common/ops.constants';
 import { opsApi } from '@services/api/ops.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { downloadText, headerKey, parseCsv } from '@utils/csv';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const TEMPLATE_HEADER =
   'asset_code,name,category,zone,status,holder_email,loan_due_on,make,model,serial_no,purchased_on,purchase_cost,vendor,warranty_until,condition,notes';
@@ -121,14 +122,14 @@ const ImportAssetsModal = ({ onClose }: { onClose: () => void }) => {
   const imported = report && !report.dryRun && report.ok ? report.created : 0;
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='max-h-full w-full max-w-5xl space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold text-slate-800'>Import assets from CSV</h2>
           <button
             type='button'
             onClick={onClose}
-            className='text-sm text-slate-400 hover:text-slate-600'
+            className='text-sm text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -171,6 +172,7 @@ const ImportAssetsModal = ({ onClose }: { onClose: () => void }) => {
               </button>
             </div>
             <input
+              aria-label='Upload asset file'
               type='file'
               accept='.csv,text/csv'
               onChange={pick}
@@ -199,10 +201,11 @@ const ImportAssetsModal = ({ onClose }: { onClose: () => void }) => {
                           key={i}
                           className={`border-t border-slate-100 align-top ${err ? 'bg-red-50/60' : ''}`}
                         >
-                          <td className='px-2 py-1 font-mono text-slate-400'>{i + 1}</td>
+                          <td className='px-2 py-1 font-mono text-slate-500'>{i + 1}</td>
                           {EDITABLE.map((c) => (
                             <td key={c.key} className='px-1 py-1'>
                               <input
+                                aria-label={`${c.label}, row ${i + 1}`}
                                 value={r[c.key] ?? ''}
                                 onChange={(e) => edit(i, c.key, e.target.value)}
                                 className={`${c.width} rounded border border-slate-200 px-1.5 py-1 text-xs focus:border-brand-500 focus:outline-none`}
@@ -262,7 +265,7 @@ const ImportAssetsModal = ({ onClose }: { onClose: () => void }) => {
           </>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

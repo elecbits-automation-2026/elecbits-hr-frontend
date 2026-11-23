@@ -30,6 +30,7 @@ const PeopleFilters = ({
   return (
     <div className='flex flex-wrap items-center gap-2'>
       <input
+        aria-label='Search name, email, code'
         type='search'
         value={value.search}
         onChange={(e) => onChange({ ...value, search: e.target.value })}
@@ -37,6 +38,7 @@ const PeopleFilters = ({
         className={`${selectClass} min-w-56`}
       />
       <select
+        aria-label='Department'
         className={selectClass}
         value={value.department}
         onChange={(e) => onChange({ ...value, department: e.target.value, role: '' })}
@@ -49,6 +51,7 @@ const PeopleFilters = ({
         ))}
       </select>
       <select
+        aria-label='Role'
         className={selectClass}
         value={value.role}
         onChange={(e) => onChange({ ...value, role: e.target.value })}

@@ -10,6 +10,7 @@ import type {
 import BarList, { type BarListRow } from '@components/Common/Charts/BarList.component';
 import { policiesApi } from '@services/api/policies.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const CATEGORIES: Array<{ value: PolicyCategory; label: string }> = [
   { value: 'conduct', label: 'Conduct' },
@@ -109,11 +110,13 @@ const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: 
     },
   });
 
-  const valid = draft.title.trim().length >= 3 && draft.version.trim().length > 0 &&
+  const valid =
+    draft.title.trim().length >= 3 &&
+    draft.version.trim().length > 0 &&
     (existing !== null || /^[a-z0-9][a-z0-9_-]{1,39}$/.test(draft.code.trim()));
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-lg rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>
           {existing ? `Edit “${existing.title}”` : 'Add a policy'}
@@ -174,8 +177,8 @@ const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: 
           </div>
           {bumping && (
             <p className='rounded-md bg-amber-50 p-3 text-xs text-amber-700'>
-              Version change {existing!.version} → {draft.version.trim()}: everyone will be asked
-              to acknowledge again. Existing signatures stay on record as the old version.
+              Version change {existing!.version} → {draft.version.trim()}: everyone will be asked to
+              acknowledge again. Existing signatures stay on record as the old version.
             </p>
           )}
           <label className='block text-sm'>
@@ -243,7 +246,7 @@ const PolicyModal = ({ existing, onClose }: { existing: Policy | null; onClose: 
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -295,7 +298,7 @@ const RetireButton = ({ policy }: { policy: Policy }) => {
       disabled={change.isPending}
       onClick={() => (armed ? change.mutate() : setArmed(true))}
       title={change.error ? apiErrorMessage(change.error) : undefined}
-      className={`text-xs hover:underline disabled:opacity-50 ${armed ? 'font-medium text-red-600' : 'text-slate-400'}`}
+      className={`text-xs hover:underline disabled:opacity-50 ${armed ? 'font-medium text-red-600' : 'text-slate-500'}`}
     >
       {armed ? 'Click again to retire' : 'Retire'}
     </button>
@@ -366,16 +369,18 @@ const HrPoliciesPage = () => {
 
   return (
     <div className='w-full space-y-4'>
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
         <h1 className='text-2xl font-semibold text-slate-800'>Policies</h1>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           {(['tracker', 'manage'] as const).map((t) => (
             <button
               key={t}
               type='button'
               onClick={() => setTab(t)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize ${
-                tab === t ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                tab === t
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {t === 'tracker' ? 'Acknowledgements' : 'Manage'}
@@ -406,6 +411,7 @@ const HrPoliciesPage = () => {
             <>
               <div className='mb-4 flex flex-wrap items-center gap-3 text-sm'>
                 <select
+                  aria-label='Department'
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
                   className='rounded-md border border-slate-300 px-2 py-1 text-sm'
@@ -459,13 +465,13 @@ const HrPoliciesPage = () => {
               <div className='overflow-x-auto'>
                 <table className='min-w-full text-sm'>
                   <thead>
-                    <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
+                    <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
                       <th className='sticky left-0 bg-white py-2 pr-4'>Person</th>
                       <th className='px-2 py-2 text-center font-medium'>Signed</th>
                       {tracker.data.policies.map((p) => (
                         <th key={p.id} className='px-2 py-2 text-center font-medium'>
                           {p.title}
-                          <span className='block text-[10px] normal-case text-slate-300'>
+                          <span className='block text-xs normal-case text-slate-500'>
                             v{p.version}
                           </span>
                         </th>
@@ -479,7 +485,9 @@ const HrPoliciesPage = () => {
                           colSpan={tracker.data.policies.length + 2}
                           className='py-4 text-center text-sm text-slate-500'
                         >
-                          {missingOnly ? 'Everyone in this view is up to date.' : 'Nobody in this view.'}
+                          {missingOnly
+                            ? 'Everyone in this view is up to date.'
+                            : 'Nobody in this view.'}
                         </td>
                       </tr>
                     )}
@@ -489,7 +497,7 @@ const HrPoliciesPage = () => {
                         <tr key={r.employee.id} className='border-t border-slate-100'>
                           <td className='sticky left-0 bg-white py-2 pr-4'>
                             <span className='font-medium text-slate-700'>{r.employee.name}</span>
-                            <span className='ml-2 text-xs text-slate-400'>
+                            <span className='ml-2 text-xs text-slate-500'>
                               {r.employee.employeeCode}
                             </span>
                           </td>
@@ -533,91 +541,103 @@ const HrPoliciesPage = () => {
             <p className='text-sm text-slate-500'>No policies yet.</p>
           )}
           {list.data && list.data.length > 0 && (
-            <table className='min-w-full text-sm'>
-              <thead>
-                <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
-                  <th className='py-2 pr-4'>Policy</th>
-                  <th className='py-2 pr-4'>Category</th>
-                  <th className='py-2 pr-4'>Version</th>
-                  <th className='py-2 pr-4'>Effective</th>
-                  <th className='py-2 pr-4'>Sign-off</th>
-                  <th className='py-2 pr-4'>Document</th>
-                  <th className='py-2'></th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.data.map((p) => (
-                  <tr
-                    key={p.id}
-                    className={`border-t border-slate-100 ${p.retiredAt ? 'opacity-60' : ''}`}
-                  >
-                    <td className='py-2 pr-4'>
-                      <span className='font-medium text-slate-700'>{p.title}</span>
-                      <span className='ml-2 text-xs text-slate-400'>{p.code}</span>
-                      {p.retiredAt && (
-                        <span
-                          title={`Retired ${new Date(p.retiredAt).toLocaleDateString()} — hidden from employees and the tracker; signatures kept`}
-                          className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500'
-                        >
-                          retired
-                        </span>
-                      )}
-                    </td>
-                    <td className='py-2 pr-4 capitalize text-slate-600'>{p.category}</td>
-                    <td className='py-2 pr-4 text-slate-600'>v{p.version}</td>
-                    <td className='py-2 pr-4 text-slate-600'>
-                      {p.effectiveFrom ? fmtDay(p.effectiveFrom) : <span className='text-slate-400'>—</span>}
-                    </td>
-                    <td className='py-2 pr-4 text-slate-600'>
-                      {p.ackRequired ? 'required' : 'not required'}
-                      {(() => {
-                        const n = signedOf(p.id);
-                        return n ? (
-                          <span className='block text-xs text-slate-400'>
-                            {n.ok} of {n.total} signed
-                          </span>
-                        ) : null;
-                      })()}
-                    </td>
-                    <td className='py-2 pr-4'>
-                      {p.hasDocument ? (
-                        <button
-                          type='button'
-                          onClick={() => void policiesApi.openDocument(p.id)}
-                          className='rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700 hover:underline'
-                        >
-                          PDF in DB
-                        </button>
-                      ) : p.docUrl ? (
-                        <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'>
-                          external link
-                        </span>
-                      ) : (
-                        <span className='text-xs text-slate-400'>none</span>
-                      )}
-                    </td>
-                    <td className='py-2 text-right'>
-                      <span className='inline-flex items-center gap-3'>
-                        <button
-                          type='button'
-                          onClick={() => setEditing(p)}
-                          className='text-xs text-brand-600 hover:underline'
-                        >
-                          Edit
-                        </button>
-                        <RetireButton policy={p} />
-                      </span>
-                    </td>
+            <div className='overflow-x-auto'>
+              <table className='min-w-full text-sm'>
+                <thead>
+                  <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
+                    <th className='py-2 pr-4'>Policy</th>
+                    <th className='py-2 pr-4'>Category</th>
+                    <th className='py-2 pr-4'>Version</th>
+                    <th className='py-2 pr-4'>Effective</th>
+                    <th className='py-2 pr-4'>Sign-off</th>
+                    <th className='py-2 pr-4'>Document</th>
+                    <th className='py-2'></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {list.data.map((p) => (
+                    <tr
+                      key={p.id}
+                      className={`border-t border-slate-100 ${p.retiredAt ? 'opacity-60' : ''}`}
+                    >
+                      <td className='py-2 pr-4'>
+                        <span className='font-medium text-slate-700'>{p.title}</span>
+                        <span className='ml-2 text-xs text-slate-500'>{p.code}</span>
+                        {p.retiredAt && (
+                          <span
+                            title={`Retired ${new Date(p.retiredAt).toLocaleDateString()} — hidden from employees and the tracker; signatures kept`}
+                            className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'
+                          >
+                            retired
+                          </span>
+                        )}
+                      </td>
+                      <td className='py-2 pr-4 capitalize text-slate-600'>{p.category}</td>
+                      <td className='py-2 pr-4 text-slate-600'>v{p.version}</td>
+                      <td className='py-2 pr-4 text-slate-600'>
+                        {p.effectiveFrom ? (
+                          fmtDay(p.effectiveFrom)
+                        ) : (
+                          <span className='text-slate-500'>—</span>
+                        )}
+                      </td>
+                      <td className='py-2 pr-4 text-slate-600'>
+                        {p.ackRequired ? 'required' : 'not required'}
+                        {(() => {
+                          const n = signedOf(p.id);
+                          return n ? (
+                            <span className='block text-xs text-slate-500'>
+                              {n.ok} of {n.total} signed
+                            </span>
+                          ) : null;
+                        })()}
+                      </td>
+                      <td className='py-2 pr-4'>
+                        {p.hasDocument ? (
+                          <button
+                            type='button'
+                            onClick={() => void policiesApi.openDocument(p.id)}
+                            className='rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700 hover:underline'
+                          >
+                            PDF in DB
+                          </button>
+                        ) : p.docUrl ? (
+                          <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'>
+                            external link
+                          </span>
+                        ) : (
+                          <span className='text-xs text-slate-500'>none</span>
+                        )}
+                      </td>
+                      <td className='py-2 text-right'>
+                        <span className='inline-flex items-center gap-3'>
+                          <button
+                            type='button'
+                            onClick={() => setEditing(p)}
+                            className='text-xs text-brand-600 hover:underline'
+                          >
+                            Edit
+                          </button>
+                          <RetireButton policy={p} />
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       {(adding || editing) && (
-        <PolicyModal existing={editing} onClose={() => { setAdding(false); setEditing(null); }} />
+        <PolicyModal
+          existing={editing}
+          onClose={() => {
+            setAdding(false);
+            setEditing(null);
+          }}
+        />
       )}
     </div>
   );

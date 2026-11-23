@@ -68,7 +68,7 @@ const RequestCard = ({
         </span>
         <span className='font-medium text-slate-800'>{REQUEST_TYPE_LABELS[r.type]}</span>
         <span className='text-sm text-slate-600'>— {r.requestedBy.name}</span>
-        <span className='ml-auto text-xs text-slate-400'>{fmtWhen(r.createdAt)}</span>
+        <span className='ml-auto text-xs text-slate-500'>{fmtWhen(r.createdAt)}</span>
       </div>
       <p className='text-sm text-slate-600'>
         {r.asset && (
@@ -117,6 +117,7 @@ const RequestCard = ({
           {mode === 'fulfil' && needsIssue && (
             <>
               <select
+                aria-label='Asset to hand over'
                 value={issueAssetId}
                 onChange={(e) => setIssueAssetId(e.target.value)}
                 className={inputClass}
@@ -144,6 +145,7 @@ const RequestCard = ({
           )}
           {mode === 'fulfil' && TAKES_BACK.has(r.type) && r.asset && (
             <select
+              aria-label='Condition'
               value={condition}
               onChange={(e) => setCondition(e.target.value as AssetCondition)}
               className={inputClass}
@@ -156,6 +158,7 @@ const RequestCard = ({
             </select>
           )}
           <textarea
+            aria-label='Note'
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -214,7 +217,8 @@ const RequestQueuePage = () => {
         <div>
           <h1 className='text-2xl font-semibold text-slate-800'>Asset requests</h1>
           <p className='text-sm text-slate-500'>
-            What people have asked OPS for. Anyone with the Operations / assets team role can pick one up.
+            What people have asked OPS for. Anyone with the Operations / assets team role can pick
+            one up.
           </p>
         </div>
         <label className='flex items-center gap-2 text-sm text-slate-600'>
@@ -226,10 +230,10 @@ const RequestQueuePage = () => {
           Show done and declined
         </label>
       </div>
-      {queue.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+      {queue.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {queue.error && <p className='text-sm text-red-600'>{apiErrorMessage(queue.error)}</p>}
       {queue.data && rows.length === 0 && (
-        <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-400'>
+        <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500'>
           Nothing waiting.
         </p>
       )}

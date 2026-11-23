@@ -11,6 +11,7 @@ import {
 import { roundScoreOf } from '@constants/Common/scorecardTemplate.constants';
 import { candidatesApi } from '@services/api/candidates.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 /** Shortest evidence the backend accepts per attribute (no "ok"). */
 const EVIDENCE_MIN = 10;
@@ -75,6 +76,7 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
                 </p>
               ))}
               <textarea
+                aria-label={`Evidence for ${a.name}`}
                 value={evidence[a.name] ?? ''}
                 onChange={(e) => setEvidence({ ...evidence, [a.name]: e.target.value })}
                 rows={2}
@@ -86,7 +88,11 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
                   <p className='text-xs text-amber-700'>Write the evidence for this score.</p>
                 )}
             </div>
-            <div className='flex items-start gap-1' role='radiogroup' aria-label={`Score for ${a.name}`}>
+            <div
+              className='flex items-start gap-1'
+              role='radiogroup'
+              aria-label={`Score for ${a.name}`}
+            >
               {[1, 2, 3, 4].map((n) => (
                 <button
                   key={n}
@@ -128,6 +134,7 @@ const ScoreForm = ({ item }: { item: MyInterview }) => {
         ))}
       </div>
       <textarea
+        aria-label='Notes'
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         rows={2}
@@ -236,15 +243,13 @@ const MyInterviewsPage = () => {
   const [scoring, setScoring] = useState<string | null>(null);
 
   if (list.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (list.error) return <p className='text-sm text-red-600'>{apiErrorMessage(list.error)}</p>;
+  if (list.error) return <QueryError error={list.error} />;
   const now = new Date();
   const all = list.data ?? [];
   const byTab = (t: Tab) =>
     all
       .filter((i) => tabOf(i, now) === t)
-      .sort((a, b) =>
-        (a.slot?.startsAt ?? '9999').localeCompare(b.slot?.startsAt ?? '9999'),
-      );
+      .sort((a, b) => (a.slot?.startsAt ?? '9999').localeCompare(b.slot?.startsAt ?? '9999'));
   const items = byTab(tab);
   const empty = TABS.find((t) => t.key === tab)!.empty;
 
@@ -294,7 +299,7 @@ const MyInterviewsPage = () => {
             <div className='flex flex-wrap items-start justify-between gap-2'>
               <div className='space-y-1'>
                 <p className='font-medium text-slate-800'>{i.candidateName}</p>
-                <p className='text-xs text-slate-400'>
+                <p className='text-xs text-slate-500'>
                   {ROUND_LABEL[i.round]} round · {i.roleTitle} · {i.departmentName}
                 </p>
                 <p className='text-xs text-slate-500'>

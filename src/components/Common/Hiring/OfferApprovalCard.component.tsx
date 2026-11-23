@@ -27,7 +27,10 @@ const OfferApprovalCard = ({ app }: { app: Application }) => {
     mutationFn: (file: File) => hireApi.uploadSignedLetter(app.id, file),
     onSuccess: refresh,
   });
-  const approve = useMutation({ mutationFn: () => hireApi.approveOffer(app.id), onSuccess: refresh });
+  const approve = useMutation({
+    mutationFn: () => hireApi.approveOffer(app.id),
+    onSuccess: refresh,
+  });
   const back = useMutation({
     mutationFn: () => hireApi.returnOffer(app.id, reason.trim()),
     onSuccess: refresh,
@@ -39,9 +42,9 @@ const OfferApprovalCard = ({ app }: { app: Application }) => {
       <div>
         <p className='font-medium text-slate-800'>
           {app.candidateName}{' '}
-          <span className='font-mono text-xs font-normal text-slate-400'>{app.candidateCode}</span>
+          <span className='font-mono text-xs font-normal text-slate-500'>{app.candidateCode}</span>
         </p>
-        <p className='text-xs text-slate-400'>
+        <p className='text-xs text-slate-500'>
           {app.roleTitle} #{app.positionNumber} · {app.departmentName}
         </p>
       </div>
@@ -79,6 +82,7 @@ const OfferApprovalCard = ({ app }: { app: Application }) => {
       </div>
       {returning && (
         <textarea
+          aria-label='What should TA change?'
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={2}
@@ -101,7 +105,7 @@ const OfferApprovalCard = ({ app }: { app: Application }) => {
               type='button'
               disabled={!reason.trim() || back.isPending}
               onClick={() => back.mutate()}
-              className='rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50'
+              className='rounded-md bg-amber-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50'
             >
               Return to TA
             </button>
@@ -116,7 +120,7 @@ const OfferApprovalCard = ({ app }: { app: Application }) => {
               disabled={!app.hasSignedLetter || approve.isPending}
               title={app.hasSignedLetter ? undefined : 'Upload the signed letter first'}
               onClick={() => approve.mutate()}
-              className='rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50'
+              className='rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50'
             >
               Approve the signed offer
             </button>

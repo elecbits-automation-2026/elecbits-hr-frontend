@@ -51,7 +51,11 @@ const PositionSources = ({ position, canAdd }: { position: Position; canAdd: boo
   const [notes, setNotes] = useState('');
   const add = useMutation({
     mutationFn: () =>
-      hiringApi.addSource(position.id, { channel, activatedOn: on, notes: notes.trim() || undefined }),
+      hiringApi.addSource(position.id, {
+        channel,
+        activatedOn: on,
+        notes: notes.trim() || undefined,
+      }),
     onSuccess: () => {
       setAdding(false);
       setNotes('');
@@ -69,35 +73,63 @@ const PositionSources = ({ position, canAdd }: { position: Position; canAdd: boo
         )}
       </div>
       {position.sources.length === 0 && !adding && (
-        <p className='text-xs text-slate-400'>No sourcing channel logged yet.</p>
+        <p className='text-xs text-slate-500'>No sourcing channel logged yet.</p>
       )}
       <div className='flex flex-wrap gap-1.5'>
         {position.sources.map((s) => (
-          <span key={s.id} title={s.notes ?? undefined} className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600'>
+          <span
+            key={s.id}
+            title={s.notes ?? undefined}
+            className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600'
+          >
             {SOURCE_LABEL[s.channel]} · {longDate(s.activatedOn)} · {s.spocName}
           </span>
         ))}
       </div>
       {adding && (
         <div className='grid gap-2 sm:grid-cols-[150px_150px_1fr_auto]'>
-          <select value={channel} onChange={(e) => setChannel(e.target.value as CandidateSource)} className={input}>
+          <select
+            aria-label='Channel'
+            value={channel}
+            onChange={(e) => setChannel(e.target.value as CandidateSource)}
+            className={input}
+          >
             {(Object.keys(SOURCE_LABEL) as CandidateSource[]).map((c) => (
               <option key={c} value={c}>
                 {SOURCE_LABEL[c]}
               </option>
             ))}
           </select>
-          <input type='date' value={on} onChange={(e) => setOn(e.target.value)} className={input} aria-label='Activated on' />
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder='Notes, e.g. job posted' className={input} />
+          <input
+            type='date'
+            value={on}
+            onChange={(e) => setOn(e.target.value)}
+            className={input}
+            aria-label='Activated on'
+          />
+          <input
+            aria-label='Notes, e.g. job posted'
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder='Notes, e.g. job posted'
+            className={input}
+          />
           <span className='flex gap-1'>
             <button type='button' onClick={() => setAdding(false)} className={btn}>
               Cancel
             </button>
-            <button type='button' disabled={!on || add.isPending} onClick={() => add.mutate()} className={primary}>
+            <button
+              type='button'
+              disabled={!on || add.isPending}
+              onClick={() => add.mutate()}
+              className={primary}
+            >
               Save
             </button>
           </span>
-          {add.error && <p className='text-xs text-red-600 sm:col-span-4'>{apiErrorMessage(add.error)}</p>}
+          {add.error && (
+            <p className='text-xs text-red-600 sm:col-span-4'>{apiErrorMessage(add.error)}</p>
+          )}
         </div>
       )}
     </div>
@@ -163,6 +195,7 @@ const Positions = ({
                   <div className='mt-2 space-y-2'>
                     <div className='grid grid-cols-[1fr_110px] gap-2'>
                       <select
+                        aria-label='Recruiter'
                         value={recruiterId}
                         onChange={(e) => setRecruiterId(e.target.value)}
                         className={input}
@@ -340,7 +373,7 @@ const JdEditor = ({ req, position, onDone }: EditorProps) => {
   const label = (text: string, hint?: string) => (
     <span className='text-xs text-slate-500'>
       {text}
-      {hint && <span className='text-slate-400'> — {hint}</span>}
+      {hint && <span className='text-slate-500'> — {hint}</span>}
     </span>
   );
 
@@ -352,10 +385,12 @@ const JdEditor = ({ req, position, onDone }: EditorProps) => {
         </p>
         {others.length > 0 && (
           <select
+            aria-label='Job description template'
             value=''
             onChange={(e) => {
               const from = others.find((p) => p.id === e.target.value);
-              if (from?.documents.jd) setJd(draftOf(from.documents.jd.content as Partial<JdContent>));
+              if (from?.documents.jd)
+                setJd(draftOf(from.documents.jd.content as Partial<JdContent>));
             }}
             className='rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600'
           >
@@ -392,7 +427,12 @@ const JdEditor = ({ req, position, onDone }: EditorProps) => {
       </div>
       <label className='block space-y-1'>
         {label('About the business unit', `what ${req.departmentName} does`)}
-        <textarea rows={3} value={jd.businessUnit} onChange={set('businessUnit')} className={input} />
+        <textarea
+          rows={3}
+          value={jd.businessUnit}
+          onChange={set('businessUnit')}
+          className={input}
+        />
       </label>
       <label className='block space-y-1'>
         {label('Role summary')}
@@ -444,14 +484,16 @@ const JdEditor = ({ req, position, onDone }: EditorProps) => {
           Save draft
         </button>
       </div>
-      {preview && (
-        <JdDocument c={c} roleTitle={req.roleTitle} onClose={() => setPreview(false)} />
-      )}
+      {preview && <JdDocument c={c} roleTitle={req.roleTitle} onClose={() => setPreview(false)} />}
     </div>
   );
 };
 
-type SheetDraft = { round: InterviewRound; weight: number; attributes: Array<{ name: string; questions: string }> };
+type SheetDraft = {
+  round: InterviewRound;
+  weight: number;
+  attributes: Array<{ name: string; questions: string }>;
+};
 
 const sheetsOf = (rounds: ScorecardContent['rounds']): SheetDraft[] =>
   rounds.map((r) => ({
@@ -515,6 +557,7 @@ const ScorecardEditor = ({ req, position, onDone }: EditorProps) => {
         </p>
         {others.length > 0 && (
           <select
+            aria-label='Scorecard template'
             value=''
             onChange={(e) => {
               const from = others.find((p) => p.id === e.target.value);
@@ -533,8 +576,8 @@ const ScorecardEditor = ({ req, position, onDone }: EditorProps) => {
         )}
       </div>
       <p className='text-xs text-slate-500'>
-        One sheet per interview round. Each round&apos;s interviewer scores every attribute 1–4
-        with evidence; attributes in a round weigh the same. Round weights must add up to 100{' '}
+        One sheet per interview round. Each round&apos;s interviewer scores every attribute 1–4 with
+        evidence; attributes in a round weigh the same. Round weights must add up to 100{' '}
         <span className={total === 100 ? 'text-emerald-700' : 'font-medium text-red-600'}>
           (now {total})
         </span>
@@ -545,7 +588,7 @@ const ScorecardEditor = ({ req, position, onDone }: EditorProps) => {
           <div className='flex flex-wrap items-center justify-between gap-2'>
             <p className='text-sm font-semibold text-slate-800'>
               {ROUND_LABEL[s.round]}{' '}
-              <span className='text-xs font-normal text-slate-400'>
+              <span className='text-xs font-normal text-slate-500'>
                 · {req.rounds.find((r) => r.round === s.round)?.interviewerName ?? 'recruiter'}
               </span>
             </p>
@@ -581,12 +624,14 @@ const ScorecardEditor = ({ req, position, onDone }: EditorProps) => {
           {s.attributes.map((a, k) => (
             <div key={k} className='grid gap-2 sm:grid-cols-[220px_1fr_auto]'>
               <input
+                aria-label='Attribute, e.g. Domain Fitment'
                 value={a.name}
                 onChange={(e) => setAttr(i, k, { name: e.target.value })}
                 placeholder='Attribute, e.g. Domain Fitment'
                 className={input}
               />
               <textarea
+                aria-label='Questions to ask — one per line'
                 rows={2}
                 value={a.questions}
                 onChange={(e) => setAttr(i, k, { questions: e.target.value })}
@@ -595,10 +640,8 @@ const ScorecardEditor = ({ req, position, onDone }: EditorProps) => {
               />
               <button
                 type='button'
-                onClick={() =>
-                  setSheet(i, { attributes: s.attributes.filter((_, j) => j !== k) })
-                }
-                className='px-2 py-2 text-slate-400 hover:text-red-600'
+                onClick={() => setSheet(i, { attributes: s.attributes.filter((_, j) => j !== k) })}
+                className='px-2 py-2 text-slate-500 hover:text-red-600'
                 aria-label='Remove attribute'
               >
                 ×
@@ -671,7 +714,8 @@ export const PositionDocuments = ({
           <TaDocumentPanel doc={doc} roleTitle={req.roleTitle} invalidate={KEYS} />
         ) : (
           <p className='rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500'>
-            No {label} yet{isRecruiter ? '' : ` — ${position.recruiterName ?? 'the recruiter'} writes it`}.
+            No {label} yet
+            {isRecruiter ? '' : ` — ${position.recruiterName ?? 'the recruiter'} writes it`}.
           </p>
         )}
         {isRecruiter && editable(doc) && (
@@ -728,7 +772,8 @@ const LineWorkspace = ({ req }: { req: Requisition }) => {
         {req.taRm ? (
           <>
             TA RM: <span className='font-medium text-slate-800'>{req.taRm.name}</span>
-            {isTaRm && ' (you) — give each position to someone in your TA team, or keep it yourself.'}
+            {isTaRm &&
+              ' (you) — give each position to someone in your TA team, or keep it yourself.'}
           </>
         ) : (
           'Waiting for Admin to give this line to a TA RM.'

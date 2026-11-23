@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import type { HiringReportRow, TrackerRow, TrackerView } from '@app-types/api.types';
-import { ROUND_LABEL, SOURCE_LABEL, STAGE_LABEL, longDate, rupees } from '@constants/Common/hiring.constants';
+import {
+  ROUND_LABEL,
+  SOURCE_LABEL,
+  STAGE_LABEL,
+  longDate,
+  rupees,
+} from '@constants/Common/hiring.constants';
 import { hiringApi } from '@services/api/hiring.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { csvCell, downloadText } from '@utils/csv';
@@ -10,7 +16,8 @@ import { csvCell, downloadText } from '@utils/csv';
 const card = 'rounded-xl border border-slate-200 bg-white';
 const btn =
   'rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50';
-const th = 'whitespace-nowrap px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400';
+const th =
+  'whitespace-nowrap px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500';
 const td = 'whitespace-nowrap px-2 py-1.5 text-sm';
 
 const iso = (d: Date) => d.toLocaleDateString('en-CA');
@@ -20,7 +27,9 @@ const monthStart = () => {
 };
 
 const toCsv = (head: string[], rows: Array<Array<string | number | null>>) =>
-  [head, ...rows].map((r) => r.map((v) => csvCell(v === null ? '' : String(v))).join(',')).join('\n');
+  [head, ...rows]
+    .map((r) => r.map((v) => csvCell(v === null ? '' : String(v))).join(','))
+    .join('\n');
 
 /** The report's numeric columns, in the deck's order. */
 const COLS: Array<{ key: keyof HiringReportRow; label: string }> = [
@@ -76,9 +85,21 @@ const ActivityReport = () => {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2 text-sm'>
-          <input type='date' value={from} onChange={(e) => setFrom(e.target.value)} className='rounded-md border border-slate-300 px-2 py-1' aria-label='From' />
-          <span className='text-slate-400'>to</span>
-          <input type='date' value={to} onChange={(e) => setTo(e.target.value)} className='rounded-md border border-slate-300 px-2 py-1' aria-label='To' />
+          <input
+            type='date'
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className='rounded-md border border-slate-300 px-2 py-1'
+            aria-label='From'
+          />
+          <span className='text-slate-500'>to</span>
+          <input
+            type='date'
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className='rounded-md border border-slate-300 px-2 py-1'
+            aria-label='To'
+          />
           <button type='button' disabled={!rows.length} onClick={exportCsv} className={btn}>
             Export CSV
           </button>
@@ -104,7 +125,7 @@ const ActivityReport = () => {
                   <span className='font-medium text-slate-800'>
                     {r.roleTitle} #{r.positionNumber}
                   </span>
-                  <span className='block text-xs text-slate-400'>
+                  <span className='block text-xs text-slate-500'>
                     {r.departmentName} · {r.spocName ?? 'no recruiter yet'}
                   </span>
                 </td>
@@ -131,7 +152,7 @@ const ActivityReport = () => {
           </tbody>
         </table>
         {report.isSuccess && rows.length === 0 && (
-          <p className='py-6 text-center text-sm text-slate-400'>No positions on approved lines.</p>
+          <p className='py-6 text-center text-sm text-slate-500'>No positions on approved lines.</p>
         )}
       </div>
     </section>
@@ -144,10 +165,13 @@ const PendingActions = () => {
   return (
     <section className={`${card} space-y-2 p-4`}>
       <h2 className='text-base font-semibold text-slate-800'>Pending and overdue actions</h2>
-      {list.data?.length === 0 && <p className='text-sm text-slate-400'>Nothing pending.</p>}
+      {list.data?.length === 0 && <p className='text-sm text-slate-500'>Nothing pending.</p>}
       <ul className='divide-y divide-slate-100'>
         {list.data?.map((x) => (
-          <li key={x.applicationId} className='flex flex-wrap items-baseline justify-between gap-2 py-1.5 text-sm'>
+          <li
+            key={x.applicationId}
+            className='flex flex-wrap items-baseline justify-between gap-2 py-1.5 text-sm'
+          >
             <span>
               <span className='font-medium text-slate-800'>{x.nextAction}</span>
               <span className='text-xs text-slate-500'>
@@ -155,7 +179,9 @@ const PendingActions = () => {
                 · {x.candidateName} ({x.candidateCode}) · {x.roleTitle} #{x.positionNumber}
               </span>
             </span>
-            <span className={`text-xs ${x.overdue ? 'font-semibold text-red-600' : 'text-slate-500'}`}>
+            <span
+              className={`text-xs ${x.overdue ? 'font-semibold text-red-600' : 'text-slate-500'}`}
+            >
               {x.ownerName ?? 'no owner'}
               {x.due && <> · due {longDate(x.due)}</>}
               {x.overdue && ' · overdue'}
@@ -172,7 +198,10 @@ const PendingActions = () => {
  * CTC; the EXTERNAL view (dept heads / leadership) leaves them out.
  */
 export const TrackerTable = ({ view, title }: { view: TrackerView; title: string }) => {
-  const list = useQuery({ queryKey: ['hiring-tracker', view], queryFn: () => hiringApi.tracker(view) });
+  const list = useQuery({
+    queryKey: ['hiring-tracker', view],
+    queryFn: () => hiringApi.tracker(view),
+  });
   const rows: TrackerRow[] = list.data ?? [];
   const internal = view === 'internal';
   const head = [
@@ -250,18 +279,20 @@ export const TrackerTable = ({ view, title }: { view: TrackerView; title: string
               <tr key={r.applicationId} className='border-b border-slate-100'>
                 <td className={td}>
                   <span className='font-medium text-slate-800'>{r.candidateName}</span>
-                  <span className='block font-mono text-[11px] text-slate-400'>{r.candidateCode}</span>
+                  <span className='block font-mono text-xs text-slate-500'>{r.candidateCode}</span>
                 </td>
                 <td className={td}>
                   {r.roleTitle} #{r.positionNumber}
-                  <span className='block text-xs text-slate-400'>
+                  <span className='block text-xs text-slate-500'>
                     {r.departmentName} · {r.spocName ?? '—'}
                   </span>
                 </td>
                 <td className={td}>
                   {STAGE_LABEL[r.stage] ?? r.stage}
                   {r.currentRound && (
-                    <span className='block text-xs text-violet-700'>{ROUND_LABEL[r.currentRound]}</span>
+                    <span className='block text-xs text-violet-700'>
+                      {ROUND_LABEL[r.currentRound]}
+                    </span>
                   )}
                 </td>
                 <td className={td}>{SOURCE_LABEL[r.source] ?? r.source}</td>
@@ -286,7 +317,7 @@ export const TrackerTable = ({ view, title }: { view: TrackerView; title: string
           </tbody>
         </table>
         {list.isSuccess && rows.length === 0 && (
-          <p className='py-6 text-center text-sm text-slate-400'>No candidates yet.</p>
+          <p className='py-6 text-center text-sm text-slate-500'>No candidates yet.</p>
         )}
       </div>
     </section>
@@ -308,7 +339,9 @@ const HiringReports = () => {
             onClick={() => setView(v)}
             className={`rounded-md px-3 py-1.5 ${view === v ? 'bg-white font-semibold text-slate-800 shadow-sm' : 'text-slate-500'}`}
           >
-            {v === 'internal' ? 'Internal tracker (TA / HR)' : 'External tracker (no contacts / CTC)'}
+            {v === 'internal'
+              ? 'Internal tracker (TA / HR)'
+              : 'External tracker (no contacts / CTC)'}
           </button>
         ))}
       </div>
