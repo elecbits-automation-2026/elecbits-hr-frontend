@@ -16,7 +16,7 @@ import {
 
 const Stat = ({ label, value, warn = false }: { label: string; value: string; warn?: boolean }) => (
   <div>
-    <p className='text-[10px] font-semibold uppercase tracking-wide text-slate-400'>{label}</p>
+    <p className='text-xs font-semibold uppercase tracking-wide text-slate-500'>{label}</p>
     <p className={`font-mono text-lg font-bold ${warn ? 'text-red-600' : 'text-slate-800'}`}>
       {value}
     </p>
@@ -53,8 +53,7 @@ const RoleCard = ({
   const accepted = apps.filter((a) => a.stage === 'hired').length;
   const held = p.onHold;
   const toggle = useMutation({
-    mutationFn: () =>
-      held ? candidatesApi.resume(p.id) : candidatesApi.hold(p.id, reason.trim()),
+    mutationFn: () => (held ? candidatesApi.resume(p.id) : candidatesApi.hold(p.id, reason.trim())),
     onSuccess: () => {
       setHolding(false);
       setReason('');
@@ -80,7 +79,7 @@ const RoleCard = ({
       <div className='flex items-start justify-between gap-2'>
         <div className='min-w-0'>
           <h3 className='truncate text-sm font-bold text-slate-800'>
-            {line.roleTitle} <span className='font-normal text-slate-400'>#{p.number}</span>
+            {line.roleTitle} <span className='font-normal text-slate-500'>#{p.number}</span>
           </h3>
           <p className='text-xs text-slate-500'>
             {line.requestCode && <span className='font-mono'>{line.requestCode} · </span>}
@@ -89,13 +88,13 @@ const RoleCard = ({
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${held ? 'bg-slate-200 text-slate-700' : pill.cls}`}
+          className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${held ? 'bg-slate-200 text-slate-700' : pill.cls}`}
         >
           {held ? 'On hold' : pill.label}
         </span>
       </div>
 
-      <div className='flex flex-wrap gap-1.5 text-[11px]'>
+      <div className='flex flex-wrap gap-1.5 text-xs'>
         <span
           className={`rounded-full px-2 py-0.5 font-medium ${PRIORITY_LABEL[line.priority].cls}`}
         >
@@ -153,6 +152,7 @@ const RoleCard = ({
       {holding && (
         <div className='space-y-1'>
           <input
+            aria-label='Why is this on hold?'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder='Why is this on hold?'
@@ -162,7 +162,7 @@ const RoleCard = ({
             <button
               type='button'
               onClick={() => setHolding(false)}
-              className='rounded px-2 py-0.5 text-[11px] text-slate-500 hover:bg-slate-100'
+              className='rounded px-2 py-0.5 text-xs text-slate-500 hover:bg-slate-100'
             >
               Back
             </button>
@@ -170,7 +170,7 @@ const RoleCard = ({
               type='button'
               disabled={!reason.trim() || toggle.isPending}
               onClick={() => toggle.mutate()}
-              className='rounded bg-slate-700 px-2 py-0.5 text-[11px] font-medium text-white disabled:opacity-50'
+              className='rounded bg-slate-700 px-2 py-0.5 text-xs font-medium text-white disabled:opacity-50'
             >
               Put on hold
             </button>

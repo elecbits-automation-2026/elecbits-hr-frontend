@@ -118,33 +118,35 @@ const EmailDelivery = () => {
           )}
 
           {s.recentFailures.length > 0 && (
-            <table className='mt-4 w-full text-left text-xs'>
-              <thead>
-                <tr className='text-slate-400'>
-                  <th className='py-1 pr-3 font-medium'>Queued</th>
-                  <th className='py-1 pr-3 font-medium'>To</th>
-                  <th className='py-1 pr-3 font-medium'>Subject</th>
-                  <th className='py-1 pr-3 font-medium'>Tries</th>
-                  <th className='py-1 font-medium'>Last error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {s.recentFailures.map((f) => (
-                  <tr key={f.id} className='border-t border-slate-100 align-top'>
-                    <td className='py-1.5 pr-3 tabular-nums text-slate-500'>
-                      {new Date(f.createdAt).toLocaleString('en-IN', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
-                    </td>
-                    <td className='py-1.5 pr-3 text-slate-700'>{f.toAddress}</td>
-                    <td className='py-1.5 pr-3 text-slate-700'>{f.subject}</td>
-                    <td className='py-1.5 pr-3 tabular-nums text-slate-500'>{f.attempts}</td>
-                    <td className='py-1.5 text-red-600'>{f.lastError ?? '—'}</td>
+            <div className='overflow-x-auto'>
+              <table className='mt-4 w-full text-left text-xs'>
+                <thead>
+                  <tr className='text-slate-500'>
+                    <th className='py-1 pr-3 font-medium'>Queued</th>
+                    <th className='py-1 pr-3 font-medium'>To</th>
+                    <th className='py-1 pr-3 font-medium'>Subject</th>
+                    <th className='py-1 pr-3 font-medium'>Tries</th>
+                    <th className='py-1 font-medium'>Last error</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {s.recentFailures.map((f) => (
+                    <tr key={f.id} className='border-t border-slate-100 align-top'>
+                      <td className='py-1.5 pr-3 tabular-nums text-slate-500'>
+                        {new Date(f.createdAt).toLocaleString('en-IN', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
+                      </td>
+                      <td className='py-1.5 pr-3 text-slate-700'>{f.toAddress}</td>
+                      <td className='py-1.5 pr-3 text-slate-700'>{f.subject}</td>
+                      <td className='py-1.5 pr-3 tabular-nums text-slate-500'>{f.attempts}</td>
+                      <td className='py-1.5 text-red-600'>{f.lastError ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}

@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MyPolicy, PolicyCategory } from '@app-types/api.types';
 import { policiesApi } from '@services/api/policies.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const CATEGORY_LABELS: Record<PolicyCategory, string> = {
   conduct: 'Conduct',
@@ -25,13 +27,21 @@ const CATEGORY_ORDER: PolicyCategory[] = [
 /** "Effective from 1 Dec 2026", or "Takes effect 1 Dec 2026" while still ahead. */
 const effectiveLine = (iso: string) => {
   const day = new Date(`${iso}T00:00:00`);
-  const label = day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const label = day.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
   return day.getTime() > Date.now() ? `Takes effect ${label}` : `Effective from ${label}`;
 };
 
 const stateChip = (p: MyPolicy) => {
   if (!p.ackRequired)
-    return <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'>no sign-off needed</span>;
+    return (
+      <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'>
+        no sign-off needed
+      </span>
+    );
   switch (p.ack.state) {
     case 'ok':
       return (
@@ -46,7 +56,11 @@ const stateChip = (p: MyPolicy) => {
         </span>
       );
     default:
-      return <span className='rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700'>not acknowledged</span>;
+      return (
+        <span className='rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700'>
+          not acknowledged
+        </span>
+      );
   }
 };
 
@@ -73,10 +87,11 @@ const AckModal = ({ policy, onClose }: { policy: MyPolicy; onClose: () => void }
   });
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-lg rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>
-          {policy.title} <span className='text-sm font-normal text-slate-400'>v{policy.version}</span>
+          {policy.title}{' '}
+          <span className='text-sm font-normal text-slate-500'>v{policy.version}</span>
         </h2>
         {policy.ack.state === 'stale' && (
           <p className='mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-700'>
@@ -114,7 +129,7 @@ const AckModal = ({ policy, onClose }: { policy: MyPolicy; onClose: () => void }
         )}
 
         <label
-          className={`mt-4 flex items-start gap-2 text-sm ${mustOpen ? 'text-slate-400' : 'text-slate-700'}`}
+          className={`mt-4 flex items-start gap-2 text-sm ${mustOpen ? 'text-slate-500' : 'text-slate-700'}`}
         >
           <input
             type='checkbox'
@@ -128,7 +143,7 @@ const AckModal = ({ policy, onClose }: { policy: MyPolicy; onClose: () => void }
         {mustOpen && (
           <p className='mt-1 text-xs text-slate-500'>Open the document first to acknowledge it.</p>
         )}
-        <p className='mt-1 text-xs text-slate-400'>
+        <p className='mt-1 text-xs text-slate-500'>
           Only your name, the version and the time are recorded.
         </p>
 
@@ -152,7 +167,7 @@ const AckModal = ({ policy, onClose }: { policy: MyPolicy; onClose: () => void }
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -165,7 +180,7 @@ const MyPoliciesPage = () => {
   });
 
   if (isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (error) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
+  if (error) return <QueryError error={error} />;
 
   const all = data ?? [];
   const waiting = all.filter((p) => p.ackRequired && p.ack.state !== 'ok');
@@ -183,14 +198,16 @@ const MyPoliciesPage = () => {
           <button
             type='button'
             onClick={() => setSigning(waiting[0]!)}
-            className='mt-2 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500'
+            className='mt-2 rounded-md bg-amber-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700'
           >
             Start with “{waiting[0]!.title}”
           </button>
         </div>
       ) : (
         all.length > 0 && (
-          <p className='text-sm text-green-700'>You are up to date on every policy that needs a sign-off.</p>
+          <p className='text-sm text-green-700'>
+            You are up to date on every policy that needs a sign-off.
+          </p>
         )
       )}
 
@@ -200,7 +217,7 @@ const MyPoliciesPage = () => {
 
       {CATEGORY_ORDER.filter((c) => all.some((p) => p.category === c)).map((cat) => (
         <div key={cat} className='rounded-xl border border-slate-200 bg-white p-5'>
-          <h2 className='text-sm font-semibold uppercase tracking-wide text-slate-400'>
+          <h2 className='text-sm font-semibold uppercase tracking-wide text-slate-500'>
             {CATEGORY_LABELS[cat]}
           </h2>
           <div className='mt-3 divide-y divide-slate-100'>
@@ -210,10 +227,17 @@ const MyPoliciesPage = () => {
                 <div key={p.id} className='flex flex-wrap items-center justify-between gap-2 py-3'>
                   <div className='min-w-0'>
                     <p className='font-medium text-slate-800'>
-                      {p.title} <span className='text-xs text-slate-400'>v{p.version}</span>
+                      {p.code && (
+                        <span className='mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-medium text-slate-500'>
+                          {p.code}
+                        </span>
+                      )}
+                      {p.title} <span className='text-xs text-slate-500'>v{p.version}</span>
                     </p>
                     {p.effectiveFrom && (
-                      <p className='mt-0.5 text-xs text-slate-400'>{effectiveLine(p.effectiveFrom)}</p>
+                      <p className='mt-0.5 text-xs text-slate-500'>
+                        {effectiveLine(p.effectiveFrom)}
+                      </p>
                     )}
                     {p.summary && <p className='mt-0.5 text-xs text-slate-500'>{p.summary}</p>}
                     {p.hasDocument ? (
@@ -234,7 +258,7 @@ const MyPoliciesPage = () => {
                         Open the document →
                       </a>
                     ) : (
-                      <p className='mt-0.5 text-xs text-slate-400'>Not linked yet — ask HR.</p>
+                      <p className='mt-0.5 text-xs text-slate-500'>Not linked yet — ask HR.</p>
                     )}
                   </div>
                   <div className='flex shrink-0 items-center gap-2'>

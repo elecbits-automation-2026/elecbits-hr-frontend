@@ -20,6 +20,7 @@ const ApprovalActions = ({
     return (
       <div className='flex items-center gap-2'>
         <input
+          aria-label='Reason (required)'
           autoFocus
           value={reason}
           onChange={(e) => setReason(e.target.value)}
@@ -38,7 +39,11 @@ const ApprovalActions = ({
         >
           Decline
         </button>
-        <button type='button' onClick={() => setDeclining(false)} className='text-xs text-slate-400 hover:text-slate-600'>
+        <button
+          type='button'
+          onClick={() => setDeclining(false)}
+          className='text-xs text-slate-500 hover:text-slate-600'
+        >
           ✕
         </button>
       </div>

@@ -61,7 +61,7 @@ const AnswerRow = ({ r, onDone }: { r: OpenDoorRequest; onDone: () => void }) =>
         <span className='text-sm font-medium text-slate-800'>
           {r.employee.name}
           {r.concern && (
-            <span className='ml-2 font-mono text-xs text-slate-400'>{r.concern.code}</span>
+            <span className='ml-2 font-mono text-xs text-slate-500'>{r.concern.code}</span>
           )}
         </span>
         <Chip status={r.status} />
@@ -97,6 +97,7 @@ const AnswerRow = ({ r, onDone }: { r: OpenDoorRequest; onDone: () => void }) =>
       {r.status === 'requested' && mode === 'offer' && (
         <div className='mt-2 grid gap-2 sm:grid-cols-4'>
           <input
+            aria-label='Date'
             type='date'
             min={today()}
             value={date}
@@ -104,18 +105,21 @@ const AnswerRow = ({ r, onDone }: { r: OpenDoorRequest; onDone: () => void }) =>
             className={inputClass}
           />
           <input
+            aria-label='Start time'
             type='time'
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
             className={inputClass}
           />
           <input
+            aria-label='End time'
             type='time'
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             className={inputClass}
           />
           <input
+            aria-label='Where (optional)'
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={300}
@@ -134,7 +138,7 @@ const AnswerRow = ({ r, onDone }: { r: OpenDoorRequest; onDone: () => void }) =>
             <button
               type='button'
               onClick={() => setMode('idle')}
-              className='text-xs text-slate-400 hover:text-slate-600'
+              className='text-xs text-slate-500 hover:text-slate-600'
             >
               Back
             </button>
@@ -144,6 +148,7 @@ const AnswerRow = ({ r, onDone }: { r: OpenDoorRequest; onDone: () => void }) =>
       {r.status === 'requested' && mode === 'decline' && (
         <div className='mt-2 flex flex-wrap items-center gap-2'>
           <input
+            aria-label='Why? (they see this)'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder='Why? (they see this)'
@@ -160,7 +165,7 @@ const AnswerRow = ({ r, onDone }: { r: OpenDoorRequest; onDone: () => void }) =>
           <button
             type='button'
             onClick={() => setMode('idle')}
-            className='text-xs text-slate-400 hover:text-slate-600'
+            className='text-xs text-slate-500 hover:text-slate-600'
           >
             Back
           </button>
@@ -219,11 +224,11 @@ const SessionRequests = () => {
       {incoming.length > 0 && (
         <div className='rounded-xl border border-amber-200 bg-amber-50/40 p-5'>
           <h2 className='text-sm font-semibold text-slate-700'>Asked of you</h2>
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             Offer a time (it becomes a booked session) or decline with a reason.
           </p>
           {waiting.length === 0 && (
-            <p className='mt-2 text-sm text-slate-400'>Nothing waiting on you.</p>
+            <p className='mt-2 text-sm text-slate-500'>Nothing waiting on you.</p>
           )}
           <ul className='mt-3 space-y-2'>
             {[...waiting, ...answered].map((r) => (
@@ -242,7 +247,7 @@ const SessionRequests = () => {
       >
         <div>
           <h2 className='text-sm font-semibold text-slate-700'>Request a session</h2>
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             No open-door slot that works? Ask HR or a department head directly — they reply with a
             time. To talk about one of your concerns, use &ldquo;Request a meeting&rdquo; on the
             case instead.
@@ -312,12 +317,12 @@ const SessionRequests = () => {
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='text-sm font-semibold text-slate-700'>My requests</h2>
-        {requests.isLoading && <p className='mt-2 text-sm text-slate-400'>Loading…</p>}
+        {requests.isLoading && <p className='mt-2 text-sm text-slate-500'>Loading…</p>}
         {requests.error && (
           <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(requests.error)}</p>
         )}
         {requests.data?.mine.length === 0 && (
-          <p className='mt-2 text-sm text-slate-400'>No requests yet.</p>
+          <p className='mt-2 text-sm text-slate-500'>No requests yet.</p>
         )}
         {cancel.error && (
           <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(cancel.error)}</p>

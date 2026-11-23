@@ -55,7 +55,7 @@ const ScorecardView = ({ c }: { c: Partial<ScorecardContent> }) => (
       <details key={r.round} className='rounded-md bg-white px-2 py-1.5'>
         <summary className='cursor-pointer text-slate-700'>
           <span className='font-medium'>{ROUND_LABEL[r.round]}</span>{' '}
-          <span className='text-xs text-slate-400'>
+          <span className='text-xs text-slate-500'>
             · weight {r.weight}% · {r.attributes.length} attributes, scored 1–4
           </span>
         </summary>
@@ -116,12 +116,12 @@ const TaDocumentPanel = ({
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <p className='text-sm font-medium text-slate-800'>
           {title}{' '}
-          <span className='text-xs text-slate-400'>
+          <span className='text-xs text-slate-500'>
             v{doc.version} · by {doc.writtenByName}
           </span>
         </p>
         <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${DOC_STATUS_CLASS[doc.status]}`}
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${DOC_STATUS_CLASS[doc.status]}`}
         >
           {DOC_STATUS_LABEL[doc.status]}
         </span>
@@ -148,7 +148,7 @@ const TaDocumentPanel = ({
             </span>
           ))}
           {doc.waitingOn.map((r) => (
-            <span key={r} className='text-slate-400'>
+            <span key={r} className='text-slate-500'>
               … {REVIEWER_LABEL[r]}
             </span>
           ))}
@@ -158,6 +158,7 @@ const TaDocumentPanel = ({
         <div className='space-y-2'>
           {rejecting && (
             <textarea
+              aria-label='What should the recruiter change?'
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
@@ -188,7 +189,7 @@ const TaDocumentPanel = ({
                 type='button'
                 disabled={go.isPending}
                 onClick={() => go.mutate('approve')}
-                className='rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50'
+                className='rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50'
               >
                 Approve
               </button>

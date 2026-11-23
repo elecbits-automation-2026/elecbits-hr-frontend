@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { FeedbackType } from '@app-types/api.types';
 import { feedbackApi } from '@services/api/feedback.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 export interface FeedbackDraft {
   recipient: { id: string; name: string };
@@ -37,13 +38,11 @@ const FeedbackModal = ({ draft, onClose }: { draft: FeedbackDraft; onClose: () =
   });
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-lg rounded-xl bg-white p-6 shadow-lg'>
-        <h2 className='text-lg font-semibold text-slate-800'>
-          Note to {draft.recipient.name}
-        </h2>
+        <h2 className='text-lg font-semibold text-slate-800'>Note to {draft.recipient.name}</h2>
         {draft.evidence && (
-          <p className='mt-1 text-xs text-slate-400'>Based on: {draft.evidence}</p>
+          <p className='mt-1 text-xs text-slate-500'>Based on: {draft.evidence}</p>
         )}
 
         <div className='mt-4 flex gap-2'>
@@ -66,6 +65,7 @@ const FeedbackModal = ({ draft, onClose }: { draft: FeedbackDraft; onClose: () =
         </div>
 
         <textarea
+          aria-label='Feedback'
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={5}
@@ -92,7 +92,7 @@ const FeedbackModal = ({ draft, onClose }: { draft: FeedbackDraft; onClose: () =
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

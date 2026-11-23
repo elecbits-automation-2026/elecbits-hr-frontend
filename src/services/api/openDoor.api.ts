@@ -4,6 +4,7 @@ import type {
   OpenDoorMe,
   OpenDoorRequests,
   OpenDoorSlot,
+  OpenDoorSlotType,
 } from '@app-types/api.types';
 import { api } from '@utils/axiosInstance';
 
@@ -22,8 +23,14 @@ export const openDoorApi = {
     startTime: string;
     endTime: string;
     capacity?: number;
+    slotType?: OpenDoorSlotType;
     note?: string;
   }): Promise<OpenDoorMe> => (await api.post<OpenDoorMe>('/open-door/slots', input)).data,
+  /** The owner changes a live slot's type and/or note (null clears the note). */
+  updateSlot: async (
+    id: string,
+    input: { slotType?: OpenDoorSlotType; note?: string | null },
+  ): Promise<OpenDoorMe> => (await api.patch<OpenDoorMe>(`/open-door/slots/${id}`, input)).data,
   cancelSlot: async (id: string): Promise<OpenDoorMe> =>
     (await api.post<OpenDoorMe>(`/open-door/slots/${id}/cancel`)).data,
   book: async (id: string, topic?: string): Promise<void> => {

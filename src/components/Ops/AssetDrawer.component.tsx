@@ -40,7 +40,7 @@ export const StatusChip = ({ status }: { status: AssetDetail['status'] }) => (
 
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className='flex gap-2 text-sm'>
-    <span className='w-32 shrink-0 text-slate-400'>{label}</span>
+    <span className='w-32 shrink-0 text-slate-500'>{label}</span>
     <span className='text-slate-700'>{value}</span>
   </div>
 );
@@ -73,6 +73,7 @@ export const CloseIncident = ({
   return (
     <div className='mt-2 space-y-2'>
       <textarea
+        aria-label='What was found / decided'
         rows={2}
         value={outcome}
         onChange={(e) => setOutcome(e.target.value)}
@@ -117,6 +118,7 @@ const HandOverFields = ({
 }) => (
   <>
     <select
+      aria-label='Person'
       value={v.employeeId}
       onChange={(e) => set('employeeId', e.target.value)}
       className={inputClass}
@@ -131,7 +133,12 @@ const HandOverFields = ({
           </option>
         ))}
     </select>
-    <select value={v.zoneId} onChange={(e) => set('zoneId', e.target.value)} className={inputClass}>
+    <select
+      aria-label='Zone'
+      value={v.zoneId}
+      onChange={(e) => set('zoneId', e.target.value)}
+      className={inputClass}
+    >
       <option value=''>Zone: their base zone (or where it is now)</option>
       {options.zones.map((z) => (
         <option key={z.id} value={z.id}>
@@ -285,12 +292,12 @@ const AssetDrawer = ({
             Close ✕
           </button>
         </div>
-        {detail.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+        {detail.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
         {detail.error && <p className='text-sm text-red-600'>{apiErrorMessage(detail.error)}</p>}
         {a && (
           <>
             <div className='space-y-1'>
-              <p className='font-mono text-xs text-slate-400'>{a.assetCode}</p>
+              <p className='font-mono text-xs text-slate-500'>{a.assetCode}</p>
               <h2 className='text-lg font-semibold text-slate-800'>{a.name}</h2>
               <div className='flex flex-wrap items-center gap-2'>
                 <StatusChip status={a.status} />
@@ -393,6 +400,7 @@ const AssetDrawer = ({
                   {mode === 'return' && (
                     <>
                       <select
+                        aria-label='Condition on return'
                         value={v.condition}
                         onChange={(e) => set('condition', e.target.value)}
                         className={inputClass}
@@ -404,6 +412,7 @@ const AssetDrawer = ({
                         ))}
                       </select>
                       <select
+                        aria-label='Status after return'
                         value={v.toStatus}
                         onChange={(e) => set('toStatus', e.target.value)}
                         className={inputClass}
@@ -417,6 +426,7 @@ const AssetDrawer = ({
                   )}
                   {mode === 'move' && (
                     <select
+                      aria-label='Move to zone'
                       value={v.zoneId}
                       onChange={(e) => set('zoneId', e.target.value)}
                       className={inputClass}
@@ -434,6 +444,7 @@ const AssetDrawer = ({
                   {mode === 'status' && (
                     <>
                       <select
+                        aria-label='Status'
                         value={v.status}
                         onChange={(e) => set('status', e.target.value)}
                         className={inputClass}
@@ -456,6 +467,7 @@ const AssetDrawer = ({
                       )}
                       {v.status === 'gifted' && a.status !== 'assigned' && (
                         <select
+                          aria-label='Gifted to'
                           value={v.giftedTo}
                           onChange={(e) => set('giftedTo', e.target.value)}
                           className={inputClass}
@@ -477,6 +489,7 @@ const AssetDrawer = ({
                   )}
                   {mode === 'incident' && (
                     <select
+                      aria-label='Kind'
                       value={v.kind}
                       onChange={(e) => set('kind', e.target.value)}
                       className={inputClass}
@@ -489,6 +502,7 @@ const AssetDrawer = ({
                     </select>
                   )}
                   <textarea
+                    aria-label='Note'
                     rows={2}
                     value={v.note}
                     onChange={(e) => set('note', e.target.value)}
@@ -523,7 +537,7 @@ const AssetDrawer = ({
                     <p className='font-medium text-slate-700'>
                       {INCIDENT_KIND_LABELS[i.kind]}
                       {i.employee ? ` · with ${i.employee.name}` : ''}
-                      <span className='ml-2 text-xs font-normal text-slate-400'>
+                      <span className='ml-2 text-xs font-normal text-slate-500'>
                         {fmtWhen(i.createdAt)} · reported by {i.reportedBy.name}
                       </span>
                     </p>
@@ -552,7 +566,7 @@ const AssetDrawer = ({
                       <span className='text-slate-700'>
                         {p.holder.name} → {p.destination}
                       </span>
-                      <span className='text-xs text-slate-400'>until {fmtDay(p.returnOn)}</span>
+                      <span className='text-xs text-slate-500'>until {fmtDay(p.returnOn)}</span>
                     </li>
                   ))}
                 </ul>
@@ -578,7 +592,7 @@ const AssetDrawer = ({
                       {e.prevDueOn ? ` (was ${fmtDay(e.prevDueOn)})` : ''}
                     </p>
                     {e.note && <p className='text-xs text-slate-500'>{e.note}</p>}
-                    <p className='text-xs text-slate-400'>
+                    <p className='text-xs text-slate-500'>
                       {fmtWhen(e.at)}
                       {e.by ? ` · ${e.by.name}` : ''}
                     </p>

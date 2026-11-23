@@ -420,20 +420,9 @@ export interface InviteEmployeeInput {
 
 /** Raisable types per the leave policy v1; `casual` survives only in history. */
 export type LeaveType =
-  | 'sick'
-  | 'earned'
-  | 'menstrual'
-  | 'vacation_family'
-  | 'compassionate'
-  | 'unpaid'
-  | 'casual';
+  'sick' | 'earned' | 'menstrual' | 'vacation_family' | 'compassionate' | 'unpaid' | 'casual';
 export type LeaveDayPart = 'full' | 'first_half' | 'second_half';
-export type LeaveStatus =
-  | 'pending'
-  | 'partially_approved'
-  | 'approved'
-  | 'declined'
-  | 'cancelled';
+export type LeaveStatus = 'pending' | 'partially_approved' | 'approved' | 'declined' | 'cancelled';
 
 export interface LeaveRequest {
   id: string;
@@ -522,11 +511,7 @@ export interface PunchZone {
 }
 export type AttendanceSource = 'office' | 'remote' | 'regularized';
 export type ApprovalStatus =
-  | 'pending'
-  | 'partially_approved'
-  | 'approved'
-  | 'declined'
-  | 'cancelled';
+  'pending' | 'partially_approved' | 'approved' | 'declined' | 'cancelled';
 
 /** Punctuality vs the official workday (the calendar's corner dots).
  *  'compensated' = came late (or left early) but worked the full scheduled
@@ -783,13 +768,7 @@ export interface AuditPage {
 
 // ── Policies (version-bound acknowledgements) ───────────────────────────────
 
-export type PolicyCategory =
-  | 'conduct'
-  | 'handbook'
-  | 'performance'
-  | 'time'
-  | 'culture'
-  | 'other';
+export type PolicyCategory = 'conduct' | 'handbook' | 'performance' | 'time' | 'culture' | 'other';
 
 /** ok = signed the current version; stale = signed an older one; none = never. */
 export type PolicyAckState = 'ok' | 'stale' | 'none';
@@ -928,6 +907,8 @@ export interface OnboardingQueueRow {
   progress: { done: number; total: number };
   /** Days until dueOn; negative = overdue. */
   daysLeft: number;
+  /** The phase of the first open step; null once every step is done. */
+  currentPhase: OnboardingPhase | null;
   /** HR already nudged this journey today (one nudge a day). */
   nudgedToday: boolean;
 }
@@ -1075,6 +1056,8 @@ export interface MyCareer {
   /** Derived from the record — nothing on this card can be typed into. */
   evidence: {
     punchedDays30: number;
+    /** Working days with a work update, 30 days ending yesterday. */
+    updateDays30: { withUpdate: number; workingDays: number };
     recognitions: number;
     appreciationNotes: number;
     /** This quarter's weighted goal attainment; null with no goals. */
@@ -1367,12 +1350,49 @@ export interface AssistantTurn {
   content: string;
 }
 
+/**
+ * An action the HR Assistant set up (phase 2) — nothing is saved until the
+ * user confirms; Confirm posts `payload` to the existing endpoint.
+ */
+export interface AssistantProposal {
+  type: 'proposal';
+  id: string;
+  action: 'add_goal' | 'assign_training' | 'nominate' | 'raise_opening';
+  title: string;
+  lines: string[];
+  /** e.g. "POST /api/v1/goals" — informational; the drawer maps `action` to the API call. */
+  endpoint: string;
+  payload: Record<string, unknown>;
+  link: string;
+  linkLabel: string;
+}
+
+/** A draft from the HR Assistant — shown with Copy, never stored. */
+export interface AssistantNote {
+  type: 'note';
+  id: string;
+  title: string;
+  kind: string;
+  content: string;
+}
+
 /** One server-sent event from POST /assistant/chat. */
 export type AssistantEvent =
   | { type: 'tool'; name: string; label: string }
   | { type: 'text'; delta: string }
   | { type: 'done'; tools: string[] }
-  | { type: 'error'; code: string; message: string };
+  | { type: 'error'; code: string; message: string }
+  | AssistantProposal
+  | AssistantNote;
+
+/** POST /assistant/quick — the offline buttons (no model). */
+export type AssistantQuickQuestion = 'out' | 'updates' | 'cases';
+export interface AssistantQuickResult {
+  question: AssistantQuickQuestion;
+  label: string;
+  tool: string;
+  text: string;
+}
 
 export interface AwardCatalogEntry {
   name: string;
@@ -1555,19 +1575,9 @@ export interface EmailStatus {
 
 export type ConcernTrack = 'dispute' | 'complaint' | 'whistleblower';
 export type ConcernStatus =
-  | 'open'
-  | 'acknowledged'
-  | 'investigating'
-  | 'decided'
-  | 'resolved'
-  | 'closed'
-  | 'declined';
+  'open' | 'acknowledged' | 'investigating' | 'decided' | 'resolved' | 'closed' | 'declined';
 export type ConcernOutcome =
-  | 'substantiated'
-  | 'partially'
-  | 'not_substantiated'
-  | 'withdrawn'
-  | 'malicious';
+  'substantiated' | 'partially' | 'not_substantiated' | 'withdrawn' | 'malicious';
 export type ConcernQueueName = 'manager' | 'hr' | 'mrc';
 
 export interface ConcernNote {
@@ -1620,6 +1630,16 @@ export interface Concern {
   /** HR-queue triage — handlers only; always null in the raiser's view. */
   owner: { id: string; name: string } | null;
   severity: ConcernSeverity | null;
+  /**
+   * AI triage suggestion (Admin switch "AI suggestion on new concerns") —
+   * HR-queue handlers only; always null in the raiser's view.
+   */
+  aiSuggestion: {
+    category: string | null;
+    severity: ConcernSeverity | null;
+    summary: string;
+    suggestedAt: string;
+  } | null;
   /** Who the case may be assigned to; empty unless can.assign. */
   assignable: Array<{ id: string; name: string }>;
   notes: ConcernNote[];
@@ -1660,9 +1680,14 @@ export interface ConcernQueueSummary {
 
 // ---- Open door ----
 
+/** HR open door / department head / skip level. */
+export type OpenDoorSlotType = 'hr_open_door' | 'dept_head' | 'skip_level';
+
 export interface OpenDoorSlot {
   id: string;
-  owner: { id: string; name: string };
+  /** With the owner's title and department, shown on the slot. */
+  owner: { id: string; name: string; designation: string | null; department: string | null };
+  slotType: OpenDoorSlotType;
   date: string;
   startTime: string;
   endTime: string;
@@ -1687,6 +1712,8 @@ export interface OpenDoorOwnerSlot extends OpenDoorSlot {
 
 export interface OpenDoorMe {
   canPublish: boolean;
+  /** Slot types the caller may publish, their default first; empty if they cannot. */
+  slotTypes: OpenDoorSlotType[];
   horizonDays: number;
   bookings: {
     id: string;
@@ -1740,13 +1767,7 @@ export interface CreateOpenDoorRequestInput {
 // ── OPS asset manager ───────────────────────────────────────────────────────
 
 export type AssetStatus =
-  | 'assigned'
-  | 'idle'
-  | 'in_use_shared'
-  | 'needs_repair'
-  | 'scrapped'
-  | 'gifted'
-  | 'lost';
+  'assigned' | 'idle' | 'in_use_shared' | 'needs_repair' | 'scrapped' | 'gifted' | 'lost';
 export type AssetCondition = 'new' | 'good' | 'fair' | 'damaged';
 export type AssetRequestType = 'new' | 'upgrade' | 'replacement' | 'repair' | 'return';
 export type AssetRequestStatus = 'open' | 'in_progress' | 'fulfilled' | 'declined';
@@ -1995,12 +2016,7 @@ export interface MyAssetsOverview {
 
 export type ExitKind = 'resignation' | 'termination';
 export type ExitStatus =
-  | 'submitted'
-  | 'accepted'
-  | 'relieved'
-  | 'settled'
-  | 'withdrawn'
-  | 'cancelled';
+  'submitted' | 'accepted' | 'relieved' | 'settled' | 'withdrawn' | 'cancelled';
 export type ClearanceKind = 'hr' | 'manager' | 'ops' | 'payroll';
 
 export interface ExitInterview {
@@ -2249,13 +2265,7 @@ export type InterviewRound = 'hr' | 'technical' | 'practical' | 'managerial' | '
 export type ApproverRole = 'hrbp';
 export type HiringPriority = 'high' | 'normal' | 'low';
 export type RequisitionStatus =
-  | 'draft'
-  | 'queued'
-  | 'submitted'
-  | 'returned'
-  | 'approved'
-  | 'cancelled'
-  | 'rejected';
+  'draft' | 'queued' | 'submitted' | 'returned' | 'approved' | 'cancelled' | 'rejected';
 
 export interface HiringMe {
   headOf: Array<{ departmentId: string; departmentName: string; acting: boolean }>;
@@ -2285,7 +2295,11 @@ export interface Requisition {
   version: number;
   status: RequisitionStatus;
   urgent: boolean;
-  rounds: Array<{ round: InterviewRound; interviewerId: string | null; interviewerName: string | null }>;
+  rounds: Array<{
+    round: InterviewRound;
+    interviewerId: string | null;
+    interviewerName: string | null;
+  }>;
   /** Decisions on the current version only. */
   approvals: Array<{
     role: ApproverRole;
@@ -2349,12 +2363,7 @@ export interface RequisitionInput {
 
 // ── Hiring Step C: positions, JD + scorecard ─────────────────────────────
 export type PositionStatus =
-  | 'awaiting_docs'
-  | 'open'
-  | 'interviewing'
-  | 'offer'
-  | 'filled'
-  | 'cancelled';
+  'awaiting_docs' | 'open' | 'interviewing' | 'offer' | 'filled' | 'cancelled';
 /** A position's JD / scorecard reviewers: the line's TA RM + the dept head. */
 export type DocRole = 'dept_head' | 'ta_rm';
 
@@ -2509,7 +2518,12 @@ export interface Application {
   candidateSource: CandidateSource;
   candidateNoticeDays: number | null;
   /** Live progress: what happens next, who does it, by when. */
-  nextAction: { text: string; ownerId: string | null; ownerName: string | null; due: string | null } | null;
+  nextAction: {
+    text: string;
+    ownerId: string | null;
+    ownerName: string | null;
+    due: string | null;
+  } | null;
   contactCount: number;
   lastContactAt: string | null;
   positionId: string;
@@ -2802,7 +2816,8 @@ export interface DailyKpiRow {
   recentUpdates: { done: number; workingDays: number };
   /** Average worked hours over the 7 days up to the date (days with hours only). */
   recentHours: { avg: number | null; days: number };
-  goals: { count: number; atRisk: number; attainment: number | null };
+  /** `moved`: goals whose progress the person moved on the date. */
+  goals: { count: number; atRisk: number; attainment: number | null; moved: number };
   targets: { kpi: string | null; updatesOnTimePct: number; attainmentPct: number };
   alerts: Array<{ code: DailyKpiAlertCode; title: string }>;
 }

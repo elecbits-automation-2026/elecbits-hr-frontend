@@ -47,7 +47,7 @@ const PayslipCard = ({ slip }: { slip: MyPayslip }) => {
           <span className='font-semibold text-slate-800'>
             {money(slip.finalPay, slip.currency)}
           </span>
-          <span className='text-xs text-slate-400'>{open ? '▴' : '▾'}</span>
+          <span className='text-xs text-slate-500'>{open ? '▴' : '▾'}</span>
         </span>
       </button>
       {open && (
@@ -58,16 +58,14 @@ const PayslipCard = ({ slip }: { slip: MyPayslip }) => {
                 Working days <b className='text-slate-700'>{slip.workingDays}</b>
               </span>
               <span>
-                Days paid <b className='text-slate-700'>{Math.max(0, 30 - slip.lopDays)}</b> of
-                30
+                Days paid <b className='text-slate-700'>{Math.max(0, 30 - slip.lopDays)}</b> of 30
               </span>
               <span>
                 Loss of pay <b className='text-slate-700'>{slip.lopDays}</b> days
               </span>
               {slip.autoElDays > 0 && (
                 <span>
-                  Covered by earned leave <b className='text-slate-700'>{slip.autoElDays}</b>{' '}
-                  days
+                  Covered by earned leave <b className='text-slate-700'>{slip.autoElDays}</b> days
                 </span>
               )}
             </div>
@@ -100,10 +98,10 @@ const PayslipCard = ({ slip }: { slip: MyPayslip }) => {
                 {rows.map((r) => (
                   <div key={r.label + (r.note ?? '')}>
                     <Line label={r.label} value={amount(r.value)} />
-                    {r.note && <p className='-mt-1 pb-1 text-xs text-slate-400'>{r.note}</p>}
+                    {r.note && <p className='-mt-1 pb-1 text-xs text-slate-500'>{r.note}</p>}
                     {r.label === 'Reimbursement' &&
                       slip.reimbursementClaims.map((c) => (
-                        <p key={c.id} className='-mt-1 pb-1 pl-3 text-xs text-slate-400'>
+                        <p key={c.id} className='-mt-1 pb-1 pl-3 text-xs text-slate-500'>
                           {c.spentOn} · {c.description} · {money(c.amount, slip.currency)}
                         </p>
                       ))}
@@ -122,7 +120,7 @@ const PayslipCard = ({ slip }: { slip: MyPayslip }) => {
             </span>
           </div>
           {(slip.lopDays > 0 || slip.pf > 0) && (
-            <div className='space-y-1 text-xs text-slate-400 sm:col-span-2'>
+            <div className='space-y-1 text-xs text-slate-500 sm:col-span-2'>
               {slip.lopDays > 0 && (
                 <p>
                   Monthly CTC {money(slip.monthlyGross, slip.currency)} less loss of pay{' '}

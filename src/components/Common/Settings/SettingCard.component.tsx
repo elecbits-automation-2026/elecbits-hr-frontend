@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { AwardCatalogEntry, OrgSetting } from '@app-types/api.types';
+import PrivacyNoticeEditor from '@components/Admin/PrivacyNoticeEditor.component';
 import { settingsApi } from '@services/api/settings.api';
 import { apiErrorMessage } from '@utils/apiError';
 
@@ -63,6 +64,11 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
       {btn}
     </TextFieldsEditor>
   ),
+  'payroll.filingFolders': (v, onSave, btn) => (
+    <TextFieldsEditor value={v as Record<string, string>} onSave={onSave}>
+      {btn}
+    </TextFieldsEditor>
+  ),
   'performance.departmentTargets': (v, onSave, btn) => (
     <DepartmentTargetsEditor value={v as DepartmentTargets} onSave={onSave}>
       {btn}
@@ -107,7 +113,27 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
     </NumberFieldsEditor>
   ),
   'email.delivery': (v, onSave, btn) => (
-    <ToggleFieldsEditor value={v as Record<string, boolean>} onSave={onSave}>
+    <ToggleFieldsEditor
+      value={v as Record<string, boolean>}
+      onSave={onSave}
+      labels={{ enabled: 'Send HR emails (approvals, decisions, payslips, reminders)' }}
+    >
+      {btn}
+    </ToggleFieldsEditor>
+  ),
+  'privacy.notice': (v, onSave, btn) => (
+    <PrivacyNoticeEditor value={v as { version: string; text: string }} onSave={onSave}>
+      {btn}
+    </PrivacyNoticeEditor>
+  ),
+  'privacy.purge': (v, onSave, btn) => (
+    <ToggleFieldsEditor
+      value={v as Record<string, boolean>}
+      onSave={onSave}
+      labels={{
+        enabled: 'Permanently remove data past the retention periods (daily job)',
+      }}
+    >
       {btn}
     </ToggleFieldsEditor>
   ),
@@ -116,6 +142,15 @@ const EDITOR_BY_KEY: Record<string, EditorFor> = {
       value={v as Record<string, boolean>}
       onSave={onSave}
       labels={{ enabled: 'Turn on the HR Assistant for HR and managers' }}
+    >
+      {btn}
+    </ToggleFieldsEditor>
+  ),
+  'concerns.aiTriage': (v, onSave, btn) => (
+    <ToggleFieldsEditor
+      value={v as Record<string, boolean>}
+      onSave={onSave}
+      labels={{ enabled: 'Suggest a category, severity and summary on new concerns' }}
     >
       {btn}
     </ToggleFieldsEditor>
@@ -178,9 +213,9 @@ export const SettingCard = ({ setting, bare = false }: { setting: OrgSetting; ba
         <fieldset disabled={!setting.canEdit} className='min-w-0'>
           {editor}
         </fieldset>
-        {!setting.canEdit && <p className='mt-2 text-xs text-slate-400'>View only.</p>}
+        {!setting.canEdit && <p className='mt-2 text-xs text-slate-500'>View only.</p>}
         {save.error && <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(save.error)}</p>}
-        <p className='mt-2 text-xs text-slate-400'>
+        <p className='mt-2 text-xs text-slate-500'>
           {setting.isDefault
             ? 'Using the built-in default.'
             : `Last changed ${setting.updatedAt ? new Date(setting.updatedAt).toLocaleString() : ''}${
@@ -202,17 +237,17 @@ export const SettingCard = ({ setting, bare = false }: { setting: OrgSetting; ba
           {!setting.live && (
             <span
               title='No feature reads this setting yet — saving stores the value, which takes effect once the feature is wired.'
-              className='rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700'
+              className='rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700'
             >
               Not wired yet
             </span>
           )}
           {!setting.canEdit && (
-            <span className='rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500'>
+            <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'>
               View only
             </span>
           )}
-          <span className='rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500'>
+          <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'>
             {setting.isDefault ? 'Default' : 'Overridden'}
           </span>
         </div>
@@ -222,7 +257,7 @@ export const SettingCard = ({ setting, bare = false }: { setting: OrgSetting; ba
       </fieldset>
       {save.error && <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(save.error)}</p>}
       {!setting.isDefault && setting.updatedAt && (
-        <p className='mt-2 text-xs text-slate-400'>
+        <p className='mt-2 text-xs text-slate-500'>
           Last changed {new Date(setting.updatedAt).toLocaleString()}
           {setting.updatedByName ? ` by ${setting.updatedByName}` : ''}
         </p>

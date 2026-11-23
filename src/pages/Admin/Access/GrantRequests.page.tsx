@@ -72,7 +72,7 @@ const PendingCard = ({ request }: { request: GrantRequest }) => {
       <div className='flex flex-wrap items-baseline justify-between gap-2'>
         <div className='font-medium text-slate-800'>
           Access for {request.employee.name}
-          <span className='ml-2 text-sm font-normal text-slate-400'>
+          <span className='ml-2 text-sm font-normal text-slate-500'>
             asked by {request.requestedBy.name} · {new Date(request.createdAt).toLocaleDateString()}
           </span>
         </div>
@@ -94,6 +94,7 @@ const PendingCard = ({ request }: { request: GrantRequest }) => {
       </div>
 
       <textarea
+        aria-label='Reason (required to decline; shown to the requester)'
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder='Reason (required to decline; shown to the requester)'
@@ -145,7 +146,7 @@ const GrantRequestsPage = () => {
       </p>
 
       {requests.error && <p className='text-sm text-red-600'>{apiErrorMessage(requests.error)}</p>}
-      {requests.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+      {requests.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
 
       {requests.data && pending.length === 0 && (
         <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500'>
@@ -158,7 +159,7 @@ const GrantRequestsPage = () => {
 
       {decided.length > 0 && (
         <section className='space-y-2'>
-          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Decided</h2>
+          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Decided</h2>
           <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white'>
             <table className='w-full text-left text-sm'>
               <tbody>
@@ -166,7 +167,7 @@ const GrantRequestsPage = () => {
                   <tr key={r.id} className='border-t border-slate-100 first:border-t-0'>
                     <td className='px-4 py-3'>
                       <span className='font-medium text-slate-800'>{r.employee.name}</span>
-                      <span className='block text-xs text-slate-400'>
+                      <span className='block text-xs text-slate-500'>
                         asked by {r.requestedBy.name}
                         {r.decidedBy ? ` · decided by ${r.decidedBy.name}` : ''}
                       </span>
@@ -174,7 +175,7 @@ const GrantRequestsPage = () => {
                     <td className='px-4 py-3 text-xs text-slate-500'>
                       {(r.granted.length > 0 ? r.granted : r.requested).map(itemLabel).join(', ')}
                       {r.decisionReason && (
-                        <span className='block text-slate-400'>“{r.decisionReason}”</span>
+                        <span className='block text-slate-500'>“{r.decisionReason}”</span>
                       )}
                     </td>
                     <td className='px-4 py-3 text-right'>

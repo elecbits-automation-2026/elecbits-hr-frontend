@@ -182,7 +182,7 @@ const PeopleAnalytics = ({ employees }: { employees: Employee[] }) => {
                 <li key={e.id} className='flex justify-between gap-2 py-1.5'>
                   <span className='text-slate-800'>
                     {e.name}
-                    <span className='ml-2 text-xs text-slate-400'>
+                    <span className='ml-2 text-xs text-slate-500'>
                       {e.departmentName ?? 'No department'}
                     </span>
                   </span>
@@ -204,7 +204,7 @@ const PeopleAnalytics = ({ employees }: { employees: Employee[] }) => {
                 <li key={e.id} className='flex justify-between gap-2 py-1.5'>
                   <span className='text-slate-800'>
                     {e.name}
-                    <span className='ml-2 text-xs text-slate-400'>
+                    <span className='ml-2 text-xs text-slate-500'>
                       {e.departmentName ?? 'No department'}
                     </span>
                   </span>

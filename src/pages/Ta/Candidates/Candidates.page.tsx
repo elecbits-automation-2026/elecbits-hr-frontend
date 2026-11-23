@@ -78,16 +78,12 @@ const CandidateDetail = ({ c }: { c: Candidate }) => {
       )}
       {!c.anonymised && <Profile c={c} canEdit />}
       {c.applications.map((a) => (
-        <ApplicationRow
-          key={a.id}
-          app={a}
-          showRole
-          defaultOpen={a.rounds.some((r) => r.score)}
-        />
+        <ApplicationRow key={a.id} app={a} showRole defaultOpen={a.rounds.some((r) => r.score)} />
       ))}
       {!c.anonymised && choices.length > 0 && (
         <div className='flex flex-wrap items-center gap-2'>
           <select
+            aria-label='Open position'
             value={positionId}
             onChange={(e) => setPositionId(e.target.value)}
             className='rounded-md border border-slate-300 px-2 py-1.5 text-sm'
@@ -142,6 +138,7 @@ const CandidatesPage = () => {
         </div>
         <div className='flex gap-2'>
           <input
+            aria-label='Search name, email, phone'
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder='Search name, email, phone'
@@ -174,7 +171,7 @@ const CandidatesPage = () => {
               <span className='font-medium text-slate-800'>
                 {c.anonymised ? 'Anonymised candidate' : c.name}
               </span>
-              <span className='text-xs text-slate-400'>
+              <span className='text-xs text-slate-500'>
                 {SOURCE_LABEL[c.source]} · {c.applications.length} application(s)
               </span>
             </button>

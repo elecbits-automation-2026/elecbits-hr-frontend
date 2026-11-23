@@ -83,7 +83,7 @@ const RoundSchedule = ({ app, canSchedule }: { app: Application; canSchedule: bo
 
   return (
     <div className='space-y-1.5'>
-      <p className='text-[10px] font-semibold uppercase tracking-wide text-slate-400'>
+      <p className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
         Interview schedule
       </p>
       {app.rounds.map((r) => {
@@ -98,8 +98,7 @@ const RoundSchedule = ({ app, canSchedule }: { app: Application; canSchedule: bo
                 {s && (
                   <>
                     {' · '}
-                    <span className='font-mono'>{slotWhen(s.startsAt)}</span> ·{' '}
-                    {MODE_LABEL[s.mode]}
+                    <span className='font-mono'>{slotWhen(s.startsAt)}</span> · {MODE_LABEL[s.mode]}
                     {s.location && <> · {s.location}</>}
                   </>
                 )}
@@ -116,38 +115,38 @@ const RoundSchedule = ({ app, canSchedule }: { app: Application; canSchedule: bo
                     {r.score.recommendation === 'hire' ? 'Passed' : 'Not selected'}
                   </span>
                 ) : app.stage === 'interviewing' && app.currentRound !== r.round ? (
-                  <span className='text-slate-400'>Opens after the round before passes</span>
+                  <span className='text-slate-500'>Opens after the round before passes</span>
                 ) : s ? (
                   <span className={`rounded-full px-2 py-0.5 ${SLOT_STATUS_CLASS[s.status]}`}>
                     {SLOT_STATUS_LABEL[s.status]}
                   </span>
                 ) : (
-                  <span className='text-slate-400'>Not scheduled</span>
+                  <span className='text-slate-500'>Not scheduled</span>
                 )}
                 {canSchedule &&
                   !r.score &&
                   app.stage === 'interviewing' &&
                   app.currentRound === r.round &&
                   r.interviewerId && (
-                  <>
-                    <button type='button' onClick={() => open(r.round)} className={btn}>
-                      {live ? 'Move' : 'Schedule'}
-                    </button>
-                    {live && (
-                      <button
-                        type='button'
-                        onClick={() => {
-                          end.reset();
-                          setEditing(null);
-                          setEnding(ending === r.round ? null : r.round);
-                        }}
-                        className={btn}
-                      >
-                        Call off
+                    <>
+                      <button type='button' onClick={() => open(r.round)} className={btn}>
+                        {live ? 'Move' : 'Schedule'}
                       </button>
-                    )}
-                  </>
-                )}
+                      {live && (
+                        <button
+                          type='button'
+                          onClick={() => {
+                            end.reset();
+                            setEditing(null);
+                            setEnding(ending === r.round ? null : r.round);
+                          }}
+                          className={btn}
+                        >
+                          Call off
+                        </button>
+                      )}
+                    </>
+                  )}
               </span>
             </div>
             {s?.endReason && !live && <p className='mt-1 text-slate-500'>{s.endReason}</p>}
@@ -185,6 +184,7 @@ const RoundSchedule = ({ app, canSchedule }: { app: Application; canSchedule: bo
                   ))}
                 </select>
                 <input
+                  aria-label='Location'
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder={PLACEHOLDER[mode]}
@@ -211,6 +211,7 @@ const RoundSchedule = ({ app, canSchedule }: { app: Application; canSchedule: bo
             {ending === r.round && (
               <div className='mt-2 space-y-2'>
                 <input
+                  aria-label='Why? (the interviewer sees this)'
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder='Why? (the interviewer sees this)'

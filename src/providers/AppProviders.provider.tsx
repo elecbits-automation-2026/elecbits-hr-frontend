@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { ReactNode } from 'react';
 
+import Toaster from '@components/Common/Utilities/Toaster.component';
 import { queryClient } from '@providers/queryClient';
 
 /**
@@ -13,6 +14,7 @@ import { queryClient } from '@providers/queryClient';
 const AppProviders = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     {children}
+    <Toaster />
     <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>
 );

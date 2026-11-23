@@ -10,6 +10,10 @@ const dateRange = (l: LeaveRequest) =>
     ? `${l.startDate}${l.dayPart !== 'full' ? ` (${l.dayPart === 'first_half' ? '1st half' : '2nd half'})` : ''}`
     : `${l.startDate} → ${l.endDate}`;
 
+/** When the request was raised — approvers weigh how long it has waited. */
+const appliedOn = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
 // Approval slots read as names: "RM: Rahul Verma · HR: pending" (user decision).
 
 const LIVE = ['pending', 'partially_approved'];
@@ -61,108 +65,118 @@ const LeaveQueueTable = ({
   }
 
   return (
-    <table className='w-full text-left text-sm'>
-      <thead>
-        <tr className='border-b border-slate-200 text-xs text-slate-500'>
-          <th className='py-2 pr-3 font-medium'>Employee</th>
-          <th className='py-2 pr-3 font-medium'>Type</th>
-          <th className='py-2 pr-3 font-medium'>Dates</th>
-          <th className='py-2 pr-3 font-medium'>Days</th>
-          <th className='py-2 pr-3 font-medium'>Reason</th>
-          <th className='py-2 pr-3 font-medium'>Approvals</th>
-          <th className='py-2 pr-3 font-medium'>Status</th>
-          <th className='py-2 font-medium'>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {leaves.map((l) => (
-          <tr key={l.id} className='border-b border-slate-100 align-top'>
-            <td className='py-2 pr-3'>
-              {l.employee.name}
-              <span className='ml-1 font-mono text-xs text-slate-400'>
-                {l.employee.employeeCode}
-              </span>
-            </td>
-            <td className='py-2 pr-3'>
-              {leaveTypeLabel(l.type)}
-              {l.type === 'sick' && l.certificate && (
-                <span className='block text-xs text-slate-400'>certificate attached</span>
-              )}
-              {l.type === 'sick' && !l.certificate && l.certificateNeeded && (
-                <span className='block text-xs text-amber-700'>certificate missing</span>
-              )}
-            </td>
-            <td className='py-2 pr-3 whitespace-nowrap'>{dateRange(l)}</td>
-            <td className='py-2 pr-3'>{l.days}</td>
-            <td className='max-w-48 py-2 pr-3 text-slate-500'>{l.reason ?? '—'}</td>
-            <td className='py-2 pr-3 whitespace-nowrap text-xs text-slate-500'>{leaveSlots(l)}</td>
-            <td className='py-2 pr-3'>
-              <LeaveStatusBadge status={l.status} />
-            </td>
-            <td className='py-2'>
-              {slotState(l, slot) !== null && slotState(l, slot) !== 'act' && (
-                <span className='text-xs text-slate-400'>{slotState(l, slot)}</span>
-              )}
-              {slotState(l, slot) === 'act' &&
-                (decliningId === l.id ? (
-                  <div className='flex items-center gap-2'>
-                    <input
-                      autoFocus
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      placeholder='Reason (required)'
-                      className='w-40 rounded-md border border-slate-300 px-2 py-1 text-xs'
-                    />
-                    <button
-                      type='button'
-                      disabled={deciding || !reason.trim()}
-                      onClick={() => confirmDecline(l.id)}
-                      className='rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50'
-                    >
-                      Decline
-                    </button>
-                    <button
-                      type='button'
-                      onClick={() => setDecliningId(null)}
-                      className='text-xs text-slate-400 hover:text-slate-600'
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div className='flex gap-2'>
-                    <button
-                      type='button'
-                      // Sick leave over 3 days needs its certificate first (server-enforced).
-                      disabled={deciding || (l.certificateNeeded && !l.certificate)}
-                      title={
-                        l.certificateNeeded && !l.certificate
-                          ? 'Waiting for the medical certificate'
-                          : undefined
-                      }
-                      onClick={() => onDecide(l.id, 'approve')}
-                      className='rounded-md bg-brand-600 px-2 py-1 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-50'
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type='button'
-                      disabled={deciding}
-                      onClick={() => {
-                        setDecliningId(l.id);
-                        setReason('');
-                      }}
-                      className='rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50'
-                    >
-                      Decline
-                    </button>
-                  </div>
-                ))}
-            </td>
+    <div className='overflow-x-auto'>
+      <table className='w-full text-left text-sm'>
+        <thead>
+          <tr className='border-b border-slate-200 text-xs text-slate-500'>
+            <th className='py-2 pr-3 font-medium'>Employee</th>
+            <th className='py-2 pr-3 font-medium'>Type</th>
+            <th className='py-2 pr-3 font-medium'>Dates</th>
+            <th className='py-2 pr-3 font-medium'>Days</th>
+            <th className='py-2 pr-3 font-medium'>Reason</th>
+            <th className='py-2 pr-3 font-medium'>Approvals</th>
+            <th className='py-2 pr-3 font-medium'>Status</th>
+            <th className='py-2 font-medium'>Actions</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {leaves.map((l) => (
+            <tr key={l.id} className='border-b border-slate-100 align-top'>
+              <td className='py-2 pr-3'>
+                {l.employee.name}
+                <span className='ml-1 font-mono text-xs text-slate-500'>
+                  {l.employee.employeeCode}
+                </span>
+              </td>
+              <td className='py-2 pr-3'>
+                {leaveTypeLabel(l.type)}
+                {l.type === 'sick' && l.certificate && (
+                  <span className='block text-xs text-slate-500'>certificate attached</span>
+                )}
+                {l.type === 'sick' && !l.certificate && l.certificateNeeded && (
+                  <span className='block text-xs text-amber-700'>certificate missing</span>
+                )}
+              </td>
+              <td className='py-2 pr-3 whitespace-nowrap'>
+                {dateRange(l)}
+                <span className='block text-xs text-slate-500'>
+                  applied {appliedOn(l.createdAt)}
+                </span>
+              </td>
+              <td className='py-2 pr-3'>{l.days}</td>
+              <td className='max-w-48 py-2 pr-3 text-slate-500'>{l.reason ?? '—'}</td>
+              <td className='py-2 pr-3 whitespace-nowrap text-xs text-slate-500'>
+                {leaveSlots(l)}
+              </td>
+              <td className='py-2 pr-3'>
+                <LeaveStatusBadge status={l.status} />
+              </td>
+              <td className='py-2'>
+                {slotState(l, slot) !== null && slotState(l, slot) !== 'act' && (
+                  <span className='text-xs text-slate-500'>{slotState(l, slot)}</span>
+                )}
+                {slotState(l, slot) === 'act' &&
+                  (decliningId === l.id ? (
+                    <div className='flex items-center gap-2'>
+                      <input
+                        aria-label='Reason (required)'
+                        autoFocus
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder='Reason (required)'
+                        className='w-40 rounded-md border border-slate-300 px-2 py-1 text-xs'
+                      />
+                      <button
+                        type='button'
+                        disabled={deciding || !reason.trim()}
+                        onClick={() => confirmDecline(l.id)}
+                        className='rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50'
+                      >
+                        Decline
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => setDecliningId(null)}
+                        className='text-xs text-slate-500 hover:text-slate-600'
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className='flex gap-2'>
+                      <button
+                        type='button'
+                        // Sick leave over 3 days needs its certificate first (server-enforced).
+                        disabled={deciding || (l.certificateNeeded && !l.certificate)}
+                        title={
+                          l.certificateNeeded && !l.certificate
+                            ? 'Waiting for the medical certificate'
+                            : undefined
+                        }
+                        onClick={() => onDecide(l.id, 'approve')}
+                        className='rounded-md bg-brand-600 px-2 py-1 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-50'
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type='button'
+                        disabled={deciding}
+                        onClick={() => {
+                          setDecliningId(l.id);
+                          setReason('');
+                        }}
+                        className='rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50'
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

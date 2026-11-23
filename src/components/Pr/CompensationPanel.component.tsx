@@ -107,8 +107,7 @@ const CompensationPanel = () => {
   // Without pr.payroll.bank_details the server hides the bank fields; never
   // send them back (it would refuse the whole save).
   const bankHidden = record?.bankDetailsHidden === true;
-  const set = <K extends keyof Draft>(key: K, value: string) =>
-    setDraft({ ...form, [key]: value });
+  const set = <K extends keyof Draft>(key: K, value: string) => setDraft({ ...form, [key]: value });
 
   const save = useMutation({
     mutationFn: () => {
@@ -193,6 +192,7 @@ const CompensationPanel = () => {
     <div className='grid grid-cols-1 gap-4 lg:grid-cols-3'>
       <div className='rounded-xl border border-slate-200 bg-white p-4'>
         <input
+          aria-label='Search people'
           placeholder='Search people…'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -217,18 +217,18 @@ const CompensationPanel = () => {
             >
               <span className='truncate'>
                 {p.name}
-                <span className='ml-1 font-mono text-xs text-slate-400'>{p.employeeCode}</span>
+                <span className='ml-1 font-mono text-xs text-slate-500'>{p.employeeCode}</span>
               </span>
               {p.status === 'invited' ? (
-                <span className='shrink-0 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] text-sky-700'>
+                <span className='shrink-0 rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700'>
                   joining
                 </span>
               ) : payrollIds.has(p.id) ? (
-                <span className='shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-700'>
+                <span className='shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700'>
                   on payroll
                 </span>
               ) : (
-                <span className='shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700'>
+                <span className='shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'>
                   no CTC
                 </span>
               )}
@@ -241,208 +241,296 @@ const CompensationPanel = () => {
         <div className='space-y-4 lg:col-span-2'>
           <div className='rounded-xl border border-slate-200 bg-white p-5'>
             <p className='text-sm text-slate-500'>
-              Pick a person. Setting a CTC is what puts them on payroll — the next run
-              generation includes them; clearing it moves them to the run's "skipped" list.
+              Pick a person. Setting a CTC is what puts them on payroll — the next run generation
+              includes them; clearing it moves them to the run's "skipped" list.
             </p>
           </div>
           <AnnexurePanel />
         </div>
       ) : (
-      <div className='rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2'>
-        {selectedId && salary.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
-        {selectedId && salary.error && (
-          <p className='text-sm text-red-600'>{apiErrorMessage(salary.error)}</p>
-        )}
-        {selectedId && record && (
-          <div className='space-y-4'>
-            <p className='text-xs text-slate-400'>
-              The payslip engine computes PF (both sides), PT and the Basic 50 / HRA 25 / LTA 10
-              structure from the CTC — only the entries below are typed in. Monthly TDS usually
-              comes from the TDS calculator's Apply button.
-            </p>
-            <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
-              <div className='space-y-1'>
-                <label className={labelClass}>Annual CTC (₹)</label>
-                <input value={form.ctc} onChange={(e) => set('ctc', e.target.value)} className={inputClass} placeholder='e.g. 1200000' />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>TDS / month (₹)</label>
-                <input value={form.tdsAmount} onChange={(e) => set('tdsAmount', e.target.value)} className={inputClass} />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>Other deduction (₹/mo)</label>
-                <input value={form.otherDeductionAmount} onChange={(e) => set('otherDeductionAmount', e.target.value)} className={inputClass} />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass} title='Blank = 50%. Basic + HRA + LTA (10%) must stay within 100%.'>
-                  Basic % of monthly CTC
-                </label>
-                <input value={form.basicPercent} onChange={(e) => set('basicPercent', e.target.value)} className={inputClass} placeholder='50' />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass} title='Blank = 25%.'>HRA % of monthly CTC</label>
-                <input value={form.hraPercent} onChange={(e) => set('hraPercent', e.target.value)} className={inputClass} placeholder='25' />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>CNPS %</label>
-                <input value={form.cnpsPercent} onChange={(e) => set('cnpsPercent', e.target.value)} className={inputClass} placeholder='0' />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass} title='Annual target; joins taxable income in the TDS projection. Pay it on a payslip as "Other +".'>
-                  Variable pay (₹/yr)
-                </label>
-                <input value={form.variablePay} onChange={(e) => set('variablePay', e.target.value)} className={inputClass} placeholder='0' />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>Salary mode</label>
-                <input value={form.salaryMode} onChange={(e) => set('salaryMode', e.target.value)} className={inputClass} placeholder='Bank / Cash / Cheque' />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>Cost center</label>
-                <input value={form.payrollCostCenter} onChange={(e) => set('payrollCostCenter', e.target.value)} className={inputClass} />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>PAN</label>
-                <input value={form.panNumber} onChange={(e) => set('panNumber', e.target.value)} className={inputClass} />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>UAN</label>
-                <input
-                  value={form.uanNumber}
-                  onChange={(e) => set('uanNumber', e.target.value)}
-                  className={inputClass}
-                  inputMode='numeric'
-                  maxLength={14}
-                  placeholder='12 digits'
-                />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>ESIC IP number</label>
-                <input
-                  value={form.esicIpNumber}
-                  onChange={(e) => set('esicIpNumber', e.target.value)}
-                  className={inputClass}
-                  inputMode='numeric'
-                  maxLength={12}
-                  placeholder='10 digits, if covered'
-                />
-              </div>
-              <div className='space-y-1'>
-                <label className={labelClass}>PF account number</label>
-                <input value={form.providentFundAccount} onChange={(e) => set('providentFundAccount', e.target.value)} className={inputClass} />
-              </div>
-            </div>
-            <div>
-              <p className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400'>
-                Bank details
+        <div className='rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2'>
+          {selectedId && salary.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
+          {selectedId && salary.error && (
+            <p className='text-sm text-red-600'>{apiErrorMessage(salary.error)}</p>
+          )}
+          {selectedId && record && (
+            <div className='space-y-4'>
+              <p className='text-xs text-slate-500'>
+                The payslip engine computes PF (both sides), PT and the Basic 50 / HRA 25 / LTA 10
+                structure from the CTC — only the entries below are typed in. Monthly TDS usually
+                comes from the TDS calculator's Apply button.
               </p>
-              {bankHidden ? (
-                <p className='rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500'>
-                  Hidden — bank details need the separate bank-details access
-                  (pr.payroll.bank_details).
-                </p>
-              ) : (
               <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
                 <div className='space-y-1'>
-                  <label className={labelClass}>Bank</label>
-                  <input value={form.bankName} onChange={(e) => set('bankName', e.target.value)} className={inputClass} />
+                  <label className={labelClass}>Annual CTC (₹)</label>
+                  <input
+                    aria-label='Annual CTC (₹)'
+                    value={form.ctc}
+                    onChange={(e) => set('ctc', e.target.value)}
+                    className={inputClass}
+                    placeholder='e.g. 1200000'
+                  />
                 </div>
                 <div className='space-y-1'>
-                  <label className={labelClass}>Account no</label>
-                  <input value={form.bankAccountNo} onChange={(e) => set('bankAccountNo', e.target.value)} className={inputClass} />
+                  <label className={labelClass}>TDS / month (₹)</label>
+                  <input
+                    aria-label='TDS / month (₹)'
+                    value={form.tdsAmount}
+                    onChange={(e) => set('tdsAmount', e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
                 <div className='space-y-1'>
-                  <label className={labelClass}>IFSC</label>
-                  <input value={form.ifscCode} onChange={(e) => set('ifscCode', e.target.value)} className={inputClass} />
+                  <label className={labelClass}>Other deduction (₹/mo)</label>
+                  <input
+                    aria-label='Other deduction (₹/mo)'
+                    value={form.otherDeductionAmount}
+                    onChange={(e) => set('otherDeductionAmount', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label
+                    className={labelClass}
+                    title='Blank = 50%. Basic + HRA + LTA (10%) must stay within 100%.'
+                  >
+                    Basic % of monthly CTC
+                  </label>
+                  <input
+                    aria-label='Basic % of monthly CTC'
+                    value={form.basicPercent}
+                    onChange={(e) => set('basicPercent', e.target.value)}
+                    className={inputClass}
+                    placeholder='50'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass} title='Blank = 25%.'>
+                    HRA % of monthly CTC
+                  </label>
+                  <input
+                    aria-label='HRA % of monthly CTC'
+                    value={form.hraPercent}
+                    onChange={(e) => set('hraPercent', e.target.value)}
+                    className={inputClass}
+                    placeholder='25'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>CNPS %</label>
+                  <input
+                    aria-label='CNPS %'
+                    value={form.cnpsPercent}
+                    onChange={(e) => set('cnpsPercent', e.target.value)}
+                    className={inputClass}
+                    placeholder='0'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label
+                    className={labelClass}
+                    title='Annual target; joins taxable income in the TDS projection. Pay it on a payslip as "Other +".'
+                  >
+                    Variable pay (₹/yr)
+                  </label>
+                  <input
+                    aria-label='Variable pay (₹/yr)'
+                    value={form.variablePay}
+                    onChange={(e) => set('variablePay', e.target.value)}
+                    className={inputClass}
+                    placeholder='0'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>Salary mode</label>
+                  <input
+                    aria-label='Salary mode'
+                    value={form.salaryMode}
+                    onChange={(e) => set('salaryMode', e.target.value)}
+                    className={inputClass}
+                    placeholder='Bank / Cash / Cheque'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>Cost center</label>
+                  <input
+                    aria-label='Cost center'
+                    value={form.payrollCostCenter}
+                    onChange={(e) => set('payrollCostCenter', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>PAN</label>
+                  <input
+                    aria-label='PAN'
+                    value={form.panNumber}
+                    onChange={(e) => set('panNumber', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>UAN</label>
+                  <input
+                    aria-label='UAN'
+                    value={form.uanNumber}
+                    onChange={(e) => set('uanNumber', e.target.value)}
+                    className={inputClass}
+                    inputMode='numeric'
+                    maxLength={14}
+                    placeholder='12 digits'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>ESIC IP number</label>
+                  <input
+                    aria-label='ESIC IP number'
+                    value={form.esicIpNumber}
+                    onChange={(e) => set('esicIpNumber', e.target.value)}
+                    className={inputClass}
+                    inputMode='numeric'
+                    maxLength={12}
+                    placeholder='10 digits, if covered'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <label className={labelClass}>PF account number</label>
+                  <input
+                    aria-label='PF account number'
+                    value={form.providentFundAccount}
+                    onChange={(e) => set('providentFundAccount', e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
               </div>
-              )}
-            </div>
-            <div className='border-t border-slate-100 pt-4'>
-              <div className='flex flex-wrap items-center justify-between gap-3'>
-                <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
-                  Live breakup — what month one pays
+              <div>
+                <p className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                  Bank details
                 </p>
-                <div className='flex items-center gap-3 text-xs text-slate-500'>
-                  <label className='flex items-center gap-1.5'>
-                    PT state
-                    <select
-                      value={effectiveState}
-                      onChange={(e) => setPtState(e.target.value)}
-                      className='rounded-md border border-slate-300 px-1.5 py-0.5 text-xs'
-                    >
-                      {ptStates.map((st) => (
-                        <option key={st} value={st}>
-                          {st}
-                        </option>
-                      ))}
-                      <option value=''>None</option>
-                    </select>
-                  </label>
-                  <label className='flex items-center gap-1.5'>
-                    Health ins./mo
-                    <input
-                      type='number'
-                      min={0}
-                      value={healthIns}
-                      onChange={(e) => setHealthIns(e.target.value)}
-                      className='w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-xs'
-                    />
-                  </label>
-                </div>
+                {bankHidden ? (
+                  <p className='rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500'>
+                    Hidden — bank details need the separate bank-details access
+                    (pr.payroll.bank_details).
+                  </p>
+                ) : (
+                  <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
+                    <div className='space-y-1'>
+                      <label className={labelClass}>Bank</label>
+                      <input
+                        aria-label='Bank'
+                        value={form.bankName}
+                        onChange={(e) => set('bankName', e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <label className={labelClass}>Account no</label>
+                      <input
+                        aria-label='Account no'
+                        value={form.bankAccountNo}
+                        onChange={(e) => set('bankAccountNo', e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <label className={labelClass}>IFSC</label>
+                      <input
+                        aria-label='IFSC'
+                        value={form.ifscCode}
+                        onChange={(e) => set('ifscCode', e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              {(!ctcNum || ctcNum <= 0) && (
-                <p className='mt-2 text-sm text-slate-400'>
-                  Type an annual CTC above and the breakup appears here — saving the CTC is what
-                  puts them on payroll.
-                </p>
-              )}
-              {breakup.error && (
-                <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(breakup.error)}</p>
-              )}
-              {breakup.data && ctcNum > 0 && (
-                <div className='mt-3 space-y-3'>
-                  <BreakdownTable data={breakup.data} />
-                  {Number(form.tdsAmount || 0) !== breakup.data.tdsPerMonth && (
-                    <button
-                      type='button'
-                      onClick={() =>
-                        breakup.data && set('tdsAmount', String(breakup.data.tdsPerMonth))
-                      }
-                      className='rounded-md border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100'
-                      title='Copies the full-year projection into the TDS/month field above — saved with the record'
-                    >
-                      Use estimated TDS — ₹
-                      {breakup.data.tdsPerMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                      /month
-                    </button>
-                  )}
+              <div className='border-t border-slate-100 pt-4'>
+                <div className='flex flex-wrap items-center justify-between gap-3'>
+                  <p className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                    Live breakup — what month one pays
+                  </p>
+                  <div className='flex items-center gap-3 text-xs text-slate-500'>
+                    <label className='flex items-center gap-1.5'>
+                      PT state
+                      <select
+                        value={effectiveState}
+                        onChange={(e) => setPtState(e.target.value)}
+                        className='rounded-md border border-slate-300 px-1.5 py-0.5 text-xs'
+                      >
+                        {ptStates.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
+                        <option value=''>None</option>
+                      </select>
+                    </label>
+                    <label className='flex items-center gap-1.5'>
+                      Health ins./mo
+                      <input
+                        type='number'
+                        min={0}
+                        value={healthIns}
+                        onChange={(e) => setHealthIns(e.target.value)}
+                        className='w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-xs'
+                      />
+                    </label>
+                  </div>
                 </div>
-              )}
-            </div>
-            {save.error && <p className='text-sm text-red-600'>{apiErrorMessage(save.error)}</p>}
-            <div className='flex justify-end gap-2'>
-              {draft && (
+                {(!ctcNum || ctcNum <= 0) && (
+                  <p className='mt-2 text-sm text-slate-500'>
+                    Type an annual CTC above and the breakup appears here — saving the CTC is what
+                    puts them on payroll.
+                  </p>
+                )}
+                {breakup.error && (
+                  <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(breakup.error)}</p>
+                )}
+                {breakup.data && ctcNum > 0 && (
+                  <div className='mt-3 space-y-3'>
+                    <BreakdownTable data={breakup.data} />
+                    {Number(form.tdsAmount || 0) !== breakup.data.tdsPerMonth && (
+                      <button
+                        type='button'
+                        onClick={() =>
+                          breakup.data && set('tdsAmount', String(breakup.data.tdsPerMonth))
+                        }
+                        className='rounded-md border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100'
+                        title='Copies the full-year projection into the TDS/month field above — saved with the record'
+                      >
+                        Use estimated TDS — ₹
+                        {breakup.data.tdsPerMonth.toLocaleString('en-IN', {
+                          maximumFractionDigits: 2,
+                        })}
+                        /month
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              {save.error && <p className='text-sm text-red-600'>{apiErrorMessage(save.error)}</p>}
+              <div className='flex justify-end gap-2'>
+                {draft && (
+                  <button
+                    type='button'
+                    onClick={() => setDraft(null)}
+                    className='rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50'
+                  >
+                    Discard changes
+                  </button>
+                )}
                 <button
                   type='button'
-                  onClick={() => setDraft(null)}
-                  className='rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50'
+                  disabled={save.isPending || !draft}
+                  onClick={() => save.mutate()}
+                  className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
                 >
-                  Discard changes
+                  {save.isPending ? 'Saving…' : 'Save compensation'}
                 </button>
-              )}
-              <button
-                type='button'
-                disabled={save.isPending || !draft}
-                onClick={() => save.mutate()}
-                className='rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50'
-              >
-                {save.isPending ? 'Saving…' : 'Save compensation'}
-              </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,0 +1,11 @@
+# Keep LF in the repo and in working copies on every OS, so Prettier and
+# format:check agree on Windows too (core.autocrlf=true would write CRLF).
+* text=auto eol=lf
+*.pem text eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.xlsx binary
+*.ico binary
+*.webp binary
+*.woff2 binary

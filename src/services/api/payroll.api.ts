@@ -48,8 +48,8 @@ export const payrollApi = {
     input: UpdatePayslipInput,
   ): Promise<Payslip> =>
     (await api.patch<Payslip>(`/payroll/runs/${runId}/payslips/${payslipId}`, input)).data,
-  finalize: async (id: string): Promise<PayrollRun> =>
-    (await api.post<PayrollRun>(`/payroll/runs/${id}/finalize`)).data,
+  finalize: async ({ id, early = false }: { id: string; early?: boolean }): Promise<PayrollRun> =>
+    (await api.post<PayrollRun>(`/payroll/runs/${id}/finalize`, { early })).data,
   markPaid: async (id: string): Promise<PayrollRun> =>
     (await api.post<PayrollRun>(`/payroll/runs/${id}/mark-paid`)).data,
   deleteRun: async (id: string): Promise<void> => {

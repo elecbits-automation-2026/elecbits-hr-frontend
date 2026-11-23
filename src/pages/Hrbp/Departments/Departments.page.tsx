@@ -13,6 +13,7 @@ import { employeesApi } from '@services/api/employees.api';
 import { meApi } from '@services/api/me.api';
 import { settingsApi } from '@services/api/settings.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 type Tab = 'tree' | 'chapters';
 
@@ -60,7 +61,7 @@ const buildTree = (all: Department[]) => {
 
 const kindChip = (d: Department) => (
   <span
-    className={`rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
+    className={`rounded-full px-1.5 py-0.5 text-xs uppercase tracking-wide ${
       d.kind === 'division'
         ? 'bg-sky-50 text-sky-700'
         : d.kind === 'chapter'
@@ -117,11 +118,11 @@ const UnitRow = ({
             {unit.head.acting && ' (acting)'}
           </span>
         ) : (
-          <span className='rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700'>
+          <span className='rounded-full bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700'>
             no head
           </span>
         )}
-        <span className='text-xs text-slate-400'>
+        <span className='text-xs text-slate-500'>
           {unit.memberCount} {unit.memberCount === 1 ? 'person' : 'people'}
           {node.total > unit.memberCount && ` · ${node.total} with sub-units`}
           {unit.extraCount > 0 && ` · +${unit.extraCount} also in`}
@@ -148,7 +149,7 @@ const UnitRow = ({
             <p className='py-1 text-xs text-slate-500'>
               {home.map((p) => p.name).join(', ')}
               {extras.length > 0 && (
-                <span className='text-slate-400'>
+                <span className='text-slate-500'>
                   {home.length > 0 && ' · '}also in: {extras.map((m) => m.employeeName).join(', ')}
                 </span>
               )}
@@ -186,9 +187,10 @@ const UnplacedRow = ({ person, units }: { person: Employee; units: Department[] 
   return (
     <li className='flex flex-wrap items-center gap-2 py-1.5'>
       <span className='min-w-40 text-sm text-slate-800'>{person.name}</span>
-      <span className='text-xs text-slate-400'>{person.designation}</span>
+      <span className='text-xs text-slate-500'>{person.designation}</span>
       <span className='ml-auto flex gap-2'>
         <select
+          aria-label={`Home unit for ${person.name}`}
           className='rounded-md border border-slate-300 px-2 py-1 text-sm'
           value={departmentId}
           onChange={(e) => setDepartmentId(e.target.value)}
@@ -264,7 +266,7 @@ const DepartmentsPage = () => {
     return <p className='text-sm text-slate-500'>Loading…</p>;
   }
   const error = departments.error ?? employees.error;
-  if (error) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
+  if (error) return <QueryError error={error} />;
 
   const allIds = (nodes: UnitNode[]): string[] =>
     nodes.flatMap((n) => [n.unit.id, ...allIds(n.children)]);

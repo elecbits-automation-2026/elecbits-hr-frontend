@@ -6,6 +6,7 @@ import { SOURCE_LABEL } from '@constants/Common/hiring.constants';
 import { candidatesApi } from '@services/api/candidates.api';
 import { concernsApi } from '@services/api/concerns.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const input =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
@@ -89,10 +90,11 @@ const AddCandidateDialog = ({
     matches.length === 0;
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>Add a candidate</h2>
         <input
+          aria-label='Full name'
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder='Full name'
@@ -100,6 +102,7 @@ const AddCandidateDialog = ({
         />
         <div className='grid grid-cols-2 gap-2'>
           <input
+            aria-label='Email'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={check}
@@ -107,6 +110,7 @@ const AddCandidateDialog = ({
             className={input}
           />
           <input
+            aria-label='Phone'
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             onBlur={check}
@@ -116,6 +120,7 @@ const AddCandidateDialog = ({
         </div>
         <div className='grid grid-cols-[1fr_140px] gap-2'>
           <input
+            aria-label='Education, e.g. B.Tech ECE, NIT Trichy'
             value={education}
             onChange={(e) => setEducation(e.target.value)}
             placeholder='Education, e.g. B.Tech ECE, NIT Trichy'
@@ -135,24 +140,28 @@ const AddCandidateDialog = ({
         </div>
         <div className='grid grid-cols-2 gap-2'>
           <input
+            aria-label='Current company (blank for freshers)'
             value={currentCompany}
             onChange={(e) => setCurrentCompany(e.target.value)}
             placeholder='Current company (blank for freshers)'
             className={input}
           />
           <input
+            aria-label='Designation'
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
             placeholder='Designation'
             className={input}
           />
           <input
+            aria-label='Location (city)'
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder='Location (city)'
             className={input}
           />
           <input
+            aria-label='Notice period (days)'
             type='number'
             min={0}
             max={365}
@@ -162,6 +171,7 @@ const AddCandidateDialog = ({
             className={input}
           />
           <input
+            aria-label='Current CTC ₹/yr (optional)'
             type='number'
             min={0}
             value={currentCtc}
@@ -170,6 +180,7 @@ const AddCandidateDialog = ({
             className={input}
           />
           <input
+            aria-label='Expected CTC ₹/yr (optional)'
             type='number'
             min={0}
             value={expectedCtc}
@@ -190,7 +201,7 @@ const AddCandidateDialog = ({
                 <button
                   type='button'
                   onClick={() => onDone(m.id)}
-                  className='rounded-md bg-amber-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-700'
+                  className='rounded-md bg-amber-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-700'
                 >
                   Use this person
                 </button>
@@ -200,6 +211,7 @@ const AddCandidateDialog = ({
         )}
         <div className='grid grid-cols-2 gap-2'>
           <select
+            aria-label='Source'
             value={source}
             onChange={(e) => setSource(e.target.value as CandidateSource)}
             className={input}
@@ -212,6 +224,7 @@ const AddCandidateDialog = ({
           </select>
           {source === 'referral' && (
             <select
+              aria-label='Referred by'
               value={referredById}
               onChange={(e) => setReferredById(e.target.value)}
               className={input}
@@ -226,6 +239,7 @@ const AddCandidateDialog = ({
           )}
         </div>
         <textarea
+          aria-label='Notes (experience, notice period, expected CTC…)'
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
@@ -269,7 +283,7 @@ const AddCandidateDialog = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

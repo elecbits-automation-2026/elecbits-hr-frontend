@@ -29,6 +29,7 @@ const LeaveCertificate = ({ leave }: { leave: LeaveRequest }) => {
   return (
     <div className='mt-1 text-xs'>
       <input
+        aria-label='Upload medical certificate'
         ref={file}
         type='file'
         accept='application/pdf,image/jpeg,image/png'
@@ -47,7 +48,7 @@ const LeaveCertificate = ({ leave }: { leave: LeaveRequest }) => {
           <button
             type='button'
             onClick={() => file.current?.click()}
-            className='text-slate-400 hover:text-slate-700'
+            className='text-slate-500 hover:text-slate-700'
           >
             Replace
           </button>

@@ -55,7 +55,7 @@ const TeamTrendChart = ({ months, today }: { months: EmployeeAttendance[]; today
                 style={{ height: Math.max(3, barH(b.absent)) }}
               />
             </div>
-            <span className='text-[10px] text-slate-400'>{b.label}</span>
+            <span className='text-xs text-slate-500'>{b.label}</span>
           </div>
         ))}
       </div>

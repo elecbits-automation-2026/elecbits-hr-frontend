@@ -27,6 +27,7 @@ import { attendanceApi } from '@services/api/attendance.api';
 import { employeesApi } from '@services/api/employees.api';
 import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const currentMonth = () => new Date().toLocaleDateString('en-CA').slice(0, 7);
 
@@ -92,7 +93,7 @@ const PeoplePage = () => {
   const filtered = applyPeopleFilter(employees ?? [], filter);
 
   if (isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (error) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
+  if (error) return <QueryError error={error} />;
 
   return (
     <div className='space-y-4'>
@@ -151,103 +152,107 @@ const PeoplePage = () => {
             <p className='text-sm text-red-600'>{apiErrorMessage(claimLink.error)}</p>
           )}
           <div className='overflow-hidden rounded-xl border border-slate-200 bg-white'>
-            <table className='w-full text-left text-sm'>
-              <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
-                <tr>
-                  <th className='px-4 py-3'>Name</th>
-                  <th className='px-4 py-3'>Code</th>
-                  <th className='px-4 py-3'>Email</th>
-                  <th className='px-4 py-3'>Role</th>
-                  <th className='px-4 py-3'>Department</th>
-                  <th className='px-4 py-3'>Level</th>
-                  <th className='px-4 py-3'>Status</th>
-                  <th className='px-4 py-3'></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((employee) => {
-                  // The sheet's per-person reads 404 on inactive records — those
-                  // rows stay plain history, not a clickable sheet.
-                  const openable = employee.status !== 'inactive';
-                  return (
-                    <tr
-                      key={employee.id}
-                      onClick={openable ? () => setPerson(toSheetPerson(employee)) : undefined}
-                      className={`border-t border-slate-100 ${openable ? 'cursor-pointer hover:bg-slate-50' : ''}`}
-                      title={openable ? `Open ${employee.name}'s sheet` : undefined}
-                    >
-                      <td className='px-4 py-3 font-medium text-slate-800'>{employee.name}</td>
-                      <td className='px-4 py-3 text-slate-500'>{employee.employeeCode}</td>
-                      <td className='px-4 py-3 text-slate-500'>{employee.email}</td>
-                      <td className='px-4 py-3 text-slate-500'>{employee.designation ?? '—'}</td>
-                      <td className='px-4 py-3 text-slate-500'>{employee.departmentName ?? '—'}</td>
-                      <td className='px-4 py-3 text-slate-500'>{employee.level}</td>
-                      <td className='px-4 py-3 text-slate-500'>{employee.status}</td>
-                      <td className='space-x-3 whitespace-nowrap px-4 py-3 text-right'>
-                        <button
-                          type='button'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditing(employee);
-                          }}
-                          className='text-xs text-brand-600 hover:text-brand-500'
-                        >
-                          Edit
-                        </button>
-                        {openable && isAdmin && (
-                          <Link
-                            to={ADMIN_BATCHES_ROUTE}
-                            onClick={(e) => e.stopPropagation()}
-                            className='text-xs text-slate-500 hover:text-brand-600'
-                          >
-                            Give access
-                          </Link>
-                        )}
-                        {openable && me.data && !isAdmin && (
+            <div className='overflow-x-auto'>
+              <table className='w-full text-left text-sm'>
+                <thead className='bg-slate-50 text-xs uppercase text-slate-500'>
+                  <tr>
+                    <th className='px-4 py-3'>Name</th>
+                    <th className='px-4 py-3'>Code</th>
+                    <th className='px-4 py-3'>Email</th>
+                    <th className='px-4 py-3'>Role</th>
+                    <th className='px-4 py-3'>Department</th>
+                    <th className='px-4 py-3'>Level</th>
+                    <th className='px-4 py-3'>Status</th>
+                    <th className='px-4 py-3'></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((employee) => {
+                    // The sheet's per-person reads 404 on inactive records — those
+                    // rows stay plain history, not a clickable sheet.
+                    const openable = employee.status !== 'inactive';
+                    return (
+                      <tr
+                        key={employee.id}
+                        onClick={openable ? () => setPerson(toSheetPerson(employee)) : undefined}
+                        className={`border-t border-slate-100 ${openable ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+                        title={openable ? `Open ${employee.name}'s sheet` : undefined}
+                      >
+                        <td className='px-4 py-3 font-medium text-slate-800'>{employee.name}</td>
+                        <td className='px-4 py-3 text-slate-500'>{employee.employeeCode}</td>
+                        <td className='px-4 py-3 text-slate-500'>{employee.email}</td>
+                        <td className='px-4 py-3 text-slate-500'>{employee.designation ?? '—'}</td>
+                        <td className='px-4 py-3 text-slate-500'>
+                          {employee.departmentName ?? '—'}
+                        </td>
+                        <td className='px-4 py-3 text-slate-500'>{employee.level}</td>
+                        <td className='px-4 py-3 text-slate-500'>{employee.status}</td>
+                        <td className='space-x-3 whitespace-nowrap px-4 py-3 text-right'>
                           <button
                             type='button'
                             onClick={(e) => {
                               e.stopPropagation();
-                              setRequestingFor(employee);
+                              setEditing(employee);
                             }}
-                            className='text-xs text-slate-500 hover:text-brand-600'
+                            className='text-xs text-brand-600 hover:text-brand-500'
                           >
-                            Request access
+                            Edit
                           </button>
-                        )}
-                        {employee.status === 'invited' && (
-                          <button
-                            type='button'
-                            disabled={claimLink.isPending}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              claimLink.mutate(employee.id);
-                            }}
-                            className='text-xs text-brand-600 hover:text-brand-500 disabled:opacity-50'
-                          >
-                            {copiedFor === employee.id ? 'Link copied!' : 'Invite link'}
-                          </button>
-                        )}
+                          {openable && isAdmin && (
+                            <Link
+                              to={ADMIN_BATCHES_ROUTE}
+                              onClick={(e) => e.stopPropagation()}
+                              className='text-xs text-slate-500 hover:text-brand-600'
+                            >
+                              Give access
+                            </Link>
+                          )}
+                          {openable && me.data && !isAdmin && (
+                            <button
+                              type='button'
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRequestingFor(employee);
+                              }}
+                              className='text-xs text-slate-500 hover:text-brand-600'
+                            >
+                              Request access
+                            </button>
+                          )}
+                          {employee.status === 'invited' && (
+                            <button
+                              type='button'
+                              disabled={claimLink.isPending}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                claimLink.mutate(employee.id);
+                              }}
+                              className='text-xs text-brand-600 hover:text-brand-500 disabled:opacity-50'
+                            >
+                              {copiedFor === employee.id ? 'Link copied!' : 'Invite link'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {(employees ?? []).length > 0 && filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className='px-4 py-8 text-center text-slate-500'>
+                        Nobody matches these filters.
                       </td>
                     </tr>
-                  );
-                })}
-                {(employees ?? []).length > 0 && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className='px-4 py-8 text-center text-slate-400'>
-                      Nobody matches these filters.
-                    </td>
-                  </tr>
-                )}
-                {(employees ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={8} className='px-4 py-8 text-center text-slate-400'>
-                      No employees yet — HRBP adds people top-down (managers first).
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                  {(employees ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={8} className='px-4 py-8 text-center text-slate-500'>
+                        No employees yet — HRBP adds people top-down (managers first).
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}

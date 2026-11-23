@@ -58,10 +58,26 @@ const TeamLoadStrip = ({
           <div className='flex h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100'>
             {total > 0 && (
               <>
-                <div className={SEG.present} style={{ width: pct(present) }} title={`${present} present`} />
-                <div className={SEG.leave} style={{ width: pct(leave) }} title={`${leave} leave/remote`} />
-                <div className={SEG.half} style={{ width: pct(half) }} title={`${half} half-days`} />
-                <div className={SEG.absent} style={{ width: pct(absent) }} title={`${absent} absent`} />
+                <div
+                  className={SEG.present}
+                  style={{ width: pct(present) }}
+                  title={`${present} present`}
+                />
+                <div
+                  className={SEG.leave}
+                  style={{ width: pct(leave) }}
+                  title={`${leave} leave/remote`}
+                />
+                <div
+                  className={SEG.half}
+                  style={{ width: pct(half) }}
+                  title={`${half} half-days`}
+                />
+                <div
+                  className={SEG.absent}
+                  style={{ width: pct(absent) }}
+                  title={`${absent} absent`}
+                />
               </>
             )}
           </div>
@@ -69,7 +85,7 @@ const TeamLoadStrip = ({
             type='button'
             onClick={() => onAppreciate({ id: m.employee.id, name: m.employee.name }, present)}
             title='Draft an appreciation note — you review and send'
-            className='shrink-0 text-xs text-green-600 hover:underline'
+            className='shrink-0 text-xs text-green-700 hover:underline'
           >
             + appreciate
           </button>

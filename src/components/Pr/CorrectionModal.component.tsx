@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Payslip } from '@app-types/api.types';
 import { payrollApi } from '@services/api/payroll.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 /**
  * Correct a PUBLISHED payslip. The slip itself never changes: the amount
@@ -40,12 +41,12 @@ const CorrectionModal = ({
   });
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-md rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>
           Correct {slip.employee.name}&rsquo;s {month} payslip
         </h2>
-        <p className='mt-1 text-xs text-slate-400'>
+        <p className='mt-1 text-xs text-slate-500'>
           The {month} payslip stays exactly as published. This amount is added as its own line on
           their next payslip, and they are notified. Adjust TDS on that draft if the correction is
           taxable.
@@ -112,7 +113,7 @@ const CorrectionModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

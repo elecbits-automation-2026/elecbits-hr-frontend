@@ -74,7 +74,7 @@ const ColumnChart = ({
         <div className='flex gap-2'>
           {/* Scale: three recessive ticks, top / middle / zero. */}
           <div
-            className='flex shrink-0 flex-col justify-between text-right text-[10px] tabular-nums text-slate-400'
+            className='flex shrink-0 flex-col justify-between text-right text-xs tabular-nums text-slate-500'
             style={{ height: PLOT_H }}
           >
             {ticks.map((t) => (
@@ -124,7 +124,7 @@ const ColumnChart = ({
                             {s.label}: {format(p.values[i] ?? 0)}
                           </p>
                         ))}
-                        {p.note && <p className='text-slate-300'>{p.note}</p>}
+                        {p.note && <p className='text-slate-500'>{p.note}</p>}
                       </div>
                     )}
                   </div>
@@ -133,10 +133,7 @@ const ColumnChart = ({
             </div>
             <div className='mt-1 flex gap-1'>
               {points.map((p) => (
-                <span
-                  key={p.key}
-                  className='flex-1 truncate text-center text-[10px] text-slate-500'
-                >
+                <span key={p.key} className='flex-1 truncate text-center text-xs text-slate-500'>
                   {p.label}
                 </span>
               ))}

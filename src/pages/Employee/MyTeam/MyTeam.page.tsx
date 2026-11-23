@@ -26,9 +26,9 @@ import { dailyKpiApi } from '@services/api/dailyKpi.api';
 import { leavesApi } from '@services/api/leaves.api';
 import { meApi } from '@services/api/me.api';
 import { trainingsApi } from '@services/api/trainings.api';
-import { apiErrorMessage } from '@utils/apiError';
 import { attendancePct } from '@utils/attendance';
 import { tenureOf } from '@utils/tenure';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const NO_DEPT = '__none__';
 const selectClass = 'rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm';
@@ -96,7 +96,7 @@ const pctClass = (pct: number) =>
 
 const AttendanceCell = ({ days, today }: { days: AttendanceDay[]; today: string }) => {
   const a = attendancePct(days, today);
-  if (!a) return <span className='text-slate-400'>—</span>;
+  if (!a) return <span className='text-slate-500'>—</span>;
   return (
     <span className={pctClass(a.pct)} title={`${a.got} of ${a.of} working days this month`}>
       {a.pct}%
@@ -106,9 +106,9 @@ const AttendanceCell = ({ days, today }: { days: AttendanceDay[]; today: string 
 
 /** Updates on the last 7 working days, red when under the department target. */
 const UpdatesCell = ({ row }: { row: DailyKpiRow | undefined }) => {
-  if (!row) return <span className='text-slate-400'>—</span>;
+  if (!row) return <span className='text-slate-500'>—</span>;
   const u = row.recentUpdates;
-  if (u.workingDays === 0) return <span className='text-slate-400'>new</span>;
+  if (u.workingDays === 0) return <span className='text-slate-500'>new</span>;
   const below = (u.done / u.workingDays) * 100 < row.targets.updatesOnTimePct;
   return (
     <span
@@ -159,7 +159,7 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
   const trainings = useQuery({ queryKey: ['trainings-team'], queryFn: trainingsApi.team });
 
   if (team.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (team.error) return <p className='text-sm text-red-600'>{apiErrorMessage(team.error)}</p>;
+  if (team.error) return <QueryError error={team.error} />;
 
   const members = team.data ?? [];
   const departments = [...new Set(members.map((m) => m.department ?? NO_DEPT))].sort((a, b) =>
@@ -302,6 +302,7 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
       {members.length > 0 && (
         <div className='flex flex-wrap items-center gap-2'>
           <input
+            aria-label='Search name, code, role'
             type='search'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -309,7 +310,12 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
             className={`${selectClass} min-w-56`}
           />
           {departments.length > 1 && (
-            <select className={selectClass} value={dept} onChange={(e) => setDept(e.target.value)}>
+            <select
+              aria-label='Department'
+              className={selectClass}
+              value={dept}
+              onChange={(e) => setDept(e.target.value)}
+            >
               <option value=''>Every department</option>
               {departments.map((d) => (
                 <option key={d} value={d}>
@@ -378,10 +384,10 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
                 >
                   <td className='px-4 py-3'>
                     <div className='font-medium text-slate-800'>{m.name}</div>
-                    <div className='text-xs text-slate-400'>
+                    <div className='text-xs text-slate-500'>
                       {m.employeeCode}
                       {m.relation === 'approver_only' && (
-                        <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide'>
+                        <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs uppercase tracking-wide'>
                           approver only
                         </span>
                       )}
@@ -389,7 +395,7 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
                   </td>
                   <td className='px-4 py-3 text-slate-600'>
                     {m.designation ?? '—'}
-                    {m.department && <div className='text-xs text-slate-400'>{m.department}</div>}
+                    {m.department && <div className='text-xs text-slate-500'>{m.department}</div>}
                   </td>
                   <td className='px-4 py-3 text-slate-600'>{m.level}</td>
                   <td className='px-4 py-3 whitespace-nowrap text-slate-600'>
@@ -437,7 +443,7 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
                         e.stopPropagation();
                         noteDraft(m);
                       }}
-                      className='ml-3 text-green-600 hover:underline'
+                      className='ml-3 text-green-700 hover:underline'
                     >
                       send note
                     </button>
@@ -447,7 +453,7 @@ const MyTeamPage = ({ embedded = false }: { embedded?: boolean }) => {
             })}
             {shown.length === 0 && (
               <tr>
-                <td colSpan={11} className='px-4 py-8 text-center text-slate-400'>
+                <td colSpan={11} className='px-4 py-8 text-center text-slate-500'>
                   {members.length === 0
                     ? 'Nobody routes to you yet.'
                     : 'Nobody matches these filters.'}

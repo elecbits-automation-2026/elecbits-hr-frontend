@@ -42,9 +42,9 @@ const PassCard = ({ p, onDone }: { p: GatePass; onDone: () => void }) => {
         >
           {p.overdue ? 'Overdue' : PASS_STATUS_LABELS[p.status]}
         </span>
-        <span className='font-mono text-xs text-slate-400'>{p.asset.assetCode}</span>
+        <span className='font-mono text-xs text-slate-500'>{p.asset.assetCode}</span>
         <span className='font-medium text-slate-800'>{p.asset.name}</span>
-        <span className='ml-auto text-xs text-slate-400'>{fmtWhen(p.createdAt)}</span>
+        <span className='ml-auto text-xs text-slate-500'>{fmtWhen(p.createdAt)}</span>
       </div>
       <p className='text-sm text-slate-600'>
         <b>{p.holder.name}</b> → {p.destination} · {p.purpose}
@@ -79,6 +79,7 @@ const PassCard = ({ p, onDone }: { p: GatePass; onDone: () => void }) => {
       {declining && (
         <div className='space-y-2'>
           <input
+            aria-label='Why (they see this)'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder='Why (they see this)'
@@ -173,10 +174,10 @@ const GatePassesPage = () => {
           </button>
         ))}
       </div>
-      {passes.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+      {passes.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {passes.error && <p className='text-sm text-red-600'>{apiErrorMessage(passes.error)}</p>}
       {passes.data && groups[tab].length === 0 && (
-        <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-400'>
+        <p className='rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500'>
           Nothing here.
         </p>
       )}

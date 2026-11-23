@@ -21,10 +21,26 @@ const ENDED = ['rejected', 'withdrawn'];
 
 type Ending = 'reject' | 'withdraw' | 'back' | 'restore';
 const ENDING_TEXT: Record<Ending, { prompt: string; button: string; cls: string }> = {
-  reject: { prompt: 'Why is this candidate rejected?', button: 'Reject', cls: 'bg-red-600 hover:bg-red-700' },
-  withdraw: { prompt: 'Why did they withdraw?', button: 'Record withdrawal', cls: 'bg-red-600 hover:bg-red-700' },
-  back: { prompt: 'Why move them back a stage?', button: 'Move back', cls: 'bg-slate-700 hover:bg-slate-800' },
-  restore: { prompt: 'Why bring them back?', button: 'Restore', cls: 'bg-brand-600 hover:bg-brand-700' },
+  reject: {
+    prompt: 'Why is this candidate rejected?',
+    button: 'Reject',
+    cls: 'bg-red-600 hover:bg-red-700',
+  },
+  withdraw: {
+    prompt: 'Why did they withdraw?',
+    button: 'Record withdrawal',
+    cls: 'bg-red-600 hover:bg-red-700',
+  },
+  back: {
+    prompt: 'Why move them back a stage?',
+    button: 'Move back',
+    cls: 'bg-slate-700 hover:bg-slate-800',
+  },
+  restore: {
+    prompt: 'Why bring them back?',
+    button: 'Restore',
+    cls: 'bg-brand-600 hover:bg-brand-700',
+  },
 };
 
 /**
@@ -101,14 +117,14 @@ const ApplicationRow = ({
             </button>
           )}
           {(app.stage === 'interviewing' || app.stage === 'interviewed') && (
-            <span className='text-xs text-slate-400'>
+            <span className='text-xs text-slate-500'>
               {app.currentRound && <>Now: {ROUND_LABEL[app.currentRound]} · </>}
               {scored}/{app.rounds.length} rounds passed
               {app.scoreTotal !== null && ` · ${app.scoreTotal}/100`}
             </span>
           )}
           <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STAGE_CLASS[app.stage]}`}
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${STAGE_CLASS[app.stage]}`}
           >
             {STAGE_LABEL[app.stage]}
           </span>
@@ -151,6 +167,7 @@ const ApplicationRow = ({
       {showSummary && open && <ScorecardSummary app={app} />}
       {ending && (
         <textarea
+          aria-label='Reason'
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={2}

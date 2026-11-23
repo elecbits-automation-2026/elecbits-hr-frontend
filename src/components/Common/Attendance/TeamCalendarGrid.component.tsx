@@ -6,10 +6,7 @@ import type { AttendanceDay, EmployeeAttendance } from '@app-types/api.types';
  * state owns one hue across the whole app). Header dots flag days where
  * someone is away: blue for one person, red for more.
  */
-const CELL: Record<
-  AttendanceDay['status'],
-  { cls: string; label: string } | null
-> = {
+const CELL: Record<AttendanceDay['status'], { cls: string; label: string } | null> = {
   present: { cls: 'bg-green-500 text-white', label: 'Present' },
   wfh: { cls: 'bg-violet-500 text-white', label: 'Remote' },
   leave: { cls: 'bg-blue-500 text-white', label: 'Leave' },
@@ -17,7 +14,7 @@ const CELL: Record<
   half_day: { cls: 'bg-orange-500 text-white', label: 'Half day (auto-closed)' },
   absent: { cls: 'bg-red-500 text-white', label: 'Absent' },
   holiday: { cls: 'bg-slate-200 text-slate-500', label: 'Holiday' },
-  weekend: { cls: 'bg-slate-100 text-slate-400', label: 'Weekend' },
+  weekend: { cls: 'bg-slate-100 text-slate-500', label: 'Weekend' },
   none: null,
 };
 
@@ -88,7 +85,7 @@ const TeamCalendarGrid = ({ months, today }: { months: EmployeeAttendance[]; tod
                 const dow = DOW[new Date(`${date}T00:00:00`).getDay()];
                 return (
                   <th key={date} className='min-w-7 text-center font-normal'>
-                    <span className='block text-[10px] text-slate-400'>{dow}</span>
+                    <span className='block text-xs text-slate-500'>{dow}</span>
                     <span
                       className={`mx-auto block h-1.5 w-1.5 rounded-full ${
                         awayCount[i]! > 1
@@ -98,9 +95,7 @@ const TeamCalendarGrid = ({ months, today }: { months: EmployeeAttendance[]; tod
                             : 'bg-slate-200'
                       }`}
                       title={
-                        awayCount[i]
-                          ? `${awayCount[i]} away on ${date}`
-                          : `nobody away on ${date}`
+                        awayCount[i] ? `${awayCount[i]} away on ${date}` : `nobody away on ${date}`
                       }
                     />
                   </th>
@@ -114,7 +109,7 @@ const TeamCalendarGrid = ({ months, today }: { months: EmployeeAttendance[]; tod
                 <td className='sticky left-0 z-10 bg-white pr-3'>
                   <div className='flex max-w-44 items-center gap-2'>
                     <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${tintOf(m.employee.name)}`}
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${tintOf(m.employee.name)}`}
                     >
                       {initials(m.employee.name)}
                     </span>
@@ -130,8 +125,8 @@ const TeamCalendarGrid = ({ months, today }: { months: EmployeeAttendance[]; tod
                     <td key={d.date} className='text-center'>
                       <span
                         title={tooltip(d)}
-                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-[11px] tabular-nums ${
-                          cell ? cell.cls : 'border border-slate-200 text-slate-400'
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-xs tabular-nums ${
+                          cell ? cell.cls : 'border border-slate-200 text-slate-500'
                         } ${isToday ? 'ring-2 ring-brand-500 ring-offset-1' : ''}`}
                       >
                         {Number(d.date.slice(8))}

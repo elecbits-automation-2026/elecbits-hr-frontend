@@ -5,6 +5,7 @@ import type { Employee } from '@app-types/api.types';
 import { ROLE_INFO, roleLabel } from '@constants/Common/access/modules.constants';
 import { accessApi } from '@services/api/access.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 /**
  * HR asks Admin for extra access for ONE person (§5.5): pick the roles,
@@ -39,7 +40,7 @@ const RequestAccessModal = ({ employee, onClose }: { employee: Employee; onClose
     setPicked((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <form
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
@@ -54,7 +55,7 @@ const RequestAccessModal = ({ employee, onClose }: { employee: Employee; onClose
           <button
             type='button'
             onClick={onClose}
-            className='text-sm text-slate-400 hover:text-slate-600'
+            className='text-sm text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -93,7 +94,7 @@ const RequestAccessModal = ({ employee, onClose }: { employee: Employee; onClose
                   <span>
                     {roleLabel(b.name)}
                     {(ROLE_INFO[b.name]?.blurb ?? b.description) && (
-                      <span className='block text-xs text-slate-400'>
+                      <span className='block text-xs text-slate-500'>
                         {ROLE_INFO[b.name]?.blurb ?? b.description}
                       </span>
                     )}
@@ -138,7 +139,7 @@ const RequestAccessModal = ({ employee, onClose }: { employee: Employee; onClose
           </>
         )}
       </form>
-    </div>
+    </ModalShell>
   );
 };
 

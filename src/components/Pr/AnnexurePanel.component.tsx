@@ -20,9 +20,19 @@ export const BreakdownTable = ({ data }: { data: SalaryAnnexure }) => {
     { label: 'HRA (25%)', monthly: data.hra },
     { label: 'LTA (10%)', monthly: data.lta },
     { label: 'Special allowance', monthly: data.specialAllowance, note: 'balancing figure' },
-    { label: 'PF — employer', monthly: data.pfEmployer, note: 'blended 16/14-day rule, same as the payslip' },
+    {
+      label: 'PF — employer',
+      monthly: data.pfEmployer,
+      note: 'blended 16/14-day rule, same as the payslip',
+    },
     ...(data.esicEmployer > 0
-      ? [{ label: 'ESIC — employer', monthly: data.esicEmployer, note: '3.25% of ESIC wages, inside CTC' }]
+      ? [
+          {
+            label: 'ESIC — employer',
+            monthly: data.esicEmployer,
+            note: '3.25% of ESIC wages, inside CTC',
+          },
+        ]
       : []),
     {
       label: 'Gross salary',
@@ -53,51 +63,59 @@ export const BreakdownTable = ({ data }: { data: SalaryAnnexure }) => {
         <h3 className='text-sm font-semibold text-slate-700'>
           CTC ₹{money(data.ctcAnnual)} / year · ₹{money(data.ctcMonthly)} / month
         </h3>
-        <span className='text-xs text-slate-400'>
+        <span className='text-xs text-slate-500'>
           {data.variablePayAnnual > 0 && <>variable ₹{money(data.variablePayAnnual)}/yr · </>}
           taxable ₹{money(data.taxableIncome)} → tax ₹{money(data.totalTaxAnnual)}/yr
           {data.surchargeAnnual > 0 && <> (incl. surcharge ₹{money(data.surchargeAnnual)})</>}
         </span>
       </div>
-      <table className='mt-2 w-full text-sm'>
-        <thead>
-          <tr className='border-b border-slate-200 text-xs text-slate-500'>
-            <th className='py-2 pr-3 text-left font-medium'>Component</th>
-            <th className='py-2 pr-3 text-right font-medium'>Monthly</th>
-            <th className='py-2 text-right font-medium'>Annual</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.label} className='border-b border-slate-100'>
-              <td className='py-1.5 pr-3 text-slate-700'>
-                {r.label}
-                {r.note && <span className='ml-2 text-xs text-slate-400'>{r.note}</span>}
+      <div className='overflow-x-auto'>
+        <table className='mt-2 w-full text-sm'>
+          <thead>
+            <tr className='border-b border-slate-200 text-xs text-slate-500'>
+              <th className='py-2 pr-3 text-left font-medium'>Component</th>
+              <th className='py-2 pr-3 text-right font-medium'>Monthly</th>
+              <th className='py-2 text-right font-medium'>Annual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label} className='border-b border-slate-100'>
+                <td className='py-1.5 pr-3 text-slate-700'>
+                  {r.label}
+                  {r.note && <span className='ml-2 text-xs text-slate-500'>{r.note}</span>}
+                </td>
+                <td
+                  className={`py-1.5 pr-3 text-right tabular-nums ${r.deduction ? 'text-red-600' : 'text-slate-700'}`}
+                >
+                  {r.deduction && r.monthly > 0 ? '−' : ''}
+                  {money(r.monthly)}
+                </td>
+                <td
+                  className={`py-1.5 text-right tabular-nums ${r.deduction ? 'text-red-600' : 'text-slate-500'}`}
+                >
+                  {r.deduction && r.monthly > 0 ? '−' : ''}
+                  {money(Math.round(r.monthly * 12 * 100) / 100)}
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td className='py-2 pr-3 font-semibold text-slate-800'>
+                Net take-home (bank figure)
               </td>
-              <td className={`py-1.5 pr-3 text-right tabular-nums ${r.deduction ? 'text-red-600' : 'text-slate-700'}`}>
-                {r.deduction && r.monthly > 0 ? '−' : ''}
-                {money(r.monthly)}
+              <td className='py-2 pr-3 text-right font-semibold tabular-nums text-slate-800'>
+                {money(data.netTakeHome)}
               </td>
-              <td className={`py-1.5 text-right tabular-nums ${r.deduction ? 'text-red-600' : 'text-slate-500'}`}>
-                {r.deduction && r.monthly > 0 ? '−' : ''}
-                {money(Math.round(r.monthly * 12 * 100) / 100)}
+              <td className='py-2 text-right font-semibold tabular-nums text-slate-800'>
+                {money(Math.round(data.netTakeHome * 12 * 100) / 100)}
               </td>
             </tr>
-          ))}
-          <tr>
-            <td className='py-2 pr-3 font-semibold text-slate-800'>Net take-home (bank figure)</td>
-            <td className='py-2 pr-3 text-right font-semibold tabular-nums text-slate-800'>
-              {money(data.netTakeHome)}
-            </td>
-            <td className='py-2 text-right font-semibold tabular-nums text-slate-800'>
-              {money(Math.round(data.netTakeHome * 12 * 100) / 100)}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p className='mt-2 text-xs text-slate-400'>
-        Net take-home is AFTER professional tax and estimated TDS — what actually lands in the
-        bank in a full month.
+          </tbody>
+        </table>
+      </div>
+      <p className='mt-2 text-xs text-slate-500'>
+        Net take-home is AFTER professional tax and estimated TDS — what actually lands in the bank
+        in a full month.
       </p>
     </div>
   );
@@ -143,10 +161,10 @@ const AnnexurePanel = () => {
 
   return (
     <div className='rounded-xl border border-slate-200 bg-white p-5'>
-      <p className='mb-3 text-xs text-slate-400'>
+      <p className='mb-3 text-xs text-slate-500'>
         Price an offer for a CANDIDATE (not on the roster yet): the annexure an offer letter
-        promises, computed by the payslip engine. Nothing is stored — once they join, pick them
-        on the left and the same breakup drives their compensation record.
+        promises, computed by the payslip engine. Nothing is stored — once they join, pick them on
+        the left and the same breakup drives their compensation record.
       </p>
 
       <div className='flex flex-wrap items-end gap-3'>

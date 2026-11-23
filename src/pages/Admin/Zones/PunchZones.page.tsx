@@ -81,23 +81,71 @@ const PunchZonesPage = () => {
     <div className='w-full max-w-3xl space-y-4'>
       <h1 className='text-2xl font-semibold text-slate-800'>Punch zones</h1>
       <p className='text-sm text-slate-500'>
-        Employees can check in/out from inside any zone below (checking in at one and out at
-        another is fine). Outside every zone, punching needs an approved remote-work request.
+        Employees can check in/out from inside any zone below (checking in at one and out at another
+        is fine). Outside every zone, punching needs an approved remote-work request.
       </p>
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <form onSubmit={submit} className='mb-4 flex flex-wrap items-end gap-2'>
-          <input required value={name} onChange={(e) => setName(e.target.value)} placeholder='Zone name (e.g. HQ, Warehouse)' className={inputClass} />
-          <input required type='number' step='any' min={-90} max={90} value={lat} onChange={(e) => setLat(e.target.value)} placeholder='Latitude' className={`${inputClass} w-32`} />
-          <input required type='number' step='any' min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} placeholder='Longitude' className={`${inputClass} w-32`} />
-          <input type='number' min={1} max={5000} value={radiusM} onChange={(e) => setRadiusM(e.target.value)} placeholder='Radius (m)' className={`${inputClass} w-28`} />
+          <input
+            aria-label='Zone name (e.g. HQ, Warehouse)'
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder='Zone name (e.g. HQ, Warehouse)'
+            className={inputClass}
+          />
+          <input
+            aria-label='Latitude'
+            required
+            type='number'
+            step='any'
+            min={-90}
+            max={90}
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
+            placeholder='Latitude'
+            className={`${inputClass} w-32`}
+          />
+          <input
+            aria-label='Longitude'
+            required
+            type='number'
+            step='any'
+            min={-180}
+            max={180}
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
+            placeholder='Longitude'
+            className={`${inputClass} w-32`}
+          />
+          <input
+            aria-label='Radius (m)'
+            type='number'
+            min={1}
+            max={5000}
+            value={radiusM}
+            onChange={(e) => setRadiusM(e.target.value)}
+            placeholder='Radius (m)'
+            className={`${inputClass} w-28`}
+          />
           <label className='text-xs text-slate-500'>
             Hours
-            <input type='time' value={workStart} onChange={(e) => setWorkStart(e.target.value)} className={`${inputClass} ml-1`} />
+            <input
+              type='time'
+              value={workStart}
+              onChange={(e) => setWorkStart(e.target.value)}
+              className={`${inputClass} ml-1`}
+            />
           </label>
           <label className='text-xs text-slate-500'>
             to
-            <input type='time' value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className={`${inputClass} ml-1`} />
+            <input
+              type='time'
+              value={workEnd}
+              onChange={(e) => setWorkEnd(e.target.value)}
+              className={`${inputClass} ml-1`}
+            />
           </label>
           <button
             type='button'
@@ -128,10 +176,13 @@ const PunchZonesPage = () => {
           </p>
         )}
         {zones.data?.map((z) => (
-          <div key={z.id} className='flex items-center justify-between border-b border-slate-100 py-2 text-sm'>
+          <div
+            key={z.id}
+            className='flex items-center justify-between border-b border-slate-100 py-2 text-sm'
+          >
             <span>
               <b>{z.name}</b>
-              <span className='ml-2 font-mono text-xs text-slate-400'>
+              <span className='ml-2 font-mono text-xs text-slate-500'>
                 {z.lat}, {z.lng} · {z.radiusM}m ·{' '}
                 {z.workStart ? `${z.workStart}–${z.workEnd}` : 'default hours'}
               </span>
@@ -147,7 +198,11 @@ const PunchZonesPage = () => {
                 >
                   Yes, remove
                 </button>
-                <button type='button' onClick={() => setConfirming(null)} className='text-slate-400 hover:text-slate-600'>
+                <button
+                  type='button'
+                  onClick={() => setConfirming(null)}
+                  className='text-slate-500 hover:text-slate-600'
+                >
                   Keep
                 </button>
               </span>
@@ -158,7 +213,7 @@ const PunchZonesPage = () => {
                   removeZone.reset();
                   setConfirming(z.id);
                 }}
-                className='text-xs text-slate-400 hover:text-red-600'
+                className='text-xs text-slate-500 hover:text-red-600'
               >
                 Remove
               </button>

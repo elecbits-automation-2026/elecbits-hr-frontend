@@ -5,6 +5,7 @@ import type { ImportEmployeeRow, ImportEmployeesResult } from '@app-types/api.ty
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
 import { csvCell, downloadText, parseCsv } from '@utils/csv';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const TEMPLATE_HEADER = 'email,name,manager_email,level,date_of_joining,department,designation';
 const TEMPLATE_EXAMPLE =
@@ -29,7 +30,10 @@ const HEADER_FIELDS: Record<string, keyof ImportEmployeeRow> = {
 const toRows = (text: string): { rows: ImportEmployeeRow[] } | { error: string } => {
   // "Unicode text" (UTF-16) from Excel reads as text full of NUL characters.
   if (text.includes('\u0000')) {
-    return { error: 'This file is saved as Unicode text \u2014 in Excel choose Save as \u2192 "CSV UTF-8".' };
+    return {
+      error:
+        'This file is saved as Unicode text \u2014 in Excel choose Save as \u2192 "CSV UTF-8".',
+    };
   }
   const [header, ...body] = parseCsv(text.replace(/^\uFEFF/, ''));
   if (!header) return { error: 'The file is empty.' };
@@ -119,14 +123,14 @@ const ImportEmployeesModal = ({ onClose }: { onClose: () => void }) => {
     );
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='max-h-full w-full max-w-2xl space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'>
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold text-slate-800'>Import people from CSV</h2>
           <button
             type='button'
             onClick={onClose}
-            className='text-sm text-slate-400 hover:text-slate-600'
+            className='text-sm text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -136,8 +140,8 @@ const ImportEmployeesModal = ({ onClose }: { onClose: () => void }) => {
           <div className='space-y-3'>
             <p className='text-sm text-slate-700'>
               Imported {created.length} {created.length === 1 ? 'person' : 'people'}. Each is
-              invited with only the Everyone (basic) role. Their claim links are shown once — download them
-              now and send each person their own.
+              invited with only the Everyone (basic) role. Their claim links are shown once —
+              download them now and send each person their own.
             </p>
             <ul className='max-h-56 overflow-y-auto rounded-md border border-slate-200 text-sm'>
               {created.map((c) => (
@@ -146,7 +150,7 @@ const ImportEmployeesModal = ({ onClose }: { onClose: () => void }) => {
                   className='flex justify-between gap-2 border-t border-slate-100 px-3 py-1.5 first:border-t-0'
                 >
                   <span>{c.name}</span>
-                  <span className='font-mono text-xs text-slate-400'>{c.employeeCode}</span>
+                  <span className='font-mono text-xs text-slate-500'>{c.employeeCode}</span>
                 </li>
               ))}
             </ul>
@@ -230,7 +234,7 @@ const ImportEmployeesModal = ({ onClose }: { onClose: () => void }) => {
                           key={r.line}
                           className='border-t border-red-50 align-top first:border-t-0'
                         >
-                          <td className='px-2 py-1.5 font-mono text-slate-400'>row {r.line}</td>
+                          <td className='px-2 py-1.5 font-mono text-slate-500'>row {r.line}</td>
                           <td className='px-2 py-1.5 text-slate-700'>{r.email || r.name || '—'}</td>
                           <td className='px-2 py-1.5 text-red-700'>{r.errors.join(' · ')}</td>
                         </tr>
@@ -275,7 +279,7 @@ const ImportEmployeesModal = ({ onClose }: { onClose: () => void }) => {
           </>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

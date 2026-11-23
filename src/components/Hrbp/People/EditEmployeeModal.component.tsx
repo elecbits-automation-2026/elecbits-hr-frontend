@@ -6,6 +6,7 @@ import { attendanceApi } from '@services/api/attendance.api';
 import { departmentsApi, homeUnits } from '@services/api/departments.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const LEVELS: Level[] = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
 const EMPLOYMENT_TYPES: EmploymentType[] = ['intern', 'permanent', 'contract'];
@@ -87,8 +88,7 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
   const changes = (): Partial<CreateEmployeeInput> => {
     const out: Record<string, unknown> = {};
     // Personal hours travel as a pair; clearing both returns them to the zone's.
-    const hoursChanged =
-      form.workStart !== initial.workStart || form.workEnd !== initial.workEnd;
+    const hoursChanged = form.workStart !== initial.workStart || form.workEnd !== initial.workEnd;
     if (hoursChanged) {
       out.workStart = form.workStart || null;
       out.workEnd = form.workEnd || null;
@@ -120,7 +120,7 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
   );
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <form
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
@@ -131,14 +131,14 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold text-slate-800'>
             Edit {employee.name}
-            <span className='ml-2 font-mono text-xs font-normal text-slate-400'>
+            <span className='ml-2 font-mono text-xs font-normal text-slate-500'>
               {employee.status}
             </span>
           </h2>
           <button
             type='button'
             onClick={onClose}
-            className='text-sm text-slate-400 hover:text-slate-600'
+            className='text-sm text-slate-500 hover:text-slate-600'
           >
             ✕
           </button>
@@ -258,7 +258,9 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
         </div>
 
         <div className='space-y-1'>
-          <span className={labelClass}>Personal work hours (optional — overrides their location&rsquo;s hours)</span>
+          <span className={labelClass}>
+            Personal work hours (optional — overrides their location&rsquo;s hours)
+          </span>
           <div className='grid grid-cols-2 gap-3'>
             <input
               id='edit-workStart'
@@ -304,7 +306,7 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
         </div>
 
         <section className='space-y-2 border-t border-slate-100 pt-4'>
-          <h3 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Status</h3>
+          <h3 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Status</h3>
           {employee.status === 'inactive' ? (
             <div className='flex flex-wrap items-center justify-between gap-2'>
               <p className='text-sm text-slate-500'>
@@ -356,7 +358,7 @@ const EditEmployeeModal = ({ employee, onClose }: { employee: Employee; onClose:
           )}
         </section>
       </form>
-    </div>
+    </ModalShell>
   );
 };
 

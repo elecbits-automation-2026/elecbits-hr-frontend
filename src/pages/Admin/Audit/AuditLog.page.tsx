@@ -70,6 +70,7 @@ const AuditLogPage = () => {
 
       <form onSubmit={submit} className='flex flex-wrap gap-2'>
         <input
+          aria-label='Search action, subject, detail or person (e.g. seat, settings, Rahul)'
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder='Search action, subject, detail or person (e.g. seat, settings, Rahul)'
@@ -119,9 +120,11 @@ const AuditLogPage = () => {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className='border-b border-slate-100 align-top last:border-0'>
-                  <td className='whitespace-nowrap px-4 py-2 text-slate-600'>{when(r.createdAt)}</td>
+                  <td className='whitespace-nowrap px-4 py-2 text-slate-600'>
+                    {when(r.createdAt)}
+                  </td>
                   <td className='whitespace-nowrap px-4 py-2 text-slate-800'>
-                    {r.actorName ?? <span className='text-slate-400'>System</span>}
+                    {r.actorName ?? <span className='text-slate-500'>System</span>}
                   </td>
                   <td className='whitespace-nowrap px-4 py-2 font-mono text-xs text-slate-700'>
                     {r.action}

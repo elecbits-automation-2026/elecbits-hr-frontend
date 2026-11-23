@@ -23,6 +23,7 @@ const ConcernFollowUpPage = () => {
 
   const open = useMutation({
     mutationFn: () => concernsApi.followUp({ code: code.trim(), key: key.trim() }),
+    meta: { silentError: true }, // shown inline under the form
     onSuccess: setConcern,
   });
 

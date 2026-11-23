@@ -73,42 +73,46 @@ const BackgroundJobs = () => {
         ))}
       </ul>
       {(overview.data?.runs.length ?? 0) > 0 && (
-        <table className='mt-4 w-full text-left text-xs'>
-          <thead>
-            <tr className='text-slate-400'>
-              <th className='py-1 pr-3 font-medium'>Started</th>
-              <th className='py-1 pr-3 font-medium'>Job</th>
-              <th className='py-1 pr-3 font-medium'>Run</th>
-              <th className='py-1 pr-3 font-medium'>Status</th>
-              <th className='py-1 font-medium'>Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            {overview.data!.runs.slice(0, 10).map((r) => (
-              <tr key={r.id} className='border-t border-slate-100 align-top'>
-                <td className='py-1.5 pr-3 tabular-nums text-slate-500'>
-                  {new Date(r.startedAt).toLocaleString('en-IN', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </td>
-                <td className='py-1.5 pr-3 text-slate-700'>{r.job}</td>
-                <td className='py-1.5 pr-3 text-slate-500'>
-                  {r.runKey.startsWith('manual-') ? 'by hand' : 'scheduled'}
-                  {r.attempts > 1 ? ` · try ${r.attempts}` : ''}
-                </td>
-                <td className='py-1.5 pr-3'>
-                  <span className={`rounded-full px-2 py-0.5 font-medium ${STATUS_LOOK[r.status]}`}>
-                    {r.status}
-                  </span>
-                </td>
-                <td className='py-1.5 text-slate-600'>
-                  {r.status === 'failed' ? r.error : summaryText(r.summary)}
-                </td>
+        <div className='overflow-x-auto'>
+          <table className='mt-4 w-full text-left text-xs'>
+            <thead>
+              <tr className='text-slate-500'>
+                <th className='py-1 pr-3 font-medium'>Started</th>
+                <th className='py-1 pr-3 font-medium'>Job</th>
+                <th className='py-1 pr-3 font-medium'>Run</th>
+                <th className='py-1 pr-3 font-medium'>Status</th>
+                <th className='py-1 font-medium'>Result</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {overview.data!.runs.slice(0, 10).map((r) => (
+                <tr key={r.id} className='border-t border-slate-100 align-top'>
+                  <td className='py-1.5 pr-3 tabular-nums text-slate-500'>
+                    {new Date(r.startedAt).toLocaleString('en-IN', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </td>
+                  <td className='py-1.5 pr-3 text-slate-700'>{r.job}</td>
+                  <td className='py-1.5 pr-3 text-slate-500'>
+                    {r.runKey.startsWith('manual-') ? 'by hand' : 'scheduled'}
+                    {r.attempts > 1 ? ` · try ${r.attempts}` : ''}
+                  </td>
+                  <td className='py-1.5 pr-3'>
+                    <span
+                      className={`rounded-full px-2 py-0.5 font-medium ${STATUS_LOOK[r.status]}`}
+                    >
+                      {r.status}
+                    </span>
+                  </td>
+                  <td className='py-1.5 text-slate-600'>
+                    {r.status === 'failed' ? r.error : summaryText(r.summary)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

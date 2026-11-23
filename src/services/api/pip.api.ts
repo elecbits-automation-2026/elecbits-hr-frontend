@@ -12,8 +12,7 @@ export const pipApi = {
   /** The RM — or HR when the person has no RM — and nothing running. */
   canStart: async (employeeId: string): Promise<boolean> =>
     (await api.get<{ canStart: boolean }>(`/pips/can-start/${employeeId}`)).data.canStart,
-  create: async (input: CreatePipInput): Promise<Pip> =>
-    (await api.post<Pip>('/pips', input)).data,
+  create: async (input: CreatePipInput): Promise<Pip> => (await api.post<Pip>('/pips', input)).data,
   outcome: async (
     id: string,
     input: { outcome: 'passed' | 'extend' | 'not_passed'; note: string },

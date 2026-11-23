@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import type { OrgSetting, SettingArea } from '@app-types/api.types';
 import { settingsApi } from '@services/api/settings.api';
-import { apiErrorMessage } from '@utils/apiError';
 
 import { SettingCard } from './SettingCard.component';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const AREA_TITLES: Record<SettingArea, string> = {
   payroll: 'Payroll',
@@ -47,10 +47,10 @@ export const SettingsList = ({
   });
 
   if (settings.error) {
-    return <p className='text-sm text-red-600'>{apiErrorMessage(settings.error)}</p>;
+    return <QueryError error={settings.error} />;
   }
   if (settings.isLoading || !settings.data) {
-    return hideWhenEmpty ? null : <p className='text-sm text-slate-400'>Loading…</p>;
+    return hideWhenEmpty ? null : <p className='text-sm text-slate-500'>Loading…</p>;
   }
   if (settings.data.length === 0) {
     return hideWhenEmpty ? null : (
@@ -59,7 +59,7 @@ export const SettingsList = ({
   }
 
   const heading = (text: string) => (
-    <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>{text}</h2>
+    <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>{text}</h2>
   );
 
   if (!groupByArea) {

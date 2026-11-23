@@ -34,7 +34,7 @@ const PageTabs = <K extends string>({
         {t.label}
         {(t.count ?? 0) > 0 && (
           <span
-            className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+            className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs font-semibold ${
               active === t.key ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700'
             }`}
           >

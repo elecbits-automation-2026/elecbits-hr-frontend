@@ -20,6 +20,7 @@ import {
 import { accessApi } from '@services/api/access.api';
 import { employeesApi } from '@services/api/employees.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 /** One area at one "for whom": the actions ticked there. */
 interface GrantRowDraft {
@@ -61,7 +62,8 @@ const areaList = (modules: Module[] | undefined, rows: GrantRowDraft[]) => {
     }));
 };
 
-const selectCls = 'rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-slate-50 disabled:text-slate-400';
+const selectCls =
+  'rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-slate-50 disabled:text-slate-400';
 
 /**
  * One area in the role editor: an access level and a "for whom". A mix the
@@ -93,13 +95,19 @@ const AreaRow = ({
     }
     setCustomOpen(false);
     const picked = ACCESS_LEVELS.find((l) => l.key === value);
-    onChange(picked ? [{ moduleKey: area.key, actions: [...picked.actions], scope: orgOnly ? 'org' : scope }] : []);
+    onChange(
+      picked
+        ? [{ moduleKey: area.key, actions: [...picked.actions], scope: orgOnly ? 'org' : scope }]
+        : [],
+    );
   };
   const setRow = (i: number, patch: Partial<GrantRowDraft>) =>
     onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   const toggle = (i: number, action: Action) => {
     const acts = rows[i]!.actions;
-    setRow(i, { actions: acts.includes(action) ? acts.filter((a) => a !== action) : [...acts, action] });
+    setRow(i, {
+      actions: acts.includes(action) ? acts.filter((a) => a !== action) : [...acts, action],
+    });
   };
   const unusedScope = SCOPE_ORDER.find((s) => !rows.some((r) => r.scope === s));
   const duplicate = rows.some((r, i) => rows.findIndex((o) => o.scope === r.scope) !== i);
@@ -112,10 +120,15 @@ const AreaRow = ({
             {area.label}
           </p>
           {MODULE_INFO[area.key] && (
-            <p className='mt-0.5 text-xs text-slate-400'>{MODULE_INFO[area.key]!.unlocks}</p>
+            <p className='mt-0.5 text-xs text-slate-500'>{MODULE_INFO[area.key]!.unlocks}</p>
           )}
         </div>
-        <select value={level} onChange={(e) => setLevel(e.target.value)} className={`${selectCls} w-44`}>
+        <select
+          aria-label='Access level'
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          className={`${selectCls} w-44`}
+        >
           <option value='none'>No access</option>
           {ACCESS_LEVELS.map((l) => (
             <option key={l.key} value={l.key}>
@@ -126,13 +139,14 @@ const AreaRow = ({
         </select>
         <div className='w-48'>
           {showCustom ? (
-            <p className='py-1.5 text-xs text-slate-400'>Set below</p>
+            <p className='py-1.5 text-xs text-slate-500'>Set below</p>
           ) : orgOnly ? (
             <p className='py-1.5 text-sm text-slate-500' title='This area only works company-wide'>
               {rows.length ? 'Whole company' : '—'}
             </p>
           ) : (
             <select
+              aria-label='For whom'
               value={scope}
               disabled={rows.length === 0}
               onChange={(e) => setRow(0, { scope: e.target.value as Scope })}
@@ -169,6 +183,7 @@ const AreaRow = ({
                 <span className='text-xs text-slate-500'>Whole company</span>
               ) : (
                 <select
+                  aria-label='For whom'
                   value={row.scope}
                   onChange={(e) => setRow(i, { scope: e.target.value as Scope })}
                   className={selectCls}
@@ -183,29 +198,37 @@ const AreaRow = ({
               <button
                 type='button'
                 onClick={() => onChange(rows.filter((_, idx) => idx !== i))}
-                className='text-xs text-red-500 hover:text-red-700'
+                className='text-xs text-red-600 hover:text-red-700'
               >
                 Remove
               </button>
               {row.actions.length === 0 && (
-                <p className='basis-full text-xs text-red-600'>Tick at least one box, or remove this line.</p>
+                <p className='basis-full text-xs text-red-600'>
+                  Tick at least one box, or remove this line.
+                </p>
               )}
               {orgOnly && row.scope !== 'org' && (
                 <p className='basis-full text-xs text-amber-700'>
-                  This area only works company-wide — “{SCOPE_LABELS[row.scope]}” gives no access here.
+                  This area only works company-wide — “{SCOPE_LABELS[row.scope]}” gives no access
+                  here.
                 </p>
               )}
             </div>
           ))}
           {duplicate && (
-            <p className='text-xs text-red-600'>Two lines use the same “for whom” — merge them into one.</p>
+            <p className='text-xs text-red-600'>
+              Two lines use the same “for whom” — merge them into one.
+            </p>
           )}
           <div className='flex flex-wrap gap-3 text-xs'>
             {!orgOnly && unusedScope && (
               <button
                 type='button'
                 onClick={() =>
-                  onChange([...rows, { moduleKey: area.key, actions: ['read'], scope: unusedScope }])
+                  onChange([
+                    ...rows,
+                    { moduleKey: area.key, actions: ['read'], scope: unusedScope },
+                  ])
                 }
                 className='text-brand-600 hover:text-brand-500'
               >
@@ -249,7 +272,10 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
   const [description, setDescription] = useState(seed.description);
   const [rows, setRows] = useState<GrantRowDraft[]>(seed.rows);
 
-  const { data: modules } = useQuery({ queryKey: ['access-modules'], queryFn: accessApi.listModules });
+  const { data: modules } = useQuery({
+    queryKey: ['access-modules'],
+    queryFn: accessApi.listModules,
+  });
   const { data: holders } = useQuery({
     queryKey: ['batch-holders', seed.editingId],
     queryFn: () => accessApi.listBatchHolders(seed.editingId!),
@@ -258,8 +284,14 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
 
   const save = useMutation({
     mutationFn: () => {
-      const input = { name: name.trim(), description: description.trim() || undefined, grants: toGrants(rows) };
-      return seed.editingId ? accessApi.updateBatch(seed.editingId, input) : accessApi.createBatch(input);
+      const input = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        grants: toGrants(rows),
+      };
+      return seed.editingId
+        ? accessApi.updateBatch(seed.editingId, input)
+        : accessApi.createBatch(input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batches'] });
@@ -292,6 +324,7 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
 
       <div className='mt-3 grid gap-3 sm:grid-cols-2'>
         <input
+          aria-label='Role name (e.g. HR — leave only)'
           value={builtIn ? roleLabel(name) : name}
           onChange={(e) => setName(e.target.value)}
           placeholder='Role name (e.g. HR — leave only)'
@@ -300,6 +333,7 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
           className='rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500'
         />
         <input
+          aria-label='Who it’s for (optional)'
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder='Who it’s for (optional)'
@@ -307,7 +341,7 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
         />
       </div>
 
-      <div className='mt-4 hidden gap-3 px-1 text-xs font-medium uppercase tracking-wide text-slate-400 sm:flex'>
+      <div className='mt-4 hidden gap-3 px-1 text-xs font-medium uppercase tracking-wide text-slate-500 sm:flex'>
         <span className='flex-1'>Area</span>
         <span className='w-44'>Access</span>
         <span className='w-48'>For whom</span>
@@ -318,7 +352,9 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
           if (inGroup.length === 0) return null;
           return (
             <section key={group} className='rounded-lg border border-slate-200 px-4 py-1'>
-              <h3 className='pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>{group}</h3>
+              <h3 className='pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                {group}
+              </h3>
               {inGroup.map((a) => (
                 <AreaRow
                   key={a.key}
@@ -350,8 +386,10 @@ const RoleEditor = ({ seed, onClose }: { seed: ComposerSeed; onClose: () => void
         >
           Cancel
         </button>
-        <span className='text-xs text-slate-400'>
-          {areaCount === 0 ? 'Give access to at least one area.' : `${areaCount} area${areaCount === 1 ? '' : 's'} with access.`}
+        <span className='text-xs text-slate-500'>
+          {areaCount === 0
+            ? 'Give access to at least one area.'
+            : `${areaCount} area${areaCount === 1 ? '' : 's'} with access.`}
         </span>
       </div>
     </div>
@@ -363,13 +401,16 @@ const AccessSummary = ({ grants, modules }: { grants: Grant[]; modules: Module[]
   const [open, setOpen] = useState(false);
   const rows = toRows(grants);
   const keys = [...new Set(rows.map((r) => r.moduleKey))];
-  if (keys.length === 0) return <p className='text-xs text-slate-400'>This role gives no access yet.</p>;
+  if (keys.length === 0)
+    return <p className='text-xs text-slate-500'>This role gives no access yet.</p>;
   return (
     <div className='space-y-1.5'>
       <ul className='space-y-1 text-sm text-slate-700'>
         {keys.map((k) => (
           <li key={k}>
-            <span className='font-medium'>{moduleLabel(k, modules?.find((m) => m.key === k)?.name)}</span>
+            <span className='font-medium'>
+              {moduleLabel(k, modules?.find((m) => m.key === k)?.name)}
+            </span>
             <span className='text-slate-500'>
               {' — '}
               {rows
@@ -378,7 +419,7 @@ const AccessSummary = ({ grants, modules }: { grants: Grant[]; modules: Module[]
                 .join('; ')}
             </span>
             {open && MODULE_INFO[k] && (
-              <span className='block text-xs text-slate-400'>{MODULE_INFO[k]!.unlocks}</span>
+              <span className='block text-xs text-slate-500'>{MODULE_INFO[k]!.unlocks}</span>
             )}
           </li>
         ))}
@@ -400,7 +441,11 @@ const AccessSummary = ({ grants, modules }: { grants: Grant[]; modules: Module[]
  * never from the token (§10). Nobody changes their own access (server-side);
  * the audit log records every change.
  */
-const RoleCard = ({ batch, onEdit, onDuplicate }: {
+const RoleCard = ({
+  batch,
+  onEdit,
+  onDuplicate,
+}: {
   batch: Batch;
   onEdit: (batch: Batch) => void;
   onDuplicate: (batch: Batch) => void;
@@ -413,7 +458,10 @@ const RoleCard = ({ batch, onEdit, onDuplicate }: {
     queryFn: () => accessApi.listBatchHolders(batch.id),
   });
   const { data: employees } = useQuery({ queryKey: ['employees'], queryFn: employeesApi.list });
-  const { data: modules } = useQuery({ queryKey: ['access-modules'], queryFn: accessApi.listModules });
+  const { data: modules } = useQuery({
+    queryKey: ['access-modules'],
+    queryFn: accessApi.listModules,
+  });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['batch-holders', batch.id] });
 
@@ -430,7 +478,9 @@ const RoleCard = ({ batch, onEdit, onDuplicate }: {
   });
 
   const holderIds = new Set((holders ?? []).map((h) => h.employeeId));
-  const assignable = (employees ?? []).filter((e) => e.status !== 'inactive' && !holderIds.has(e.id));
+  const assignable = (employees ?? []).filter(
+    (e) => e.status !== 'inactive' && !holderIds.has(e.id),
+  );
   const builtIn = ROLE_INFO[batch.name];
 
   return (
@@ -439,16 +489,24 @@ const RoleCard = ({ batch, onEdit, onDuplicate }: {
         <h2 className='text-lg font-semibold text-slate-800'>
           {roleLabel(batch.name)}
           {builtIn && (
-            <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 align-middle text-[11px] font-normal text-slate-500'>
+            <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 align-middle text-xs font-normal text-slate-500'>
               built-in
             </span>
           )}
         </h2>
         <span className='flex items-baseline gap-3 text-xs'>
-          <button type='button' onClick={() => onEdit(batch)} className='text-brand-600 hover:text-brand-500'>
+          <button
+            type='button'
+            onClick={() => onEdit(batch)}
+            className='text-brand-600 hover:text-brand-500'
+          >
             Edit
           </button>
-          <button type='button' onClick={() => onDuplicate(batch)} className='text-brand-600 hover:text-brand-500'>
+          <button
+            type='button'
+            onClick={() => onDuplicate(batch)}
+            className='text-brand-600 hover:text-brand-500'
+          >
             Duplicate
           </button>
         </span>
@@ -469,22 +527,25 @@ const RoleCard = ({ batch, onEdit, onDuplicate }: {
         {(holders ?? []).map((h) => (
           <div key={h.employeeId} className='flex items-center justify-between py-1.5 text-sm'>
             <span className='text-slate-700'>
-              {h.name} <span className='text-slate-400'>— {h.employeeCode}</span>
+              {h.name} <span className='text-slate-500'>— {h.employeeCode}</span>
             </span>
             <button
               type='button'
               disabled={revoke.isPending}
               onClick={() => revoke.mutate(h.employeeId)}
-              className='text-xs text-red-500 hover:text-red-700 disabled:opacity-50'
+              className='text-xs text-red-600 hover:text-red-700 disabled:opacity-50'
             >
               Take away
             </button>
           </div>
         ))}
-        {holders?.length === 0 && <p className='py-1.5 text-sm text-slate-400'>Nobody has this role yet.</p>}
+        {holders?.length === 0 && (
+          <p className='py-1.5 text-sm text-slate-500'>Nobody has this role yet.</p>
+        )}
 
         <div className='mt-2 flex gap-2'>
           <select
+            aria-label='Give this role to'
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
             className='w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
@@ -506,7 +567,9 @@ const RoleCard = ({ batch, onEdit, onDuplicate }: {
           </button>
         </div>
         {(assign.error || revoke.error) && (
-          <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(assign.error ?? revoke.error)}</p>
+          <p className='mt-2 text-sm text-red-600'>
+            {apiErrorMessage(assign.error ?? revoke.error)}
+          </p>
         )}
       </div>
     </div>
@@ -526,10 +589,14 @@ const BatchesPage = () => {
     setSeedVersion((v) => v + 1);
   };
 
-  const { data: batches, isLoading, error } = useQuery({ queryKey: ['batches'], queryFn: accessApi.listBatches });
+  const {
+    data: batches,
+    isLoading,
+    error,
+  } = useQuery({ queryKey: ['batches'], queryFn: accessApi.listBatches });
 
   if (isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (error) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
+  if (error) return <QueryError error={error} />;
 
   // Built-in roles first, in a fixed order; custom roles after, by name.
   const order = Object.keys(ROLE_INFO);
@@ -554,8 +621,9 @@ const BatchesPage = () => {
       </div>
       <p className='text-sm text-slate-500'>
         A role is a set of things people can see and do. Give someone a role and it applies the next
-        time they use the app; changing a role changes it for everyone in it. Every change is recorded
-        in the audit log. For a slightly different version of a role, use <b>Duplicate</b> and adjust it.
+        time they use the app; changing a role changes it for everyone in it. Every change is
+        recorded in the audit log. For a slightly different version of a role, use <b>Duplicate</b>{' '}
+        and adjust it.
       </p>
 
       {seed && <RoleEditor key={seedVersion} seed={seed} onClose={() => setSeed(null)} />}

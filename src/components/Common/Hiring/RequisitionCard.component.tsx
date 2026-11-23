@@ -29,23 +29,23 @@ const RequisitionCard = ({
       <div>
         <p className='font-medium text-slate-800'>
           {req.requestCode && (
-            <span className='mr-2 font-mono text-xs font-semibold text-slate-400'>
+            <span className='mr-2 font-mono text-xs font-semibold text-slate-500'>
               {req.requestCode}
             </span>
           )}
           {req.quantity} × {req.roleTitle}
           <span
-            className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_LABEL[req.priority].cls}`}
+            className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${PRIORITY_LABEL[req.priority].cls}`}
           >
             {PRIORITY_LABEL[req.priority].label}
           </span>
           {req.urgent && (
-            <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
+            <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold uppercase text-red-700'>
               urgent
             </span>
           )}
         </p>
-        <p className='text-xs text-slate-400'>
+        <p className='text-xs text-slate-500'>
           {[
             showDepartment && req.departmentName,
             req.quarter,
@@ -61,14 +61,14 @@ const RequisitionCard = ({
         </p>
       </div>
       <span
-        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${REQ_STATUS_CLASS[req.status]}`}
+        className={`rounded-full px-2 py-0.5 text-xs font-medium ${REQ_STATUS_CLASS[req.status]}`}
       >
         {REQ_STATUS_LABEL[req.status]}
       </span>
     </div>
     {req.reason && (
       <p className='text-sm text-slate-700'>
-        <span className='text-xs text-slate-400'>Reason: </span>
+        <span className='text-xs text-slate-500'>Reason: </span>
         {req.reason}
       </p>
     )}
@@ -104,7 +104,7 @@ const RequisitionCard = ({
         ))}
         {req.waitingOn.length > 0 && (
           // One approval from any of them is enough.
-          <span className='text-slate-400'>
+          <span className='text-slate-500'>
             … waiting for {req.waitingOn.map((role) => APPROVER_LABEL[role]).join(' or ')}
           </span>
         )}

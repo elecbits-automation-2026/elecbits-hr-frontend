@@ -37,6 +37,7 @@ export const NumberEditor = ({ value, onSave, children }: EditorProps<number>) =
       className='flex flex-wrap items-end gap-2'
     >
       <input
+        aria-label='Value'
         required
         type='number'
         min={0}
@@ -111,6 +112,7 @@ export const WorkWeekEditor = ({
       className='flex flex-wrap items-end gap-2'
     >
       <select
+        aria-label='Working Saturdays'
         value={saturdays}
         onChange={(e) => setSaturdays(e.target.value)}
         className={inputClass}
@@ -343,6 +345,7 @@ export const OrderedLeaveTypesEditor = ({ value, onSave, children }: EditorProps
         {order.map((t, i) => (
           <li key={t} className='flex items-center gap-2 text-sm text-slate-600'>
             <input
+              aria-label={LEAVE_TYPE_LABELS[t]}
               type='checkbox'
               checked={on.has(t)}
               onChange={(e) => {
@@ -358,7 +361,7 @@ export const OrderedLeaveTypesEditor = ({ value, onSave, children }: EditorProps
               type='button'
               disabled={i === 0}
               onClick={() => move(i, -1)}
-              className='text-xs text-slate-400 hover:text-slate-700 disabled:opacity-30'
+              className='text-xs text-slate-500 hover:text-slate-700 disabled:opacity-30'
             >
               ↑
             </button>
@@ -366,7 +369,7 @@ export const OrderedLeaveTypesEditor = ({ value, onSave, children }: EditorProps
               type='button'
               disabled={i === order.length - 1}
               onClick={() => move(i, 1)}
-              className='text-xs text-slate-400 hover:text-slate-700 disabled:opacity-30'
+              className='text-xs text-slate-500 hover:text-slate-700 disabled:opacity-30'
             >
               ↓
             </button>
@@ -419,7 +422,7 @@ export const PtStatesEditor = ({ value, onSave, children }: EditorProps<{ states
       className='space-y-3'
     >
       {states.length === 0 && (
-        <p className='text-xs text-slate-400'>No states — nobody pays professional tax.</p>
+        <p className='text-xs text-slate-500'>No states — nobody pays professional tax.</p>
       )}
       {states.map((st, i) => {
         const matched = matchedZones(st.zoneNames);
@@ -447,67 +450,73 @@ export const PtStatesEditor = ({ value, onSave, children }: EditorProps<{ states
               <button
                 type='button'
                 onClick={() => setStates(states.filter((_, idx) => idx !== i))}
-                className='pb-2 text-xs text-red-500 hover:text-red-700'
+                className='pb-2 text-xs text-red-600 hover:text-red-700'
               >
                 Remove state
               </button>
             </div>
-            <p className='text-xs text-slate-400'>
+            <p className='text-xs text-slate-500'>
               {matched.length > 0
                 ? `Matches: ${matched.join(', ')}`
                 : 'Matches no punch zone yet — nobody is taxed here.'}
             </p>
-            <table className='text-xs'>
-              <thead>
-                <tr className='text-slate-500'>
-                  <th className='pr-2 text-left font-medium'>From salary (₹/mo)</th>
-                  <th className='pr-2 text-left font-medium'>PT (₹/mo)</th>
-                  <th className='pr-2 text-left font-medium'>February (blank = same)</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {st.slabs.map((sl, j) => (
-                  <tr key={j}>
-                    {(['fromMonthly', 'amount'] as const).map((k) => (
-                      <td key={k} className='pr-2 py-0.5'>
+            <div className='overflow-x-auto'>
+              <table className='text-xs'>
+                <thead>
+                  <tr className='text-slate-500'>
+                    <th className='pr-2 text-left font-medium'>From salary (₹/mo)</th>
+                    <th className='pr-2 text-left font-medium'>PT (₹/mo)</th>
+                    <th className='pr-2 text-left font-medium'>February (blank = same)</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {st.slabs.map((sl, j) => (
+                    <tr key={j}>
+                      {(['fromMonthly', 'amount'] as const).map((k) => (
+                        <td key={k} className='pr-2 py-0.5'>
+                          <input
+                            aria-label={k === 'fromMonthly' ? 'From salary (₹/mo)' : 'PT (₹/mo)'}
+                            type='number'
+                            min={0}
+                            value={sl[k]}
+                            onChange={(e) => setSlab(i, j, { [k]: Number(e.target.value) })}
+                            className={`${inputClass} w-28`}
+                          />
+                        </td>
+                      ))}
+                      <td className='pr-2 py-0.5'>
                         <input
+                          aria-label='February PT (₹/mo)'
                           type='number'
                           min={0}
-                          value={sl[k]}
-                          onChange={(e) => setSlab(i, j, { [k]: Number(e.target.value) })}
+                          value={sl.februaryAmount ?? ''}
+                          onChange={(e) =>
+                            setSlab(i, j, {
+                              februaryAmount: e.target.value === '' ? null : Number(e.target.value),
+                            })
+                          }
                           className={`${inputClass} w-28`}
                         />
                       </td>
-                    ))}
-                    <td className='pr-2 py-0.5'>
-                      <input
-                        type='number'
-                        min={0}
-                        value={sl.februaryAmount ?? ''}
-                        onChange={(e) =>
-                          setSlab(i, j, {
-                            februaryAmount: e.target.value === '' ? null : Number(e.target.value),
-                          })
-                        }
-                        className={`${inputClass} w-28`}
-                      />
-                    </td>
-                    <td>
-                      {st.slabs.length > 1 && (
-                        <button
-                          type='button'
-                          onClick={() => setState(i, { slabs: st.slabs.filter((_, k) => k !== j) })}
-                          className='text-slate-400 hover:text-red-600'
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <td>
+                        {st.slabs.length > 1 && (
+                          <button
+                            type='button'
+                            onClick={() =>
+                              setState(i, { slabs: st.slabs.filter((_, k) => k !== j) })
+                            }
+                            className='text-slate-500 hover:text-red-600'
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <button
               type='button'
               onClick={() =>
@@ -601,7 +610,7 @@ export const AwardCatalogEditor = ({
       <div className='overflow-x-auto'>
         <table className='w-full text-sm'>
           <thead>
-            <tr className='text-left text-xs text-slate-400'>
+            <tr className='text-left text-xs text-slate-500'>
               <th className='pb-1 font-normal'>Code</th>
               <th className='pb-1 font-normal'>Name</th>
               <th className='pb-1 font-normal'>Cadence</th>
@@ -621,6 +630,7 @@ export const AwardCatalogEditor = ({
                 <td className='py-1 pr-2'>
                   {r.isNew ? (
                     <input
+                      aria-label='Award code'
                       required
                       pattern='[a-z][a-z0-9_]{1,30}'
                       title='lowercase letters, digits and _ (e.g. spot_award)'
@@ -635,6 +645,7 @@ export const AwardCatalogEditor = ({
                 </td>
                 <td className='py-1 pr-2'>
                   <input
+                    aria-label='Award name'
                     required
                     minLength={2}
                     maxLength={60}
@@ -645,6 +656,7 @@ export const AwardCatalogEditor = ({
                 </td>
                 <td className='py-1 pr-2'>
                   <select
+                    aria-label='Cadence'
                     value={r.cadence}
                     onChange={(e) => patch(i, { cadence: e.target.value as AwardRow['cadence'] })}
                     className={inputClass}
@@ -658,6 +670,7 @@ export const AwardCatalogEditor = ({
                 </td>
                 <td className='py-1 pr-2'>
                   <input
+                    aria-label='Value (₹)'
                     required
                     type='number'
                     min={0}
@@ -679,7 +692,7 @@ export const AwardCatalogEditor = ({
                   <button
                     type='button'
                     onClick={() => setRows(rows.filter((_, j) => j !== i))}
-                    className='text-xs text-slate-400 hover:text-red-600'
+                    className='text-xs text-slate-500 hover:text-red-600'
                   >
                     Remove
                   </button>
@@ -732,7 +745,7 @@ export const PeopleListEditor = ({
       }}
       className='space-y-2'
     >
-      {ids.length === 0 && <p className='text-xs text-slate-400'>Nobody yet.</p>}
+      {ids.length === 0 && <p className='text-xs text-slate-500'>Nobody yet.</p>}
       <ul className='flex flex-wrap gap-2'>
         {ids.map((id) => (
           <li
@@ -743,7 +756,7 @@ export const PeopleListEditor = ({
             <button
               type='button'
               onClick={() => setIds(ids.filter((x) => x !== id))}
-              className='text-slate-400 hover:text-red-600'
+              className='text-slate-500 hover:text-red-600'
               aria-label={`Remove ${nameOf(id)}`}
             >
               ×
@@ -753,6 +766,7 @@ export const PeopleListEditor = ({
       </ul>
       <div className='flex flex-wrap items-end gap-2'>
         <select
+          aria-label='Add a person'
           value={pick}
           onChange={(e) => setPick(e.target.value)}
           className={`${inputClass} min-w-[16rem]`}
@@ -800,6 +814,7 @@ export const DepartmentEditor = ({
       className='flex flex-wrap items-end gap-2'
     >
       <select
+        aria-label='Department'
         value={id}
         onChange={(e) => setId(e.target.value)}
         className={`${inputClass} min-w-[16rem]`}
@@ -911,6 +926,7 @@ export const DepartmentTargetsEditor = ({
                 {nameOf(r.departmentId)}
               </span>
               <input
+                aria-label='What this department is measured on'
                 value={r.kpi}
                 maxLength={300}
                 onChange={(e) => setRow(i, { kpi: e.target.value })}
@@ -918,6 +934,7 @@ export const DepartmentTargetsEditor = ({
                 className={inputClass}
               />
               <input
+                aria-label='Updates %'
                 type='number'
                 min={0}
                 max={100}
@@ -928,6 +945,7 @@ export const DepartmentTargetsEditor = ({
                 className={inputClass}
               />
               <input
+                aria-label='Goals %'
                 type='number'
                 min={0}
                 max={100}
@@ -951,6 +969,7 @@ export const DepartmentTargetsEditor = ({
       )}
       <div className='flex flex-wrap items-center gap-2'>
         <select
+          aria-label='Add a department'
           value={adding}
           onChange={(e) => setAdding(e.target.value)}
           className={`${inputClass} min-w-[14rem]`}
@@ -1001,7 +1020,9 @@ export const PayslipHeaderEditor = ({ value, onSave, children }: EditorProps<Pay
       return;
     }
     if (file.size > LOGO_MAX_BYTES) {
-      setLogoError(`The logo must be under ${LOGO_MAX_BYTES / 1024} KB — this one is ${Math.ceil(file.size / 1024)} KB.`);
+      setLogoError(
+        `The logo must be under ${LOGO_MAX_BYTES / 1024} KB — this one is ${Math.ceil(file.size / 1024)} KB.`,
+      );
       return;
     }
     const reader = new FileReader();
@@ -1051,7 +1072,7 @@ export const PayslipHeaderEditor = ({ value, onSave, children }: EditorProps<Pay
             className='h-12 w-12 rounded-md border border-slate-200 bg-white object-contain p-1'
           />
         ) : (
-          <span className='text-xs text-slate-400'>None</span>
+          <span className='text-xs text-slate-500'>None</span>
         )}
         <label className='cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50'>
           {draft.logo ? 'Replace' : 'Upload'}
@@ -1074,7 +1095,9 @@ export const PayslipHeaderEditor = ({ value, onSave, children }: EditorProps<Pay
             Remove
           </button>
         )}
-        <span className='text-xs text-slate-400'>PNG or JPEG, up to 60 KB; a square logo looks best.</span>
+        <span className='text-xs text-slate-500'>
+          PNG or JPEG, up to 60 KB; a square logo looks best.
+        </span>
       </div>
       {logoError && <p className='text-xs text-red-600'>{logoError}</p>}
       {children}

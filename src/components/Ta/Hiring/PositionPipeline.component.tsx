@@ -24,6 +24,7 @@ const PoolPicker = ({ onPick, onClose }: { onPick: (id: string) => void; onClose
   return (
     <div className='space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3'>
       <input
+        aria-label='Search the talent pool by name, email or phone'
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder='Search the talent pool by name, email or phone'
@@ -36,7 +37,7 @@ const PoolPicker = ({ onPick, onClose }: { onPick: (id: string) => void; onClose
             <li key={c.id} className='flex items-center justify-between gap-2 text-sm'>
               <span>
                 {c.name}{' '}
-                <span className='text-xs text-slate-400'>
+                <span className='text-xs text-slate-500'>
                   {c.applications.length
                     ? `${c.applications.length} earlier application(s)`
                     : 'no applications yet'}
@@ -110,7 +111,7 @@ export const PositionPipeline = ({ position }: { position: Position }) => {
 
   return (
     <div className='space-y-2'>
-      {pipeline.data?.length === 0 && <p className='text-xs text-slate-400'>No candidates yet.</p>}
+      {pipeline.data?.length === 0 && <p className='text-xs text-slate-500'>No candidates yet.</p>}
       {pipeline.data?.map((a) => (
         <ApplicationRow key={a.id} app={a} />
       ))}
@@ -154,6 +155,7 @@ export const InterviewerList = ({ req, canSwap }: { req: Requisition; canSwap: b
           {editing === r.round ? (
             <span className='flex gap-2'>
               <select
+                aria-label='Who'
                 value={pick}
                 onChange={(e) => setPick(e.target.value)}
                 className='rounded-md border border-slate-300 px-2 py-1 text-xs'

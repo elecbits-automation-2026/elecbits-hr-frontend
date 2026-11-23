@@ -95,12 +95,14 @@ const AttendancePage = () => {
         <h1 className='text-2xl font-semibold text-slate-800'>Attendance</h1>
         <div className='flex flex-wrap items-center gap-2'>
           <input
+            aria-label='Month'
             type='month'
             value={month}
             onChange={(e) => setMonth(e.target.value || currentMonth())}
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
           <select
+            aria-label='Location'
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
@@ -113,6 +115,7 @@ const AttendancePage = () => {
             ))}
           </select>
           <select
+            aria-label='Department'
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
@@ -142,53 +145,55 @@ const AttendancePage = () => {
         {org.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
         {org.error && <p className='text-sm text-red-600'>{apiErrorMessage(org.error)}</p>}
         {org.data && (
-          <table className='w-full text-left text-sm'>
-            <thead>
-              <tr className='border-b border-slate-200 text-xs text-slate-500'>
-                <th className='py-2 pr-3 font-medium'>Employee</th>
-                <th className='py-2 pr-3 font-medium'>Present</th>
-                <th className='py-2 pr-3 font-medium'>Absent</th>
-                <th className='py-2 pr-3 font-medium'>Leave</th>
-                <th className='py-2 pr-3 font-medium'>Remote</th>
-                <th className='py-2 pr-3 font-medium'>Late ins</th>
-                <th className='py-2 pr-3 font-medium'>Early outs</th>
-                <th className='py-2 font-medium'></th>
-              </tr>
-            </thead>
-            <tbody>
-              {org.data.map((t) => (
-                <tr key={t.employee.id} className='border-b border-slate-100'>
-                  <td className='py-2 pr-3'>
-                    {t.employee.name}
-                    <span className='ml-1 font-mono text-xs text-slate-400'>
-                      {t.employee.employeeCode}
-                    </span>
-                  </td>
-                  <td className='py-2 pr-3'>{t.summary.present}</td>
-                  <td className='py-2 pr-3'>{t.summary.absent}</td>
-                  <td className='py-2 pr-3'>{t.summary.leave}</td>
-                  <td className='py-2 pr-3'>{t.summary.wfh}</td>
-                  <td className={`py-2 pr-3 ${t.summary.lateIns > 0 ? 'text-red-600' : ''}`}>
-                    {t.summary.lateIns}
-                  </td>
-                  <td className={`py-2 pr-3 ${t.summary.earlyOuts > 0 ? 'text-red-600' : ''}`}>
-                    {t.summary.earlyOuts}
-                  </td>
-                  <td className='py-2'>
-                    <button
-                      type='button'
-                      onClick={() =>
-                        setExpandedId(expandedId === t.employee.id ? null : t.employee.id)
-                      }
-                      className='text-xs text-brand-600 hover:underline'
-                    >
-                      {expandedId === t.employee.id ? 'Hide' : 'Calendar'}
-                    </button>
-                  </td>
+          <div className='overflow-x-auto'>
+            <table className='w-full text-left text-sm'>
+              <thead>
+                <tr className='border-b border-slate-200 text-xs text-slate-500'>
+                  <th className='py-2 pr-3 font-medium'>Employee</th>
+                  <th className='py-2 pr-3 font-medium'>Present</th>
+                  <th className='py-2 pr-3 font-medium'>Absent</th>
+                  <th className='py-2 pr-3 font-medium'>Leave</th>
+                  <th className='py-2 pr-3 font-medium'>Remote</th>
+                  <th className='py-2 pr-3 font-medium'>Late ins</th>
+                  <th className='py-2 pr-3 font-medium'>Early outs</th>
+                  <th className='py-2 font-medium'></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {org.data.map((t) => (
+                  <tr key={t.employee.id} className='border-b border-slate-100'>
+                    <td className='py-2 pr-3'>
+                      {t.employee.name}
+                      <span className='ml-1 font-mono text-xs text-slate-500'>
+                        {t.employee.employeeCode}
+                      </span>
+                    </td>
+                    <td className='py-2 pr-3'>{t.summary.present}</td>
+                    <td className='py-2 pr-3'>{t.summary.absent}</td>
+                    <td className='py-2 pr-3'>{t.summary.leave}</td>
+                    <td className='py-2 pr-3'>{t.summary.wfh}</td>
+                    <td className={`py-2 pr-3 ${t.summary.lateIns > 0 ? 'text-red-600' : ''}`}>
+                      {t.summary.lateIns}
+                    </td>
+                    <td className={`py-2 pr-3 ${t.summary.earlyOuts > 0 ? 'text-red-600' : ''}`}>
+                      {t.summary.earlyOuts}
+                    </td>
+                    <td className='py-2'>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          setExpandedId(expandedId === t.employee.id ? null : t.employee.id)
+                        }
+                        className='text-xs text-brand-600 hover:underline'
+                      >
+                        {expandedId === t.employee.id ? 'Hide' : 'Calendar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         {expandedId && org.data && (
           <div className='mt-4 border-t border-slate-100 pt-4'>
@@ -202,7 +207,7 @@ const AttendancePage = () => {
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='mb-3 text-sm font-semibold text-slate-700'>Mark attendance</h2>
-        <p className='mb-3 text-xs text-slate-400'>
+        <p className='mb-3 text-xs text-slate-500'>
           For days someone worked but didn’t punch — recorded as regularized. A single-day approved
           leave on that date is revoked and its balance refunded.
         </p>
@@ -214,6 +219,7 @@ const AttendancePage = () => {
           className='flex flex-wrap items-end gap-2'
         >
           <select
+            aria-label='Employee'
             required
             value={markEmployee}
             onChange={(e) => setMarkEmployee(e.target.value)}
@@ -227,6 +233,7 @@ const AttendancePage = () => {
             ))}
           </select>
           <input
+            aria-label='Date'
             type='date'
             required
             value={markDate}
@@ -234,6 +241,7 @@ const AttendancePage = () => {
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
           <input
+            aria-label='Check-in time'
             type='time'
             required
             value={markIn}
@@ -241,6 +249,7 @@ const AttendancePage = () => {
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
           <input
+            aria-label='Check-out time'
             type='time'
             required
             value={markOut}
@@ -264,9 +273,9 @@ const AttendancePage = () => {
         <h2 className='text-sm font-semibold text-slate-700'>
           Pending remote-work requests ({(remoteQueue.data ?? []).length})
         </h2>
-        <p className='mb-3 text-xs text-slate-400'>
-          For your information — each person&rsquo;s RM approves remote work. They can clock in
-          from anywhere while it waits; if the RM declines, those days count as absent.
+        <p className='mb-3 text-xs text-slate-500'>
+          For your information — each person&rsquo;s RM approves remote work. They can clock in from
+          anywhere while it waits; if the RM declines, those days count as absent.
         </p>
         {remoteQueue.data && remoteQueue.data.length === 0 && (
           <p className='text-sm text-slate-500'>Nothing pending.</p>
@@ -280,9 +289,9 @@ const AttendancePage = () => {
               <b>{w.employee.name}</b> ·{' '}
               {w.startDate === w.endDate ? w.startDate : `${w.startDate} → ${w.endDate}`}
               {w.reason && <span className='ml-1 text-slate-500'>({w.reason})</span>}
-              <span className='ml-2 text-xs text-slate-400'>{wfhSlots(w)}</span>
+              <span className='ml-2 text-xs text-slate-500'>{wfhSlots(w)}</span>
             </span>
-            <span className='text-xs text-slate-400'>Waiting for the RM</span>
+            <span className='text-xs text-slate-500'>Waiting for the RM</span>
           </div>
         ))}
       </div>
@@ -291,6 +300,7 @@ const AttendancePage = () => {
         <h2 className='mb-3 text-sm font-semibold text-slate-700'>Holidays {year}</h2>
         <form onSubmit={submitHoliday} className='mb-3 flex flex-wrap items-end gap-2'>
           <input
+            aria-label='Holiday date'
             type='date'
             required
             value={holidayDate}
@@ -298,6 +308,7 @@ const AttendancePage = () => {
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
           <input
+            aria-label='Holiday name'
             required
             value={holidayName}
             onChange={(e) => setHolidayName(e.target.value)}
@@ -340,7 +351,7 @@ const AttendancePage = () => {
                 <button
                   type='button'
                   onClick={() => setConfirmingHolidayId(null)}
-                  className='text-slate-400 hover:text-slate-600'
+                  className='text-slate-500 hover:text-slate-600'
                 >
                   Keep it
                 </button>
@@ -350,7 +361,7 @@ const AttendancePage = () => {
                 type='button'
                 disabled={removeHoliday.isPending}
                 onClick={() => setConfirmingHolidayId(h.id)}
-                className='text-xs text-slate-400 hover:text-red-600'
+                className='text-xs text-slate-500 hover:text-red-600'
               >
                 Remove
               </button>

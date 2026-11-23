@@ -1,17 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  Application,
-  CandidateDocStatus,
-  Level,
-  MarkHiredInput,
-} from '@app-types/api.types';
+import type { Application, CandidateDocStatus, Level, MarkHiredInput } from '@app-types/api.types';
 import { DOC_STATUS_LABEL, rupees } from '@constants/Common/hiring.constants';
 import { concernsApi } from '@services/api/concerns.api';
 import { hireApi } from '@services/api/hire.api';
 import { hiringApi } from '@services/api/hiring.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const input =
   'w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:outline-none';
@@ -21,12 +17,18 @@ const primary =
   'rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50';
 const LEVELS: Level[] = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
 const today = () => new Date().toLocaleDateString('en-CA');
-const label = 'text-[10px] font-semibold uppercase tracking-wide text-slate-400';
+const label = 'text-xs font-semibold uppercase tracking-wide text-slate-500';
 
 const useRefresh = () => {
   const queryClient = useQueryClient();
   return () => {
-    for (const key of ['pipeline', 'candidates', 'hiring-requisitions', 'pending-offers', 'candidate-docs']) {
+    for (const key of [
+      'pipeline',
+      'candidates',
+      'hiring-requisitions',
+      'pending-offers',
+      'candidate-docs',
+    ]) {
       queryClient.invalidateQueries({ queryKey: [key] });
     }
   };
@@ -35,7 +37,10 @@ const useRefresh = () => {
 /** The documents asked once every round passed, and the candidate folder (workflow deck 13–14). */
 const Documents = ({ app, canWork }: { app: Application; canWork: boolean }) => {
   const refresh = useRefresh();
-  const docs = useQuery({ queryKey: ['candidate-docs', app.id], queryFn: () => hireApi.documents(app.id) });
+  const docs = useQuery({
+    queryKey: ['candidate-docs', app.id],
+    queryFn: () => hireApi.documents(app.id),
+  });
   const [name, setName] = useState('');
   const [folder, setFolder] = useState(app.folderLink ?? '');
   const set = useMutation({
@@ -59,7 +64,7 @@ const Documents = ({ app, canWork }: { app: Application; canWork: boolean }) => 
     <section className='space-y-2 rounded-lg border border-slate-200 p-3'>
       <p className='text-sm font-semibold text-slate-800'>
         Documents{' '}
-        <span className='text-xs font-normal text-slate-400'>
+        <span className='text-xs font-normal text-slate-500'>
           {app.documents.received} received · {app.documents.pending} pending
         </span>
       </p>
@@ -73,7 +78,9 @@ const Documents = ({ app, canWork }: { app: Application; canWork: boolean }) => 
             {canWork ? (
               <select
                 value={d.status}
-                onChange={(e) => set.mutate({ id: d.id, status: e.target.value as CandidateDocStatus })}
+                onChange={(e) =>
+                  set.mutate({ id: d.id, status: e.target.value as CandidateDocStatus })
+                }
                 className='rounded-md border border-slate-300 px-2 py-0.5 text-xs'
                 aria-label={`Status of ${d.name}`}
               >
@@ -91,8 +98,19 @@ const Documents = ({ app, canWork }: { app: Application; canWork: boolean }) => 
       </ul>
       {canWork && (
         <div className='flex gap-2'>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder='Ask for another document' className={input} />
-          <button type='button' disabled={!name.trim() || add.isPending} onClick={() => add.mutate()} className={btn}>
+          <input
+            aria-label='Ask for another document'
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder='Ask for another document'
+            className={input}
+          />
+          <button
+            type='button'
+            disabled={!name.trim() || add.isPending}
+            onClick={() => add.mutate()}
+            className={btn}
+          >
             Add
           </button>
         </div>
@@ -103,27 +121,48 @@ const Documents = ({ app, canWork }: { app: Application; canWork: boolean }) => 
         </p>
         {canWork ? (
           <div className='flex gap-2'>
-            <input value={folder} onChange={(e) => setFolder(e.target.value)} placeholder='https://drive.google.com/…' className={input} />
-            <button type='button' disabled={saveFolder.isPending} onClick={() => saveFolder.mutate()} className={btn}>
+            <input
+              aria-label='Candidate folder link'
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              placeholder='https://drive.google.com/…'
+              className={input}
+            />
+            <button
+              type='button'
+              disabled={saveFolder.isPending}
+              onClick={() => saveFolder.mutate()}
+              className={btn}
+            >
               Save
             </button>
           </div>
         ) : app.folderLink ? (
-          <a href={app.folderLink} target='_blank' rel='noreferrer' className='text-xs text-blue-700 underline'>
+          <a
+            href={app.folderLink}
+            target='_blank'
+            rel='noreferrer'
+            className='text-xs text-blue-700 underline'
+          >
             Open the folder
           </a>
         ) : (
-          <p className='text-xs text-slate-400'>Not linked yet.</p>
+          <p className='text-xs text-slate-500'>Not linked yet.</p>
         )}
       </div>
       {(set.error || add.error || saveFolder.error) && (
-        <p className='text-xs text-red-600'>{apiErrorMessage(set.error ?? add.error ?? saveFolder.error)}</p>
+        <p className='text-xs text-red-600'>
+          {apiErrorMessage(set.error ?? add.error ?? saveFolder.error)}
+        </p>
       )}
     </section>
   );
 };
 
-const OFFER_STATUS: Record<NonNullable<Application['offer']>['status'], { text: string; cls: string }> = {
+const OFFER_STATUS: Record<
+  NonNullable<Application['offer']>['status'],
+  { text: string; cls: string }
+> = {
   draft: { text: 'Draft', cls: 'bg-slate-100 text-slate-600' },
   pending: { text: 'With the HR Head', cls: 'bg-blue-50 text-blue-700' },
   returned: { text: 'Returned by the HR Head', cls: 'bg-amber-50 text-amber-800' },
@@ -144,7 +183,10 @@ const Offer = ({ app, canWork }: { app: Application; canWork: boolean }) => {
   const [file, setFile] = useState<File | null>(null);
   const editable = canWork && ['interviewed', 'decision', 'selected'].includes(app.stage);
   const dirty =
-    !o || Number(ctc) !== o.ctc || joiningDate !== o.joiningDate || terms.trim() !== (o.terms ?? '');
+    !o ||
+    Number(ctc) !== o.ctc ||
+    joiningDate !== o.joiningDate ||
+    terms.trim() !== (o.terms ?? '');
   const save = useMutation({
     mutationFn: async () => {
       if (file) await hireApi.uploadOfferLetter(app.id, file);
@@ -170,34 +212,61 @@ const Offer = ({ app, canWork }: { app: Application; canWork: boolean }) => {
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <p className='text-sm font-semibold text-slate-800'>Offer</p>
         {o && (
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${OFFER_STATUS[o.status].cls}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${OFFER_STATUS[o.status].cls}`}
+          >
             {OFFER_STATUS[o.status].text}
             {o.status === 'approved' && o.approvedByName && <> · {o.approvedByName}</>}
           </span>
         )}
       </div>
       {o?.status === 'returned' && o.returnReason && (
-        <p className='rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800'>{o.returnReason}</p>
+        <p className='rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800'>
+          {o.returnReason}
+        </p>
       )}
       {editable ? (
         <div className='grid gap-2 sm:grid-cols-2'>
           <label className='space-y-1'>
             <span className={label}>Annual CTC (₹)</span>
-            <input type='number' min={1} value={ctc} onChange={(e) => setCtc(e.target.value)} className={input} />
+            <input
+              type='number'
+              min={1}
+              value={ctc}
+              onChange={(e) => setCtc(e.target.value)}
+              className={input}
+            />
           </label>
           <label className='space-y-1'>
             <span className={label}>Joining date</span>
-            <input type='date' min={today()} value={joiningDate} onChange={(e) => setJoiningDate(e.target.value)} className={input} />
+            <input
+              type='date'
+              min={today()}
+              value={joiningDate}
+              onChange={(e) => setJoiningDate(e.target.value)}
+              className={input}
+            />
           </label>
           <label className='space-y-1 sm:col-span-2'>
             <span className={label}>Other terms (bonus, probation, relocation…)</span>
-            <textarea rows={2} value={terms} onChange={(e) => setTerms(e.target.value)} className={input} />
+            <textarea
+              rows={2}
+              value={terms}
+              onChange={(e) => setTerms(e.target.value)}
+              className={input}
+            />
           </label>
           <label className='space-y-1 sm:col-span-2'>
             <span className={label}>
-              Draft offer letter (PDF / Word){app.hasOfferLetter && ' — uploaded; choose a file to replace it'}
+              Draft offer letter (PDF / Word)
+              {app.hasOfferLetter && ' — uploaded; choose a file to replace it'}
             </span>
-            <input type='file' accept='.pdf,.doc,.docx' onChange={(e) => setFile(e.target.files?.[0] ?? null)} className='text-xs' />
+            <input
+              type='file'
+              accept='.pdf,.doc,.docx'
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className='text-xs'
+            />
           </label>
           {o?.status === 'approved' && dirty && (
             <p className='rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800 sm:col-span-2'>
@@ -226,7 +295,12 @@ const Offer = ({ app, canWork }: { app: Application; canWork: boolean }) => {
           </button>
         )}
         {editable && (
-          <button type='button' disabled={!valid || (!dirty && !file) || save.isPending} onClick={() => save.mutate()} className={btn}>
+          <button
+            type='button'
+            disabled={!valid || (!dirty && !file) || save.isPending}
+            onClick={() => save.mutate()}
+            className={btn}
+          >
             Save
           </button>
         )}
@@ -242,13 +316,20 @@ const Offer = ({ app, canWork }: { app: Application; canWork: boolean }) => {
           </button>
         )}
         {canWork && app.stage === 'selected' && !dirty && (
-          <button type='button' disabled={share.isPending} onClick={() => share.mutate()} className={primary}>
+          <button
+            type='button'
+            disabled={share.isPending}
+            onClick={() => share.mutate()}
+            className={primary}
+          >
             Share the signed offer
           </button>
         )}
       </div>
       {(save.error || submit.error || share.error) && (
-        <p className='text-xs text-red-600'>{apiErrorMessage(save.error ?? submit.error ?? share.error)}</p>
+        <p className='text-xs text-red-600'>
+          {apiErrorMessage(save.error ?? submit.error ?? share.error)}
+        </p>
       )}
     </section>
   );
@@ -281,16 +362,22 @@ const MarkHired = ({ app, onClose }: { app: Application; onClose: () => void }) 
   const set = (patch: Partial<MarkHiredInput>) => setForm({ ...form, ...patch });
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <div className='w-full max-w-lg space-y-3 rounded-xl bg-white p-6 shadow-lg'>
         <h2 className='text-lg font-semibold text-slate-800'>Mark hired: {app.candidateName}</h2>
         {link ? (
           <>
             <p className='text-sm text-slate-600'>
-              The employee record is created, onboarding has started and HRBP has the handover.
-              Send the joiner this single-use sign-in link (shown once):
+              The employee record is created, onboarding has started and HRBP has the handover. Send
+              the joiner this single-use sign-in link (shown once):
             </p>
-            <input readOnly value={link} onFocus={(e) => e.target.select()} className={input} />
+            <input
+              aria-label='Sign-in link'
+              readOnly
+              value={link}
+              onFocus={(e) => e.target.select()}
+              className={input}
+            />
             <div className='flex justify-end'>
               <button type='button' onClick={onClose} className={primary}>
                 Done
@@ -304,9 +391,26 @@ const MarkHired = ({ app, onClose }: { app: Application; onClose: () => void }) 
               rules (company email only, the RM must exist).
             </p>
             <div className='grid grid-cols-2 gap-2'>
-              <input value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder='Company email' className={input} />
-              <input value={form.employeeCode} onChange={(e) => set({ employeeCode: e.target.value })} placeholder='Employee code' className={input} />
-              <select value={form.level} onChange={(e) => set({ level: e.target.value as Level })} className={input}>
+              <input
+                aria-label='Company email'
+                value={form.email}
+                onChange={(e) => set({ email: e.target.value })}
+                placeholder='Company email'
+                className={input}
+              />
+              <input
+                aria-label='Employee code'
+                value={form.employeeCode}
+                onChange={(e) => set({ employeeCode: e.target.value })}
+                placeholder='Employee code'
+                className={input}
+              />
+              <select
+                aria-label='Level'
+                value={form.level}
+                onChange={(e) => set({ level: e.target.value as Level })}
+                className={input}
+              >
                 {LEVELS.map((l) => (
                   <option key={l} value={l}>
                     {l}
@@ -314,8 +418,11 @@ const MarkHired = ({ app, onClose }: { app: Application; onClose: () => void }) 
                 ))}
               </select>
               <select
+                aria-label='Employment type'
                 value={form.employmentType}
-                onChange={(e) => set({ employmentType: e.target.value as MarkHiredInput['employmentType'] })}
+                onChange={(e) =>
+                  set({ employmentType: e.target.value as MarkHiredInput['employmentType'] })
+                }
                 className={input}
               >
                 <option value='permanent'>Permanent</option>
@@ -323,8 +430,19 @@ const MarkHired = ({ app, onClose }: { app: Application; onClose: () => void }) 
                 <option value='intern'>Intern</option>
               </select>
             </div>
-            <input value={form.designation ?? ''} onChange={(e) => set({ designation: e.target.value })} placeholder='Designation' className={input} />
-            <select value={form.reportsToId} onChange={(e) => set({ reportsToId: e.target.value })} className={input}>
+            <input
+              aria-label='Designation'
+              value={form.designation ?? ''}
+              onChange={(e) => set({ designation: e.target.value })}
+              placeholder='Designation'
+              className={input}
+            />
+            <select
+              aria-label='Reporting manager'
+              value={form.reportsToId}
+              onChange={(e) => set({ reportsToId: e.target.value })}
+              className={input}
+            >
               <option value=''>Reporting manager…</option>
               {directory.data?.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -349,7 +467,7 @@ const MarkHired = ({ app, onClose }: { app: Application; onClose: () => void }) 
           </>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -379,7 +497,10 @@ const HirePanel = ({ app, canWork }: { app: Application; canWork: boolean }) => 
       refresh();
     },
   });
-  const joined = useMutation({ mutationFn: () => hireApi.confirmJoined(app.id), onSuccess: refresh });
+  const joined = useMutation({
+    mutationFn: () => hireApi.confirmJoined(app.id),
+    onSuccess: refresh,
+  });
   const LABEL = {
     declined: 'Record decline',
     withdraw: 'Withdraw the offer',
@@ -392,12 +513,18 @@ const HirePanel = ({ app, canWork }: { app: Application; canWork: boolean }) => 
       {(beforeOffer || app.stage === 'offered' || app.stage === 'hired') && (
         <Documents app={app} canWork={canWork} />
       )}
-      {beforeOffer && <Offer key={`${app.offer?.status}-${app.offer?.ctc}`} app={app} canWork={canWork} />}
+      {beforeOffer && (
+        <Offer key={`${app.offer?.status}-${app.offer?.ctc}`} app={app} canWork={canWork} />
+      )}
       {app.stage === 'offered' && (
         <p className='text-xs text-slate-500'>
           Offer out: {app.offeredCtc !== null && rupees(app.offeredCtc)} · joining {app.joiningDate}
           {app.hasSignedLetter && (
-            <button type='button' onClick={() => hireApi.openSignedLetter(app.id)} className='ml-2 underline'>
+            <button
+              type='button'
+              onClick={() => hireApi.openSignedLetter(app.id)}
+              className='ml-2 underline'
+            >
               signed letter
             </button>
           )}
@@ -409,7 +536,14 @@ const HirePanel = ({ app, canWork }: { app: Application; canWork: boolean }) => 
         </p>
       )}
       {ending && (
-        <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder='Reason' className={input} />
+        <textarea
+          aria-label='Reason'
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={2}
+          placeholder='Reason'
+          className={input}
+        />
       )}
       {(end.error || joined.error) && (
         <p className='text-xs text-red-600'>{apiErrorMessage(end.error ?? joined.error)}</p>
@@ -455,7 +589,11 @@ const HirePanel = ({ app, canWork }: { app: Application; canWork: boolean }) => 
                 <button
                   type='button'
                   disabled={joined.isPending || (!!app.joiningDate && app.joiningDate > today())}
-                  title={app.joiningDate && app.joiningDate > today() ? `Joins on ${app.joiningDate}` : undefined}
+                  title={
+                    app.joiningDate && app.joiningDate > today()
+                      ? `Joins on ${app.joiningDate}`
+                      : undefined
+                  }
                   onClick={() => joined.mutate()}
                   className={primary}
                 >

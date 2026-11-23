@@ -25,6 +25,8 @@ import { quarterReportsApi } from '@services/api/quarterReports.api';
 import { meApi } from '@services/api/me.api';
 import { performanceApi } from '@services/api/performance.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const DAY_MS = 86_400_000;
 const localDate = (d: Date) => d.toLocaleDateString('en-CA');
@@ -90,13 +92,13 @@ const TeamUpdatesGrid = ({
   return (
     <div className='mt-3 overflow-x-auto'>
       <table className='w-full min-w-[36rem] text-left text-sm'>
-        <thead className='text-[11px] text-slate-400'>
+        <thead className='text-xs text-slate-500'>
           <tr>
             <th className='py-1 pr-3 font-medium'>Person</th>
             {dates.map((d) => (
               <th key={d} className='px-1 py-1 text-center font-medium'>
                 {new Date(`${d}T00:00:00`).toLocaleDateString([], { weekday: 'short' })}
-                <div className='font-mono text-[10px]'>{d.slice(8)}</div>
+                <div className='font-mono text-xs'>{d.slice(8)}</div>
               </th>
             ))}
             <th className='py-1 pl-3 font-medium'>Missed this month</th>
@@ -132,7 +134,7 @@ const TeamUpdatesGrid = ({
               })}
               <td className='py-1.5 pl-3'>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[11px] ${
+                  className={`rounded-full px-2 py-0.5 text-xs ${
                     r.overAllowance ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
                   }`}
                 >
@@ -144,9 +146,9 @@ const TeamUpdatesGrid = ({
           ))}
         </tbody>
       </table>
-      <p className='mt-2 text-[11px] text-slate-400'>
-        Green = written · red = missed · amber = due today or waiting for you · blue = leave.
-        Hover a day for its status; click a filled one to read it.
+      <p className='mt-2 text-xs text-slate-500'>
+        Green = written · red = missed · amber = due today or waiting for you · blue = leave. Hover
+        a day for its status; click a filled one to read it.
       </p>
     </div>
   );
@@ -163,7 +165,7 @@ const daysLeft = (dueOn: string, today: string): number =>
 /** "12 days left" / "due today" / "3 days overdue" — amber in the last 14 days, red once past. */
 const DaysLeftTag = ({ dueOn, today }: { dueOn: string; today: string }) => {
   const n = daysLeft(dueOn, today);
-  const cls = n < 0 ? 'text-red-700' : n <= 14 ? 'text-amber-700' : 'text-slate-400';
+  const cls = n < 0 ? 'text-red-700' : n <= 14 ? 'text-amber-700' : 'text-slate-500';
   const label =
     n < 0
       ? `${-n} ${n === -1 ? 'day' : 'days'} overdue`
@@ -306,7 +308,7 @@ const MyPerformancePage = () => {
   });
 
   if (mine.isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (mine.error) return <p className='text-sm text-red-600'>{apiErrorMessage(mine.error)}</p>;
+  if (mine.error) return <QueryError error={mine.error} />;
   if (!mine.data) return null;
 
   const g = mine.data;
@@ -326,9 +328,10 @@ const MyPerformancePage = () => {
     <div className='w-full space-y-4'>
       <div className='flex flex-wrap items-baseline justify-between gap-2'>
         <h1 className='text-2xl font-semibold text-slate-800'>Goals &amp; updates</h1>
-        <span className='flex items-center gap-2 text-sm text-slate-400'>
+        <span className='flex items-center gap-2 text-sm text-slate-500'>
           <span className='rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700'>
-            {g.cycle.name} · {(() => {
+            {g.cycle.name} ·{' '}
+            {(() => {
               const n = Math.max(0, daysLeft(g.cycle.endDate, today));
               return `${n} ${n === 1 ? 'day' : 'days'} left`;
             })()}
@@ -354,7 +357,7 @@ const MyPerformancePage = () => {
       {view === 'mine' && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <div className='flex flex-wrap items-baseline justify-between gap-2'>
-            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
               Goals this quarter
             </h2>
             {/* Self-governing (reports to Admin): nobody above sets their goals. */}
@@ -387,7 +390,8 @@ const MyPerformancePage = () => {
 
           {g.departmentKpi && (
             <p className='mt-2 text-sm text-slate-600'>
-              Your function is measured on: <span className='text-slate-800'>{g.departmentKpi}</span>
+              Your function is measured on:{' '}
+              <span className='text-slate-800'>{g.departmentKpi}</span>
             </p>
           )}
 
@@ -396,13 +400,13 @@ const MyPerformancePage = () => {
               {g.goals.length} {g.goals.length === 1 ? 'goal' : 'goals'} · weights total{' '}
               <span className={g.weightTotal === 100 ? 'text-slate-700' : 'text-amber-700'}>
                 {g.weightTotal}
-              </span>
-              {' '}/ 100
+              </span>{' '}
+              / 100
             </p>
           )}
 
           {g.goals.length > 0 && (
-            <p className='mt-1 text-xs text-slate-400'>
+            <p className='mt-1 text-xs text-slate-500'>
               {(Object.keys(GOAL_CATEGORY_LABELS) as GoalCategory[])
                 .map(
                   (c) =>
@@ -420,7 +424,7 @@ const MyPerformancePage = () => {
           )}
 
           {g.goals.length === 0 ? (
-            <p className='mt-3 text-sm text-slate-400'>
+            <p className='mt-3 text-sm text-slate-500'>
               No goals yet — they are set by your manager (or HR), not by you. Once set, only YOU
               move the progress.
             </p>
@@ -433,24 +437,24 @@ const MyPerformancePage = () => {
                     <div className='flex flex-wrap items-baseline justify-between gap-2'>
                       <div className='min-w-0'>
                         <span className='font-medium text-slate-800'>{goal.title}</span>
-                        <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600'>
+                        <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600'>
                           {GOAL_CATEGORY_LABELS[goal.category].label}
                         </span>
                         {goal.positionId && (
                           <Link
                             to={`${HR_HIRING_ROUTE}?position=${goal.positionId}`}
                             title='Progress follows the position — work it (JD, scorecard, candidates) in HR → Hiring'
-                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 hover:bg-sky-100'
+                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 hover:bg-sky-100'
                           >
                             hiring · open →
                           </Link>
                         )}
                         {isAtRisk(goal, today) && (
-                          <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700'>
+                          <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold uppercase text-red-700'>
                             at risk
                           </span>
                         )}
-                        <p className='mt-0.5 text-xs text-slate-400'>
+                        <p className='mt-0.5 text-xs text-slate-500'>
                           {goal.metric && (
                             <>
                               {goal.metric}
@@ -474,23 +478,24 @@ const MyPerformancePage = () => {
                         />
                       </div>
                     ) : (
-                    <input
-                      type='range'
-                      min={0}
-                      max={100}
-                      step={5}
-                      value={value}
-                      disabled={progress.isPending}
-                      onChange={(e) =>
-                        setDragging((d) => ({ ...d, [goal.id]: Number(e.target.value) }))
-                      }
-                      onPointerUp={() => {
-                        const v = dragging[goal.id];
-                        if (v !== undefined && v !== goal.progress)
-                          progress.mutate({ id: goal.id, value: v });
-                      }}
-                      className='mt-2 w-full accent-brand-600'
-                    />
+                      <input
+                        aria-label='Progress'
+                        type='range'
+                        min={0}
+                        max={100}
+                        step={5}
+                        value={value}
+                        disabled={progress.isPending}
+                        onChange={(e) =>
+                          setDragging((d) => ({ ...d, [goal.id]: Number(e.target.value) }))
+                        }
+                        onPointerUp={() => {
+                          const v = dragging[goal.id];
+                          if (v !== undefined && v !== goal.progress)
+                            progress.mutate({ id: goal.id, value: v });
+                        }}
+                        className='mt-2 w-full accent-brand-600'
+                      />
                     )}
                   </div>
                 );
@@ -507,10 +512,10 @@ const MyPerformancePage = () => {
       {view === 'mine' && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
           <div className='flex flex-wrap items-baseline justify-between gap-2'>
-            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+            <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
               Today&apos;s work update
             </h2>
-            <span className='text-xs text-slate-400'>
+            <span className='text-xs text-slate-500'>
               {myUpdates.data?.scoringEnabled
                 ? 'Scored against your goals after you submit'
                 : 'AI scoring is off — updates store unscored'}
@@ -540,7 +545,7 @@ const MyPerformancePage = () => {
               className={`mt-1 text-xs ${
                 myUpdates.data.missesThisMonth > myUpdates.data.missAllowance
                   ? 'text-red-600'
-                  : 'text-slate-400'
+                  : 'text-slate-500'
               }`}
             >
               {myUpdates.data.missesThisMonth} missed this month (allowance{' '}
@@ -549,6 +554,7 @@ const MyPerformancePage = () => {
           )}
 
           <textarea
+            aria-label='Update'
             value={draft}
             onChange={(e) => {
               setNote(e.target.value);
@@ -563,12 +569,12 @@ const MyPerformancePage = () => {
             }
             className='mt-3 w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
           />
-          <p className='mt-1 text-right text-xs tabular-nums text-slate-400'>
+          <p className='mt-1 text-right text-xs tabular-nums text-slate-500'>
             {wordCount(draft)} {wordCount(draft) === 1 ? 'word' : 'words'}
           </p>
           {g.goals.length > 0 && (
             <div className='mt-2 flex flex-wrap items-center gap-1.5'>
-              <span className='text-xs text-slate-400'>About:</span>
+              <span className='text-xs text-slate-500'>About:</span>
               {g.goals.map((goal) => (
                 <button
                   key={goal.id}
@@ -592,7 +598,7 @@ const MyPerformancePage = () => {
             </div>
           )}
           <div className='mt-2 flex items-center justify-between gap-3'>
-            <p className='text-xs text-slate-400'>
+            <p className='text-xs text-slate-500'>
               {todays
                 ? 'You already sent today’s update — saving again overwrites it (and rescores it).'
                 : 'One entry per day.'}
@@ -621,7 +627,7 @@ const MyPerformancePage = () => {
               )}
               {todays.feedback && <span className='text-slate-600'>{todays.feedback}</span>}
               {todays.kpiHits && todays.kpiHits.length > 0 && (
-                <p className='mt-1 text-xs text-slate-400'>Touches: {todays.kpiHits.join(' · ')}</p>
+                <p className='mt-1 text-xs text-slate-500'>Touches: {todays.kpiHits.join(' · ')}</p>
               )}
             </div>
           )}
@@ -632,22 +638,22 @@ const MyPerformancePage = () => {
                 .data!.updates.filter((u) => u.date !== today)
                 .map((u) => (
                   <div key={u.id} className='text-sm'>
-                    <span className='font-mono text-xs text-slate-400'>{u.date}</span>
+                    <span className='font-mono text-xs text-slate-500'>{u.date}</span>
                     {u.score !== null && (
                       <span
-                        className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${scoreTone(u.score)}`}
+                        className={`ml-2 rounded-full px-1.5 py-0.5 text-xs font-semibold ${scoreTone(u.score)}`}
                       >
                         {u.score}
                       </span>
                     )}
                     {u.lateStatus && (
-                      <span className='ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700'>
+                      <span className='ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700'>
                         late · {u.lateStatus}
                       </span>
                     )}
                     <p className='mt-0.5 text-slate-600'>{u.note}</p>
                     {u.goalIds && u.goalIds.length > 0 && (
-                      <p className='text-xs text-slate-400'>
+                      <p className='text-xs text-slate-500'>
                         About:{' '}
                         {u.goalIds.map((id) => goalTitle.get(id) ?? 'a past goal').join(' · ')}
                       </p>
@@ -676,7 +682,7 @@ const MyPerformancePage = () => {
               <div key={l.update.id} className='rounded-lg border border-slate-200 bg-white p-3'>
                 <div className='text-sm'>
                   <span className='font-medium text-slate-800'>{l.employee.name}</span>
-                  <span className='ml-2 font-mono text-xs text-slate-400'>{l.update.date}</span>
+                  <span className='ml-2 font-mono text-xs text-slate-500'>{l.update.date}</span>
                 </div>
                 <p className='mt-1 text-sm text-slate-600'>{l.update.note}</p>
                 <div className='mt-2 flex gap-2'>
@@ -684,7 +690,7 @@ const MyPerformancePage = () => {
                     type='button'
                     disabled={decideLate.isPending}
                     onClick={() => decideLate.mutate({ id: l.update.id, decision: 'approve' })}
-                    className='rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-50'
+                    className='rounded-md bg-green-700 px-3 py-1 text-xs font-medium text-white hover:bg-green-600 disabled:opacity-50'
                   >
                     Approve
                   </button>
@@ -706,7 +712,7 @@ const MyPerformancePage = () => {
       {/* ── Own quarter reports (CGP transparency) ─────────── */}
       {view === 'mine' && (myReports.data?.length ?? 0) > 0 && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
-          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
             My quarter reports
           </h2>
           <ul className='mt-3 space-y-2'>
@@ -720,7 +726,7 @@ const MyPerformancePage = () => {
       {/* ── RM: the team's quarter reports ───────────────────── */}
       {view === 'team' && isRm && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
-          <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400'>
+          <h2 className='mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500'>
             Your people — quarter reports
           </h2>
           <QuarterBoard scope='rm' />
@@ -730,82 +736,84 @@ const MyPerformancePage = () => {
       {/* ── RM: the team's goal sheet ──────────────────────── */}
       {view === 'team' && isRm && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
-          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
             Your people — goals
           </h2>
-          <table className='mt-3 min-w-full text-sm'>
-            <thead>
-              <tr className='text-left text-xs uppercase tracking-wide text-slate-400'>
-                <th className='py-2 pr-4'>Person</th>
-                <th className='py-2 pr-4'>Goals</th>
-                <th className='py-2 pr-4'>Attainment</th>
-                <th className='py-2 pr-4'>At risk</th>
-                <th className='py-2'></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(teamGoals.data ?? []).map((r) => (
-                <tr key={r.employee.id} className='border-t border-slate-100'>
-                  <td className='py-2.5 pr-4 font-medium text-slate-700'>
-                    <button
-                      type='button'
-                      onClick={() => openSheet(r.employee.id, r.employee.name)}
-                      title={`Last 5 work updates from ${r.employee.name}`}
-                      className='hover:text-brand-600 hover:underline'
-                    >
-                      {r.employee.name}
-                    </button>
-                  </td>
-                  <td className='py-2.5 pr-4 text-slate-600'>
-                    {r.goalCount === 0 ? (
-                      <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'>
-                        none set
-                      </span>
-                    ) : (
-                      r.goalCount
-                    )}
-                  </td>
-                  <td className='py-2.5 pr-4 tabular-nums text-slate-600'>
-                    {r.attainment === null ? '—' : `${r.attainment}%`}
-                  </td>
-                  <td className='py-2.5 pr-4'>
-                    {r.atRisk > 0 ? (
-                      <span className='rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700'>
-                        {r.atRisk}
-                      </span>
-                    ) : (
-                      <span className='text-xs text-slate-400'>0</span>
-                    )}
-                  </td>
-                  <td className='space-x-3 whitespace-nowrap py-2.5 text-right'>
-                    {r.goalCount > 0 && (
+          <div className='overflow-x-auto'>
+            <table className='mt-3 min-w-full text-sm'>
+              <thead>
+                <tr className='text-left text-xs uppercase tracking-wide text-slate-500'>
+                  <th className='py-2 pr-4'>Person</th>
+                  <th className='py-2 pr-4'>Goals</th>
+                  <th className='py-2 pr-4'>Attainment</th>
+                  <th className='py-2 pr-4'>At risk</th>
+                  <th className='py-2'></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(teamGoals.data ?? []).map((r) => (
+                  <tr key={r.employee.id} className='border-t border-slate-100'>
+                    <td className='py-2.5 pr-4 font-medium text-slate-700'>
                       <button
                         type='button'
-                        onClick={() => setManaging({ id: r.employee.id, name: r.employee.name })}
-                        className='text-xs text-slate-500 hover:text-brand-600 hover:underline'
+                        onClick={() => openSheet(r.employee.id, r.employee.name)}
+                        title={`Last 5 work updates from ${r.employee.name}`}
+                        className='hover:text-brand-600 hover:underline'
                       >
-                        Edit goals
+                        {r.employee.name}
                       </button>
-                    )}
-                    <button
-                      type='button'
-                      onClick={() => setGoalFor(r.employee)}
-                      className='text-xs text-brand-600 hover:underline'
-                    >
-                      Add goal
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className='py-2.5 pr-4 text-slate-600'>
+                      {r.goalCount === 0 ? (
+                        <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'>
+                          none set
+                        </span>
+                      ) : (
+                        r.goalCount
+                      )}
+                    </td>
+                    <td className='py-2.5 pr-4 tabular-nums text-slate-600'>
+                      {r.attainment === null ? '—' : `${r.attainment}%`}
+                    </td>
+                    <td className='py-2.5 pr-4'>
+                      {r.atRisk > 0 ? (
+                        <span className='rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700'>
+                          {r.atRisk}
+                        </span>
+                      ) : (
+                        <span className='text-xs text-slate-500'>0</span>
+                      )}
+                    </td>
+                    <td className='space-x-3 whitespace-nowrap py-2.5 text-right'>
+                      {r.goalCount > 0 && (
+                        <button
+                          type='button'
+                          onClick={() => setManaging({ id: r.employee.id, name: r.employee.name })}
+                          className='text-xs text-slate-500 hover:text-brand-600 hover:underline'
+                        >
+                          Edit goals
+                        </button>
+                      )}
+                      <button
+                        type='button'
+                        onClick={() => setGoalFor(r.employee)}
+                        className='text-xs text-brand-600 hover:underline'
+                      >
+                        Add goal
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* ── RM: the team's update sheet (read-only) ────────── */}
       {view === 'team' && isRm && (teamUpdates.data?.length ?? 0) > 0 && (
         <div className='rounded-xl border border-slate-200 bg-white p-5'>
-          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>
+          <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>
             Your people — updates this week
           </h2>
           <TeamUpdatesGrid
@@ -817,54 +825,54 @@ const MyPerformancePage = () => {
             <summary className='cursor-pointer text-xs text-slate-500 hover:text-slate-700'>
               Show the notes as a list
             </summary>
-          <div className='mt-3 space-y-4'>
-            {(teamUpdates.data ?? [])
-              .filter((r) => r.updates.length > 0 || r.missesThisMonth > 0)
-              .map((r) => (
-                <div key={r.employee.id}>
-                  <button
-                    type='button'
-                    onClick={() => openSheet(r.employee.id, r.employee.name)}
-                    title={`Last 5 work updates from ${r.employee.name}`}
-                    className='font-medium text-slate-700 hover:text-brand-600 hover:underline'
-                  >
-                    {r.employee.name}
-                  </button>
-                  <span
-                    className={`ml-2 rounded-full px-2 py-0.5 text-[11px] ${
-                      r.overAllowance ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    {r.missesThisMonth} missed this month
-                    {r.overAllowance ? ' — over allowance' : ''}
-                  </span>
-                  <div className='mt-1 space-y-1.5'>
-                    {r.updates.map((u) => (
-                      <div key={u.id} className='text-sm'>
-                        <span className='font-mono text-xs text-slate-400'>{u.date}</span>
-                        {u.score !== null && (
-                          <span
-                            className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${scoreTone(u.score)}`}
+            <div className='mt-3 space-y-4'>
+              {(teamUpdates.data ?? [])
+                .filter((r) => r.updates.length > 0 || r.missesThisMonth > 0)
+                .map((r) => (
+                  <div key={r.employee.id}>
+                    <button
+                      type='button'
+                      onClick={() => openSheet(r.employee.id, r.employee.name)}
+                      title={`Last 5 work updates from ${r.employee.name}`}
+                      className='font-medium text-slate-700 hover:text-brand-600 hover:underline'
+                    >
+                      {r.employee.name}
+                    </button>
+                    <span
+                      className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                        r.overAllowance ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {r.missesThisMonth} missed this month
+                      {r.overAllowance ? ' — over allowance' : ''}
+                    </span>
+                    <div className='mt-1 space-y-1.5'>
+                      {r.updates.map((u) => (
+                        <div key={u.id} className='text-sm'>
+                          <span className='font-mono text-xs text-slate-500'>{u.date}</span>
+                          {u.score !== null && (
+                            <span
+                              className={`ml-2 rounded-full px-1.5 py-0.5 text-xs font-semibold ${scoreTone(u.score)}`}
+                            >
+                              {u.score}
+                            </span>
+                          )}
+                          <button
+                            type='button'
+                            onClick={() =>
+                              react({ id: r.employee.id, name: r.employee.name }, u.date)
+                            }
+                            className='ml-2 text-xs text-brand-600 hover:underline'
                           >
-                            {u.score}
-                          </span>
-                        )}
-                        <button
-                          type='button'
-                          onClick={() =>
-                            react({ id: r.employee.id, name: r.employee.name }, u.date)
-                          }
-                          className='ml-2 text-[11px] text-brand-600 hover:underline'
-                        >
-                          React
-                        </button>
-                        <p className='mt-0.5 text-slate-600'>{u.note}</p>
-                      </div>
-                    ))}
+                            React
+                          </button>
+                          <p className='mt-0.5 text-slate-600'>{u.note}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-          </div>
+                ))}
+            </div>
           </details>
         </div>
       )}
@@ -894,7 +902,7 @@ const MyPerformancePage = () => {
               <button
                 type='button'
                 onClick={() => setDayOpen(null)}
-                className='text-sm text-slate-400 hover:text-slate-600'
+                className='text-sm text-slate-500 hover:text-slate-600'
               >
                 ✕
               </button>
@@ -946,7 +954,7 @@ const MyPerformancePage = () => {
             <div className='flex items-start justify-between gap-3'>
               <div>
                 <h2 className='text-lg font-semibold text-slate-800'>{peek.name}</h2>
-                <p className='text-xs text-slate-400'>Last 5 work updates · past 30 days</p>
+                <p className='text-xs text-slate-500'>Last 5 work updates · past 30 days</p>
               </div>
               <button
                 type='button'
@@ -958,7 +966,7 @@ const MyPerformancePage = () => {
             </div>
 
             <div className='mt-4'>
-              {peekUpdates.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+              {peekUpdates.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
               {peekUpdates.error && (
                 <p className='text-sm text-red-600'>{apiErrorMessage(peekUpdates.error)}</p>
               )}
@@ -973,15 +981,15 @@ const MyPerformancePage = () => {
                   {peekUpdates.data.slice(0, 5).map((u) => (
                     <li key={u.id} className='border-l-2 border-slate-200 pl-3'>
                       <div className='flex items-center gap-2'>
-                        <span className='font-mono text-[11px] text-slate-400'>{u.date}</span>
+                        <span className='font-mono text-xs text-slate-500'>{u.date}</span>
                         {u.score !== null ? (
                           <span
-                            className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${scoreTone(u.score)}`}
+                            className={`rounded-full px-1.5 py-px text-xs font-semibold ${scoreTone(u.score)}`}
                           >
                             {u.score}
                           </span>
                         ) : (
-                          <span className='rounded-full bg-slate-100 px-1.5 py-px text-[10px] text-slate-500'>
+                          <span className='rounded-full bg-slate-100 px-1.5 py-px text-xs text-slate-500'>
                             unscored
                           </span>
                         )}
@@ -992,12 +1000,12 @@ const MyPerformancePage = () => {
                           react(peek, u.date);
                           setPeek(null);
                         }}
-                        className='text-[11px] text-brand-600 hover:underline'
+                        className='text-xs text-brand-600 hover:underline'
                       >
                         React
                       </button>
                       <p className='mt-0.5 text-sm text-slate-600'>{u.note}</p>
-                      {u.feedback && <p className='mt-0.5 text-xs text-slate-400'>{u.feedback}</p>}
+                      {u.feedback && <p className='mt-0.5 text-xs text-slate-500'>{u.feedback}</p>}
                     </li>
                   ))}
                 </ul>
@@ -1020,15 +1028,16 @@ const MyPerformancePage = () => {
 
       {/* ── Add-goal modal ─────────────────────────────────── */}
       {goalFor && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+        <ModalShell onClose={() => setGoalFor(null)}>
           <div className='w-full max-w-md rounded-xl bg-white p-6 shadow-lg'>
             <h2 className='text-lg font-semibold text-slate-800'>Goal for {goalFor.name}</h2>
-            <p className='mt-1 text-xs text-slate-400'>
+            <p className='mt-1 text-xs text-slate-500'>
               Weights should sum to 100 within the quarter; the score weighs categories 50 / 25 /
               25. Due date defaults to the cycle end.
             </p>
             <div className='mt-4 space-y-3'>
               <input
+                aria-label='Goal title (what done looks like)'
                 value={goalDraft.title}
                 onChange={(e) => setGoalDraft((d) => ({ ...d, title: e.target.value }))}
                 placeholder='Goal title (what done looks like)'
@@ -1036,6 +1045,7 @@ const MyPerformancePage = () => {
               />
               <div className='grid grid-cols-2 gap-3'>
                 <input
+                  aria-label='Metric (optional)'
                   value={goalDraft.metric ?? ''}
                   onChange={(e) =>
                     setGoalDraft((d) => ({ ...d, metric: e.target.value || undefined }))
@@ -1044,6 +1054,7 @@ const MyPerformancePage = () => {
                   className='rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none'
                 />
                 <input
+                  aria-label='Target (optional)'
                   value={goalDraft.target ?? ''}
                   onChange={(e) =>
                     setGoalDraft((d) => ({ ...d, target: e.target.value || undefined }))
@@ -1138,7 +1149,7 @@ const MyPerformancePage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

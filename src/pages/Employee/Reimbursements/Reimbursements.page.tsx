@@ -158,7 +158,7 @@ const ReimbursementsPage = () => {
         </label>
         {create.error && <p className='text-sm text-red-600'>{apiErrorMessage(create.error)}</p>}
         <div className='flex items-center justify-between gap-3'>
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             PR approves first, then Admin — usually once a month. Approved claims are paid to your
             bank account separately, not with your payslip.
           </p>
@@ -174,9 +174,9 @@ const ReimbursementsPage = () => {
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='text-sm font-semibold text-slate-700'>My claims</h2>
-        {mine.isLoading && <p className='mt-2 text-sm text-slate-400'>Loading…</p>}
+        {mine.isLoading && <p className='mt-2 text-sm text-slate-500'>Loading…</p>}
         {mine.error && <p className='mt-2 text-sm text-red-600'>{apiErrorMessage(mine.error)}</p>}
-        {mine.data?.length === 0 && <p className='mt-2 text-sm text-slate-400'>No claims yet.</p>}
+        {mine.data?.length === 0 && <p className='mt-2 text-sm text-slate-500'>No claims yet.</p>}
         <ul className='mt-3 space-y-2'>
           {(mine.data ?? []).map((c) => (
             <ClaimRow key={c.id} claim={c} mode='mine' invalidate={[['my-reimbursements']]} />

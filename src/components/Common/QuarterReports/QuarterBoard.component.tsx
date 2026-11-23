@@ -111,7 +111,7 @@ const QuarterBoard = ({
       {view.error && <p className='text-sm text-red-600'>{apiErrorMessage(view.error)}</p>}
       {view.data && (
         <>
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             Closed {view.data.cycle.closedAt!.slice(0, 10)}
             {view.data.cycle.closedByName ? ` by ${view.data.cycle.closedByName}` : ''} ·{' '}
             {view.data.reports.length} report{view.data.reports.length === 1 ? '' : 's'} you can
@@ -121,7 +121,7 @@ const QuarterBoard = ({
             <div className='overflow-x-auto rounded-xl border border-slate-200 bg-white p-4'>
               <table className='w-full text-sm'>
                 <thead>
-                  <tr className='text-left text-xs text-slate-400'>
+                  <tr className='text-left text-xs text-slate-500'>
                     <th className='py-1 pr-3 font-medium'>Team (manager at close)</th>
                     <th className='py-1 pr-3 text-right font-medium'>People</th>
                     <th className='py-1 pr-3 text-right font-medium'>Avg score</th>
@@ -147,7 +147,7 @@ const QuarterBoard = ({
                       <td className='py-1.5 pr-3 text-right tabular-nums text-red-600'>
                         {t.bands.below}
                       </td>
-                      <td className='py-1.5 text-right tabular-nums text-slate-400'>
+                      <td className='py-1.5 text-right tabular-nums text-slate-500'>
                         {t.bands.unscored}
                       </td>
                     </tr>

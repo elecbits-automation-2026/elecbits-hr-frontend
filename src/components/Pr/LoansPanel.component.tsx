@@ -24,50 +24,56 @@ const STATUS: Record<Loan['status'], { label: string; cls: string }> = {
 export const LoanSchedule = ({ loan }: { loan: LoanDetail }) => (
   <div className='grid gap-4 text-xs sm:grid-cols-2'>
     <div>
-      <p className='mb-1 font-semibold uppercase tracking-wide text-slate-400'>Paid</p>
+      <p className='mb-1 font-semibold uppercase tracking-wide text-slate-500'>Paid</p>
       {loan.repayments.length === 0 ? (
-        <p className='text-slate-400'>Nothing yet.</p>
+        <p className='text-slate-500'>Nothing yet.</p>
       ) : (
-        <table className='w-full'>
-          <tbody>
-            {loan.repayments.map((r, i) => (
-              <tr key={i} className='border-b border-slate-100'>
-                <td className='py-1'>{r.month ?? r.at.slice(0, 10)}</td>
-                <td className='py-1 text-slate-400'>
-                  {r.kind === 'fnf' ? 'F&F' : r.kind === 'outside' ? 'closed early' : 'EMI'}
-                </td>
-                <td className='py-1 text-right tabular-nums'>{money(r.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className='overflow-x-auto'>
+          <table className='w-full'>
+            <tbody>
+              {loan.repayments.map((r, i) => (
+                <tr key={i} className='border-b border-slate-100'>
+                  <td className='py-1'>{r.month ?? r.at.slice(0, 10)}</td>
+                  <td className='py-1 text-slate-500'>
+                    {r.kind === 'fnf' ? 'F&F' : r.kind === 'outside' ? 'closed early' : 'EMI'}
+                  </td>
+                  <td className='py-1 text-right tabular-nums'>{money(r.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
     <div>
-      <p className='mb-1 font-semibold uppercase tracking-wide text-slate-400'>Ahead</p>
+      <p className='mb-1 font-semibold uppercase tracking-wide text-slate-500'>Ahead</p>
       {loan.schedule.length === 0 ? (
-        <p className='text-slate-400'>Nothing left.</p>
+        <p className='text-slate-500'>Nothing left.</p>
       ) : (
-        <table className='w-full'>
-          <thead className='text-slate-400'>
-            <tr>
-              <th className='py-1 text-left font-medium'>Month</th>
-              <th className='py-1 text-right font-medium'>EMI</th>
-              <th className='py-1 text-right font-medium'>Interest</th>
-              <th className='py-1 text-right font-medium'>Balance after</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loan.schedule.map((s) => (
-              <tr key={s.month} className='border-b border-slate-100'>
-                <td className='py-1'>{s.month}</td>
-                <td className='py-1 text-right tabular-nums'>{money(s.amount)}</td>
-                <td className='py-1 text-right tabular-nums text-slate-400'>{money(s.interest)}</td>
-                <td className='py-1 text-right tabular-nums'>{money(s.balance)}</td>
+        <div className='overflow-x-auto'>
+          <table className='w-full'>
+            <thead className='text-slate-500'>
+              <tr>
+                <th className='py-1 text-left font-medium'>Month</th>
+                <th className='py-1 text-right font-medium'>EMI</th>
+                <th className='py-1 text-right font-medium'>Interest</th>
+                <th className='py-1 text-right font-medium'>Balance after</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loan.schedule.map((s) => (
+                <tr key={s.month} className='border-b border-slate-100'>
+                  <td className='py-1'>{s.month}</td>
+                  <td className='py-1 text-right tabular-nums'>{money(s.amount)}</td>
+                  <td className='py-1 text-right tabular-nums text-slate-500'>
+                    {money(s.interest)}
+                  </td>
+                  <td className='py-1 text-right tabular-nums'>{money(s.balance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   </div>
@@ -112,7 +118,7 @@ const LoanRow = ({ loan, open, onToggle }: { loan: Loan; open: boolean; onToggle
         className='flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left text-sm'
       >
         <span className='font-medium text-slate-800'>{loan.employee.name}</span>
-        <span className='text-xs text-slate-400'>{loan.employee.employeeCode}</span>
+        <span className='text-xs text-slate-500'>{loan.employee.employeeCode}</span>
         <span className='text-xs text-slate-500'>
           {loan.kind === 'advance' ? 'Advance' : 'Loan'} {money(loan.principal)} ·{' '}
           {loan.interestRatePct}% · {loan.months} mo from {loan.startMonth}
@@ -238,9 +244,9 @@ const LoansPanel = () => {
     <div className='space-y-4'>
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='text-sm font-semibold text-slate-700'>Record a loan or advance</h2>
-        <p className='mt-1 text-xs text-slate-400'>
-          Confirmed full-time employees only. An advance is recovered in one month. Interest is
-          per loan (0% = equal instalments).
+        <p className='mt-1 text-xs text-slate-500'>
+          Confirmed full-time employees only. An advance is recovered in one month. Interest is per
+          loan (0% = equal instalments).
         </p>
         <div className='mt-3 grid gap-3 text-xs text-slate-600 sm:grid-cols-3 lg:grid-cols-6'>
           <label className='sm:col-span-2'>

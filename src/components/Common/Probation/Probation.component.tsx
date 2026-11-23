@@ -58,7 +58,7 @@ const ReviewRow = ({ r }: { r: ProbationReview }) => {
     <li className='space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm'>
       <div className='flex flex-wrap items-center gap-2'>
         <span className='font-medium text-slate-800'>{r.employee.name}</span>
-        <span className='text-xs text-slate-400'>
+        <span className='text-xs text-slate-500'>
           {r.employee.designation ?? r.employee.employeeCode}
           {r.employee.department ? ` · ${r.employee.department}` : ''}
         </span>
@@ -89,6 +89,7 @@ const ReviewRow = ({ r }: { r: ProbationReview }) => {
       {(r.can.recommend || r.can.decide) && (
         <div className='space-y-2'>
           <textarea
+            aria-label={r.can.decide ? 'Your decision note' : 'Why (HR reads this)'}
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -172,7 +173,7 @@ const ReviewRow = ({ r }: { r: ProbationReview }) => {
                 <button
                   type='button'
                   onClick={() => setEnding(false)}
-                  className='text-xs text-slate-400 hover:text-slate-600'
+                  className='text-xs text-slate-500 hover:text-slate-600'
                 >
                   Back
                 </button>
@@ -232,7 +233,7 @@ export const MyProbation = () => {
   if (!r) return null;
   return (
     <section className='rounded-xl border border-slate-200 bg-white p-4 text-sm'>
-      <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Probation</h2>
+      <h2 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Probation</h2>
       <p className='mt-1 text-slate-700'>
         {r.status === 'confirmed'
           ? `Confirmed${r.decidedAt ? ` on ${day(r.decidedAt)}` : ''}.`

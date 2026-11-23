@@ -37,7 +37,7 @@ const TIMING_LABEL: Record<string, string> = {
   compensated: 'full hours worked',
 };
 const TIMING_TEXT: Record<string, string> = {
-  ontime: 'text-green-600',
+  ontime: 'text-green-700',
   grace: 'text-amber-600',
   late: 'text-red-600',
   early: 'text-red-600',
@@ -164,7 +164,7 @@ const MyAttendancePage = () => {
       {today && (
         <div className='flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white p-5'>
           <div className='flex-1'>
-            <div className='text-xs font-medium uppercase tracking-wide text-slate-400'>Today</div>
+            <div className='text-xs font-medium uppercase tracking-wide text-slate-500'>Today</div>
             <div className='mt-1 text-sm text-slate-600'>
               {onLeaveToday ? (
                 <span className='font-medium text-blue-700'>
@@ -220,13 +220,16 @@ const MyAttendancePage = () => {
               {checkOut.isPending ? 'Locating…' : 'Check out'}
             </button>
           )}
-          {punchError && <p className='w-full text-sm text-red-600'>{apiErrorMessage(punchError)}</p>}
+          {punchError && (
+            <p className='w-full text-sm text-red-600'>{apiErrorMessage(punchError)}</p>
+          )}
         </div>
       )}
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
           <input
+            aria-label='Month'
             type='month'
             value={month}
             onChange={(e) => setMonth(e.target.value || currentMonth())}
@@ -234,12 +237,24 @@ const MyAttendancePage = () => {
           />
           {summary && (
             <div className='flex flex-wrap gap-3 text-xs text-slate-500'>
-              <span>Present: <b className='text-slate-700'>{summary.present}</b></span>
-              <span>Absent: <b className='text-slate-700'>{summary.absent}</b></span>
-              <span>Leave: <b className='text-slate-700'>{summary.leave}</b></span>
-              <span>Remote: <b className='text-slate-700'>{summary.wfh}</b></span>
-              <span>Late ins: <b className='text-slate-700'>{summary.lateIns}</b></span>
-              <span>Early outs: <b className='text-slate-700'>{summary.earlyOuts}</b></span>
+              <span>
+                Present: <b className='text-slate-700'>{summary.present}</b>
+              </span>
+              <span>
+                Absent: <b className='text-slate-700'>{summary.absent}</b>
+              </span>
+              <span>
+                Leave: <b className='text-slate-700'>{summary.leave}</b>
+              </span>
+              <span>
+                Remote: <b className='text-slate-700'>{summary.wfh}</b>
+              </span>
+              <span>
+                Late ins: <b className='text-slate-700'>{summary.lateIns}</b>
+              </span>
+              <span>
+                Early outs: <b className='text-slate-700'>{summary.earlyOuts}</b>
+              </span>
               <span title='Present over the working days so far (week offs, holidays and full-day leave left out; half a day counts 0.5)'>
                 Attendance: <b className='text-slate-700'>{pct ? `${pct.pct}%` : '—'}</b>
               </span>
@@ -280,12 +295,13 @@ const MyAttendancePage = () => {
           <h2 className='mb-3 text-sm font-semibold text-slate-700'>My remote-work requests</h2>
           {wfh.data && wfh.data.length === 0 && <p className='text-sm text-slate-500'>None yet.</p>}
           {wfh.data?.map((w) => (
-            <div key={w.id} className='flex items-center justify-between border-b border-slate-100 py-2 text-sm'>
+            <div
+              key={w.id}
+              className='flex items-center justify-between border-b border-slate-100 py-2 text-sm'
+            >
               <span>
                 {w.startDate === w.endDate ? w.startDate : `${w.startDate} → ${w.endDate}`}
-                <span className='ml-2 text-xs text-slate-400'>
-                  {wfhSlots(w)}
-                </span>
+                <span className='ml-2 text-xs text-slate-500'>{wfhSlots(w)}</span>
               </span>
               <span className='flex items-center gap-2'>
                 <Chip status={w.status} />
@@ -294,7 +310,7 @@ const MyAttendancePage = () => {
                     type='button'
                     disabled={cancelWfh.isPending}
                     onClick={() => cancelWfh.mutate(w.id)}
-                    className='text-xs text-slate-400 hover:text-red-600'
+                    className='text-xs text-slate-500 hover:text-red-600'
                   >
                     Cancel
                   </button>

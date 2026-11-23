@@ -101,6 +101,8 @@ const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => 
         ...(track !== 'dispute' ? { anonymous } : {}),
         ...(track === 'dispute' ? { aboutMyManager } : {}),
       }),
+    // The error shows inline under the form; success is a toast.
+    meta: { successMessage: 'Concern raised', silentError: true },
     onSuccess: (out) => {
       queryClient.invalidateQueries({ queryKey: ['concerns-mine'] });
       reset();
@@ -234,7 +236,7 @@ const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => 
               placeholder='What happened, when, who was involved or saw it, and what you would like to happen.'
               className={`${inputClass} mt-1`}
             />
-            <span className='block text-slate-400'>
+            <span className='block text-slate-500'>
               {detail.trim().length} characters (at least 20)
             </span>
           </label>
@@ -279,7 +281,7 @@ const RaiseConcern = ({ onFiled }: { onFiled: (id: string | null) => void }) => 
 
           {create.error && <p className='text-sm text-red-600'>{apiErrorMessage(create.error)}</p>}
           <div className='flex items-center justify-between gap-3'>
-            <p className='text-xs text-slate-400'>
+            <p className='text-xs text-slate-500'>
               {track === 'dispute'
                 ? aboutMyManager
                   ? 'HR acknowledges and decides first.'

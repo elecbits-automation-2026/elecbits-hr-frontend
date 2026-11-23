@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 
 import type { OrgSetting, SettingArea } from '@app-types/api.types';
 import { settingsApi } from '@services/api/settings.api';
-import { apiErrorMessage } from '@utils/apiError';
 
 import { SettingCard } from './SettingCard.component';
 import { settingSummary } from './settingSummary';
+import QueryError from '@components/Common/Utilities/QueryError.component';
 
 const AREA_TITLES: Record<SettingArea, string> = {
   people: 'People & growth',
@@ -28,14 +28,14 @@ const SettingRow = ({ setting }: { setting: OrgSetting }) => {
           <div className='flex flex-wrap items-center gap-2'>
             <span className='font-medium text-slate-800'>{setting.label}</span>
             {!setting.isDefault && (
-              <span className='rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700'>
+              <span className='rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700'>
                 changed
               </span>
             )}
             {!setting.live && (
               <span
                 title='No feature reads this setting yet — saving stores it for later.'
-                className='rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700'
+                className='rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700'
               >
                 not wired yet
               </span>
@@ -45,7 +45,9 @@ const SettingRow = ({ setting }: { setting: OrgSetting }) => {
             {setting.description}
           </p>
           {!open && (
-            <p className='mt-1 text-sm text-slate-700'>{settingSummary(setting.key, setting.value)}</p>
+            <p className='mt-1 text-sm text-slate-700'>
+              {settingSummary(setting.key, setting.value)}
+            </p>
           )}
         </div>
         <button
@@ -59,7 +61,11 @@ const SettingRow = ({ setting }: { setting: OrgSetting }) => {
       {open && (
         <div className='pb-4'>
           {/* Remount on save so the editor's draft re-seeds from the stored value. */}
-          <SettingCard key={`${setting.key}:${setting.updatedAt ?? 'default'}`} setting={setting} bare />
+          <SettingCard
+            key={`${setting.key}:${setting.updatedAt ?? 'default'}`}
+            setting={setting}
+            bare
+          />
         </div>
       )}
     </div>
@@ -81,15 +87,18 @@ export const SettingsBrowser = ({
   areas?: SettingArea[];
   extra?: { key: string; title: string; node: ReactNode }[];
 }) => {
-  const settings = useQuery({ queryKey: ['org-settings', 'all'], queryFn: () => settingsApi.list() });
+  const settings = useQuery({
+    queryKey: ['org-settings', 'all'],
+    queryFn: () => settingsApi.list(),
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   if (settings.error) {
-    return <p className='text-sm text-red-600'>{apiErrorMessage(settings.error)}</p>;
+    return <QueryError error={settings.error} />;
   }
   if (settings.isLoading || !settings.data) {
-    return <p className='text-sm text-slate-400'>Loading…</p>;
+    return <p className='text-sm text-slate-500'>Loading…</p>;
   }
 
   const visible = settings.data.filter((s) => !areas || areas.includes(s.area));
@@ -103,7 +112,9 @@ export const SettingsBrowser = ({
     ...extra.map((e) => ({ key: e.key, title: e.title, count: null as number | null })),
   ];
   if (sections.length === 0) {
-    return <p className='text-sm text-slate-500'>You don&rsquo;t have access to any settings here.</p>;
+    return (
+      <p className='text-sm text-slate-500'>You don&rsquo;t have access to any settings here.</p>
+    );
   }
   const current = sections.some((s) => s.key === selected) ? selected! : sections[0]!.key;
   const q = search.trim().toLowerCase();
@@ -122,6 +133,7 @@ export const SettingsBrowser = ({
     <div className='flex flex-col gap-4 md:flex-row'>
       <aside className='shrink-0 space-y-3 md:w-56'>
         <input
+          aria-label='Search settings'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder='Search settings'
@@ -139,7 +151,7 @@ export const SettingsBrowser = ({
               className={`${sectionBtn(!q && current === s.key)} shrink-0 md:shrink`}
             >
               {s.title}
-              {s.count !== null && <span className='ml-2 text-xs text-slate-400'>{s.count}</span>}
+              {s.count !== null && <span className='ml-2 text-xs text-slate-500'>{s.count}</span>}
             </button>
           ))}
         </nav>
@@ -147,8 +159,9 @@ export const SettingsBrowser = ({
 
       <section className='min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-5 py-2'>
         {found ? (
-          <p className='py-3 text-xs text-slate-400'>
-            {found.length} setting{found.length === 1 ? '' : 's'} match &ldquo;{search.trim()}&rdquo;
+          <p className='py-3 text-xs text-slate-500'>
+            {found.length} setting{found.length === 1 ? '' : 's'} match &ldquo;{search.trim()}
+            &rdquo;
           </p>
         ) : (
           !extraNode && (

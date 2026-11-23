@@ -177,6 +177,7 @@ const InterviewForm = ({
       {q(
         'reason',
         <select
+          aria-label='Main reason for leaving'
           value={a.reason}
           onChange={(e) => setA({ ...a, reason: e.target.value })}
           className={input}
@@ -192,6 +193,7 @@ const InterviewForm = ({
       {q(
         'liked',
         <textarea
+          aria-label='What did you like'
           rows={2}
           value={a.liked}
           onChange={(e) => setA({ ...a, liked: e.target.value })}
@@ -201,6 +203,7 @@ const InterviewForm = ({
       {q(
         'improve',
         <textarea
+          aria-label='What should we improve'
           rows={2}
           value={a.improve}
           onChange={(e) => setA({ ...a, improve: e.target.value })}
@@ -223,6 +226,7 @@ const InterviewForm = ({
       {q(
         'newWorkplace',
         <input
+          aria-label='New workplace'
           value={a.newWorkplace}
           onChange={(e) => setA({ ...a, newWorkplace: e.target.value })}
           className={input}
@@ -231,6 +235,7 @@ const InterviewForm = ({
       {q(
         'other',
         <textarea
+          aria-label='Anything else'
           rows={2}
           value={a.other}
           onChange={(e) => setA({ ...a, other: e.target.value })}
@@ -276,7 +281,7 @@ const ResignationPage = () => {
           and payroll each clear you. Your full & final is paid with the next monthly payroll.
         </p>
       </div>
-      {page.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+      {page.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {page.error && <p className='text-sm text-red-600'>{apiErrorMessage(page.error)}</p>}
       {page.data && !live && (
         <>

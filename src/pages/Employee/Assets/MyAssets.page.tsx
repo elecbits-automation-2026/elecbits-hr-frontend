@@ -86,6 +86,7 @@ const ReturnPrompt = ({
       ) : (
         <div className='space-y-2'>
           <input
+            aria-label='Return on'
             type='date'
             min={opsToday() > due ? opsToday() : due}
             value={returnOn}
@@ -93,6 +94,7 @@ const ReturnPrompt = ({
             className={`${inputClass} max-w-xs`}
           />
           <textarea
+            aria-label='Why is it still out?'
             rows={2}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -146,6 +148,7 @@ const ReportProblem = ({ assetId, onDone }: { assetId: string; onDone: () => voi
   return (
     <div className='mt-2 space-y-2 rounded-lg bg-slate-50 p-3'>
       <select
+        aria-label='Kind'
         value={kind}
         onChange={(e) => setKind(e.target.value as AssetIncidentKind)}
         className={inputClass}
@@ -157,6 +160,7 @@ const ReportProblem = ({ assetId, onDone }: { assetId: string; onDone: () => voi
         ))}
       </select>
       <textarea
+        aria-label='What happened, when and where'
         rows={2}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
@@ -207,6 +211,7 @@ const RequestForm = ({ data, onDone }: { data: MyAssetsOverview; onDone: () => v
     <div className='space-y-2'>
       <div className='grid gap-2 sm:grid-cols-3'>
         <select
+          aria-label='Request type'
           value={type}
           onChange={(e) => setType(e.target.value as AssetRequestType)}
           className={inputClass}
@@ -219,6 +224,7 @@ const RequestForm = ({ data, onDone }: { data: MyAssetsOverview; onDone: () => v
         </select>
         {type !== 'new' && (
           <select
+            aria-label='Which of your items'
             value={assetId}
             onChange={(e) => setAssetId(e.target.value)}
             className={inputClass}
@@ -233,6 +239,7 @@ const RequestForm = ({ data, onDone }: { data: MyAssetsOverview; onDone: () => v
         )}
         {(type === 'new' || type === 'upgrade' || type === 'replacement') && (
           <select
+            aria-label='What kind'
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
             className={inputClass}
@@ -247,6 +254,7 @@ const RequestForm = ({ data, onDone }: { data: MyAssetsOverview; onDone: () => v
         )}
       </div>
       <textarea
+        aria-label='Note'
         rows={2}
         value={note}
         onChange={(e) => setNote(e.target.value)}
@@ -311,6 +319,7 @@ const PassForm = ({ data, onDone }: { data: MyAssetsOverview; onDone: () => void
     <div className='space-y-2'>
       <div className='grid gap-2 sm:grid-cols-2'>
         <select
+          aria-label='Which item'
           value={f.assetId}
           onChange={(e) => setF({ ...f, assetId: e.target.value })}
           className={inputClass}
@@ -334,12 +343,14 @@ const PassForm = ({ data, onDone }: { data: MyAssetsOverview; onDone: () => void
           />
         </label>
         <input
+          aria-label='Back by'
           value={f.destination}
           onChange={(e) => setF({ ...f, destination: e.target.value })}
           placeholder='Where is it going'
           className={inputClass}
         />
         <input
+          aria-label='Why'
           value={f.purpose}
           onChange={(e) => setF({ ...f, purpose: e.target.value })}
           placeholder='Why'
@@ -391,7 +402,7 @@ const MyAssetsPage = () => {
           hold is returned when you leave.
         </p>
       </div>
-      {mine.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+      {mine.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
       {mine.error && <p className='text-sm text-red-600'>{apiErrorMessage(mine.error)}</p>}
 
       {data && (loans.length > 0 || outPasses.length > 0) && (
@@ -430,13 +441,13 @@ const MyAssetsPage = () => {
         <section className={card}>
           <h2 className='text-sm font-semibold text-slate-700'>What you hold</h2>
           {data.held.length === 0 ? (
-            <p className='text-sm text-slate-400'>Nothing is assigned to you.</p>
+            <p className='text-sm text-slate-500'>Nothing is assigned to you.</p>
           ) : (
             <ul className='divide-y divide-slate-100'>
               {data.held.map((a) => (
                 <li key={a.id} className='py-2.5'>
                   <div className='flex flex-wrap items-center gap-2'>
-                    <span className='font-mono text-xs text-slate-400'>{a.assetCode}</span>
+                    <span className='font-mono text-xs text-slate-500'>{a.assetCode}</span>
                     <span className='text-sm font-medium text-slate-800'>{a.name}</span>
                     <span className='text-xs text-slate-500'>
                       {a.category.name} · {a.zone.name}
@@ -477,7 +488,7 @@ const MyAssetsPage = () => {
                     {r.category && (
                       <span className='text-xs text-slate-500'>{r.category.name}</span>
                     )}
-                    <span className='ml-auto text-xs text-slate-400'>{fmtWhen(r.createdAt)}</span>
+                    <span className='ml-auto text-xs text-slate-500'>{fmtWhen(r.createdAt)}</span>
                   </div>
                   {r.handlerNote && <p className='text-xs text-slate-500'>OPS: {r.handlerNote}</p>}
                   {r.fulfilledAsset && (
@@ -508,7 +519,7 @@ const MyAssetsPage = () => {
                   <span className='text-slate-800'>
                     {p.asset.name} → {p.destination}
                   </span>
-                  <span className='text-xs text-slate-400'>back by {fmtDay(p.returnOn)}</span>
+                  <span className='text-xs text-slate-500'>back by {fmtDay(p.returnOn)}</span>
                   {p.declineReason && (
                     <span className='text-xs text-slate-500'>· {p.declineReason}</span>
                   )}
@@ -528,7 +539,7 @@ const MyAssetsPage = () => {
                 <span className='text-slate-800'>
                   {Math.abs(m.qty)} {m.item.unit} · {m.item.name}
                 </span>
-                <span className='text-xs text-slate-400'>
+                <span className='text-xs text-slate-500'>
                   {m.zone.name} · {fmtWhen(m.createdAt)}
                 </span>
               </li>

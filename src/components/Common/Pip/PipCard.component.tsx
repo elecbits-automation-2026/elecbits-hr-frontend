@@ -58,21 +58,21 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
       </div>
 
       <div>
-        <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Why</p>
+        <p className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Why</p>
         <p className='whitespace-pre-line text-slate-700'>{pip.reason}</p>
       </div>
       <div>
-        <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Targets</p>
+        <p className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Targets</p>
         <ol className='list-decimal space-y-1 pl-5 text-slate-700'>
           {pip.targets.map((t, i) => (
             <li key={i}>
-              {t.title} <span className='text-slate-400'>— measured by {t.measure}</span>
+              {t.title} <span className='text-slate-500'>— measured by {t.measure}</span>
             </li>
           ))}
         </ol>
       </div>
       <div>
-        <p className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Support</p>
+        <p className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Support</p>
         <p className='whitespace-pre-line text-slate-700'>{pip.support}</p>
       </div>
 
@@ -110,6 +110,7 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
       {panel !== 'none' && (
         <div className='space-y-2 rounded-md bg-slate-50 p-3'>
           <textarea
+            aria-label='Note'
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -176,7 +177,7 @@ const PipCard = ({ pip, showPerson = false }: { pip: Pip; showPerson?: boolean }
             <button
               type='button'
               onClick={() => setPanel('none')}
-              className='text-xs text-slate-400 hover:text-slate-600'
+              className='text-xs text-slate-500 hover:text-slate-600'
             >
               Back
             </button>

@@ -8,8 +8,8 @@ import type {
 } from '@app-types/api.types';
 
 const STATUS_STYLES: Record<AttendanceDayStatus, string> = {
-  none: 'bg-white text-slate-300',
-  weekend: 'bg-slate-100 text-slate-400',
+  none: 'bg-white text-slate-500',
+  weekend: 'bg-slate-100 text-slate-500',
   holiday: 'bg-amber-100 text-amber-800',
   leave: 'bg-blue-100 text-blue-800',
   half_leave: 'bg-blue-50 text-blue-700',
@@ -67,7 +67,9 @@ const outTimingLabel: Record<CheckOutTiming, string> = {
 };
 
 const title = (d: AttendanceDay, isToday: boolean): string => {
-  const parts = [isToday && d.status === 'none' ? 'today — not checked in yet' : d.status.replace('_', ' ')];
+  const parts = [
+    isToday && d.status === 'none' ? 'today — not checked in yet' : d.status.replace('_', ' '),
+  ];
   if (isToday && d.status !== 'none') parts.unshift('today');
   if (d.holidayName) parts.push(d.holidayName);
   if (d.leaveType) parts.push(`${d.leaveType} leave`);
@@ -90,14 +92,15 @@ const DayDetail = ({
   const rows: Array<[string, string, string?]> = [];
 
   if (day.status === 'none' && !isToday) {
-    return (
-      <p className='text-sm text-slate-400'>No data — this day hasn’t happened yet.</p>
-    );
+    return <p className='text-sm text-slate-500'>No data — this day hasn’t happened yet.</p>;
   }
   if (day.status === 'holiday') rows.push(['Holiday', day.holidayName ?? '—']);
   if (day.status === 'weekend') rows.push(['Day', 'Weekend']);
   if (day.status === 'leave' || day.status === 'half_leave') {
-    rows.push(['Leave', `${day.leaveType ?? ''}${day.status === 'half_leave' ? ' (half day)' : ''}`]);
+    rows.push([
+      'Leave',
+      `${day.leaveType ?? ''}${day.status === 'half_leave' ? ' (half day)' : ''}`,
+    ]);
   }
   if (day.status === 'wfh') rows.push(['Day', 'Remote work (approved)']);
   if (day.status === 'half_day') {
@@ -154,7 +157,7 @@ const DayDetail = ({
       <div className='grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4'>
         {rows.map(([label, value, timing]) => (
           <div key={label}>
-            <span className='text-xs text-slate-400'>{label}</span>
+            <span className='text-xs text-slate-500'>{label}</span>
             <div className={valueClass(timing)}>{value}</div>
           </div>
         ))}
@@ -196,7 +199,7 @@ const MonthCalendar = ({
 
   return (
     <div className='space-y-3'>
-      <div className='grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-400'>
+      <div className='grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-500'>
         {WEEKDAYS.map((w) => (
           <div key={w}>{w}</div>
         ))}
@@ -251,7 +254,7 @@ const MonthCalendar = ({
             <button
               type='button'
               onClick={() => setSelected(null)}
-              className='text-xs text-slate-400 hover:text-slate-600'
+              className='text-xs text-slate-500 hover:text-slate-600'
             >
               ✕
             </button>
@@ -272,8 +275,9 @@ const MonthCalendar = ({
           </span>
         ))}
         <span className='flex items-center gap-2'>
-          <span className='text-slate-400'>·</span>
-          Dots: <span className='font-medium'>↖ in</span> / <span className='font-medium'>↗ out</span>
+          <span className='text-slate-500'>·</span>
+          Dots: <span className='font-medium'>↖ in</span> /{' '}
+          <span className='font-medium'>↗ out</span>
           <span className='flex items-center gap-1'>
             <span className='inline-block h-1.5 w-1.5 rounded-full bg-green-500' /> on time
           </span>

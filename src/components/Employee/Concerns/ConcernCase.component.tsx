@@ -15,6 +15,7 @@ import {
 import RequestMeeting from '@components/Employee/OpenDoor/RequestMeeting.component';
 import { concernsApi } from '@services/api/concerns.api';
 import { apiErrorMessage } from '@utils/apiError';
+import { toast } from '@utils/toast';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
@@ -71,16 +72,21 @@ const ConcernCase = ({
   const [reply, setReply] = useState(mode !== 'handler');
 
   const act = useMutation({
-    mutationFn: (fn: () => Promise<Concern>) => fn(),
-    onSuccess: (next) => {
+    mutationFn: ({ fn }: { fn: () => Promise<Concern>; done?: string }) => fn(),
+    // The error shows inline above the actions, so no global error toast.
+    meta: { silentError: true },
+    onSuccess: (next, { done }) => {
       setPanel(null);
       setText('');
       setNote('');
       onChanged(next);
+      if (done) toast.success(done);
     },
   });
 
-  const run = (fn: () => Promise<Concern>) => act.mutate(fn);
+  /** Run one case action; `done` is the success toast (each action has its own). */
+  const run = (fn: () => Promise<Concern>, done?: string) => act.mutate({ fn, done });
+  const ai = mode === 'handler' ? c.aiSuggestion : null;
   const due = dueLine(c);
   const live = !['closed', 'declined', 'resolved'].includes(c.status);
 
@@ -89,10 +95,12 @@ const ConcernCase = ({
     min: number,
     submit: () => Promise<Concern>,
     extra?: ReactNode,
+    done = 'Sent',
   ) => (
     <div className='space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3'>
       {extra}
       <textarea
+        aria-label={label}
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={4}
@@ -100,14 +108,14 @@ const ConcernCase = ({
         className={inputClass}
       />
       <div className='flex items-center justify-end gap-2'>
-        <span className='mr-auto text-xs text-slate-400'>At least {min} characters.</span>
+        <span className='mr-auto text-xs text-slate-500'>At least {min} characters.</span>
         <button type='button' onClick={() => setPanel(null)} className={secondary}>
           Back
         </button>
         <button
           type='button'
           disabled={text.trim().length < min || act.isPending}
-          onClick={() => run(submit)}
+          onClick={() => run(submit, done)}
           className={primary}
         >
           {act.isPending ? 'Saving…' : 'Send'}
@@ -132,7 +140,7 @@ const ConcernCase = ({
           )}
         </div>
         <h3 className='mt-2 text-lg font-semibold text-slate-800'>{c.title}</h3>
-        <p className='mt-1 text-xs text-slate-400'>
+        <p className='mt-1 text-xs text-slate-500'>
           Raised {fmtDate(c.createdAt)}
           {mode === 'handler' && c.raisedBy ? ` by ${c.raisedBy.name}` : ''}
           {c.subject ? ` · about ${c.subject.name}` : ''}
@@ -158,8 +166,8 @@ const ConcernCase = ({
       )}
 
       <div>
-        <h4 className='text-xs font-semibold uppercase tracking-wide text-slate-400'>Thread</h4>
-        {c.notes.length === 0 && <p className='mt-2 text-sm text-slate-400'>Nothing yet.</p>}
+        <h4 className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Thread</h4>
+        {c.notes.length === 0 && <p className='mt-2 text-sm text-slate-500'>Nothing yet.</p>}
         <ul className='mt-2 space-y-2'>
           {c.notes.map((n) => (
             <li
@@ -174,7 +182,7 @@ const ConcernCase = ({
                       : 'border-slate-200 bg-white'
               }`}
             >
-              <p className='text-xs text-slate-400'>
+              <p className='text-xs text-slate-500'>
                 {n.fromRaiser ? (n.authorName ?? 'Raiser (anonymous)') : (n.authorName ?? 'System')}
                 {n.kind === 'decision' ? ` · decision${n.level ? ` (L${n.level})` : ''}` : ''}
                 {!n.visibleToRaiser ? ' · internal note' : ''} · {fmtTime(n.createdAt)}
@@ -209,7 +217,9 @@ const ConcernCase = ({
               <button
                 type='button'
                 disabled={act.isPending}
-                onClick={() => run(() => concernsApi.accept(c.id))}
+                onClick={() =>
+                  run(() => concernsApi.accept(c.id), 'Decision accepted — case closed')
+                }
                 className={primary}
               >
                 Accept and close
@@ -224,8 +234,8 @@ const ConcernCase = ({
         </div>
       )}
 
-      {/* HR-queue triage: owner + severity (internal, never shown to the raiser). */}
-      {mode === 'handler' && (c.can.assign || c.owner || c.severity) && (
+      {/* HR-queue triage: owner + severity + AI suggestion (internal, never shown to the raiser). */}
+      {mode === 'handler' && (c.can.assign || c.owner || c.severity || ai) && (
         <div className='flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm'>
           <label className='flex items-center gap-2 text-slate-600'>
             Owner
@@ -233,7 +243,9 @@ const ConcernCase = ({
               <select
                 value={c.owner?.id ?? ''}
                 disabled={act.isPending}
-                onChange={(e) => run(() => concernsApi.assign(c.id, e.target.value || null))}
+                onChange={(e) =>
+                  run(() => concernsApi.assign(c.id, e.target.value || null), 'Owner updated')
+                }
                 className='rounded-md border border-slate-300 px-2 py-1 text-sm'
               >
                 <option value=''>Unassigned</option>
@@ -254,8 +266,13 @@ const ConcernCase = ({
                 value={c.severity ?? ''}
                 disabled={act.isPending}
                 onChange={(e) =>
-                  run(() =>
-                    concernsApi.setSeverity(c.id, (e.target.value || null) as ConcernSeverity | null),
+                  run(
+                    () =>
+                      concernsApi.setSeverity(
+                        c.id,
+                        (e.target.value || null) as ConcernSeverity | null,
+                      ),
+                    'Severity updated',
                   )
                 }
                 className='rounded-md border border-slate-300 px-2 py-1 text-sm'
@@ -269,8 +286,57 @@ const ConcernCase = ({
               <span className='capitalize text-slate-800'>{c.severity ?? 'not set'}</span>
             )}
           </label>
-          <span className='basis-full text-xs text-slate-400'>
-            Internal to HR — the person who raised this never sees the owner or severity.
+          {ai && (
+            <div className='basis-full space-y-1.5 rounded-md border border-dashed border-sky-200 bg-sky-50/40 p-2.5'>
+              <p className='text-xs font-semibold uppercase tracking-wide text-sky-700'>
+                AI suggestion
+              </p>
+              {ai.summary && <p className='text-slate-700'>{ai.summary}</p>}
+              <div className='flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600'>
+                {ai.category && (
+                  <span className='flex items-center gap-1.5'>
+                    Category: <b>{categoryLabel(c.track, ai.category)}</b>
+                    {c.can.assign && ai.category !== c.category && (
+                      <button
+                        type='button'
+                        disabled={act.isPending}
+                        onClick={() =>
+                          run(() => concernsApi.setCategory(c.id, ai.category!), 'Category updated')
+                        }
+                        className='rounded border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 hover:bg-white disabled:opacity-40'
+                      >
+                        Apply
+                      </button>
+                    )}
+                  </span>
+                )}
+                {ai.severity && (
+                  <span className='flex items-center gap-1.5'>
+                    Severity: <b className='capitalize'>{ai.severity}</b>
+                    {c.can.assign && ai.severity !== c.severity && (
+                      <button
+                        type='button'
+                        disabled={act.isPending}
+                        onClick={() =>
+                          run(() => concernsApi.setSeverity(c.id, ai.severity), 'Severity updated')
+                        }
+                        className='rounded border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 hover:bg-white disabled:opacity-40'
+                      >
+                        Apply
+                      </button>
+                    )}
+                  </span>
+                )}
+              </div>
+              <p className='text-xs text-slate-500'>
+                Read from the concern text only, never who raised it. A suggestion — check it before
+                you apply it.
+              </p>
+            </div>
+          )}
+          <span className='basis-full text-xs text-slate-500'>
+            Internal to HR — the person who raised this never sees the owner, severity or AI
+            suggestion.
           </span>
         </div>
       )}
@@ -282,7 +348,7 @@ const ConcernCase = ({
             <button
               type='button'
               disabled={act.isPending}
-              onClick={() => run(() => concernsApi.acknowledge(c.id))}
+              onClick={() => run(() => concernsApi.acknowledge(c.id), 'Acknowledged')}
               className={primary}
             >
               Acknowledge
@@ -312,12 +378,20 @@ const ConcernCase = ({
       )}
 
       {panel === 'decide' &&
-        panelForm('The decision and its reasons — the raiser sees this.', 10, () =>
-          concernsApi.decide(c.id, text.trim()),
+        panelForm(
+          'The decision and its reasons — the raiser sees this.',
+          10,
+          () => concernsApi.decide(c.id, text.trim()),
+          undefined,
+          'Decision sent',
         )}
       {panel === 'escalate' &&
-        panelForm('Why the decision should be reviewed at the next level.', 10, () =>
-          concernsApi.escalate(c.id, text.trim()),
+        panelForm(
+          'Why the decision should be reviewed at the next level.',
+          10,
+          () => concernsApi.escalate(c.id, text.trim()),
+          undefined,
+          'Escalated to the next level',
         )}
       {panel === 'resolve' &&
         panelForm(
@@ -338,6 +412,7 @@ const ConcernCase = ({
               ))}
             </select>
           </label>,
+          'Resolved — the raiser has the outcome',
         )}
       {panel === 'extend' &&
         panelForm(
@@ -354,6 +429,7 @@ const ConcernCase = ({
               className={`${inputClass} mt-1`}
             />
           </label>,
+          'Timeline extended',
         )}
       {panel === 'decline' &&
         panelForm(
@@ -373,12 +449,14 @@ const ConcernCase = ({
               className={`${inputClass} mt-1`}
             />
           </label>,
+          'Declined as a repeat',
         )}
 
       {/* Add to the thread. */}
       {live && (c.can.note || mode === 'followup') && panel === null && (
         <div className='space-y-2'>
           <textarea
+            aria-label='Note'
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
@@ -408,13 +486,15 @@ const ConcernCase = ({
               type='button'
               disabled={note.trim().length < 2 || act.isPending}
               onClick={() =>
-                run(() =>
-                  mode === 'followup' && onFollowUpNote
-                    ? onFollowUpNote(note.trim())
-                    : concernsApi.note(c.id, {
-                        body: note.trim(),
-                        ...(mode === 'handler' ? { visibleToRaiser: reply } : {}),
-                      }),
+                run(
+                  () =>
+                    mode === 'followup' && onFollowUpNote
+                      ? onFollowUpNote(note.trim())
+                      : concernsApi.note(c.id, {
+                          body: note.trim(),
+                          ...(mode === 'handler' ? { visibleToRaiser: reply } : {}),
+                        }),
+                  mode === 'handler' && !reply ? 'Note added' : 'Sent',
                 )
               }
               className={primary}

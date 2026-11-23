@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { attendanceApi } from '@services/api/attendance.api';
 import { apiErrorMessage } from '@utils/apiError';
+import ModalShell from '@components/Common/Utilities/ModalShell.component';
 
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
 const labelClass = 'block text-xs font-medium text-slate-600';
@@ -39,14 +40,18 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4'>
+    <ModalShell onClose={onClose}>
       <form
         onSubmit={submit}
         className='max-h-full w-full max-w-md space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-lg'
       >
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold text-slate-800'>Request remote work</h2>
-          <button type='button' onClick={onClose} className='text-sm text-slate-400 hover:text-slate-600'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='text-sm text-slate-500 hover:text-slate-600'
+          >
             ✕
           </button>
         </div>
@@ -54,16 +59,32 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
         <div className='grid grid-cols-2 gap-3'>
           <div className='space-y-1'>
             <label className={labelClass}>From</label>
-            <input type='date' required min={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
+            <input
+              aria-label='From'
+              type='date'
+              required
+              min={today}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={inputClass}
+            />
           </div>
           <div className='space-y-1'>
             <label className={labelClass}>To</label>
-            <input type='date' min={startDate || today} value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+            <input
+              aria-label='To'
+              type='date'
+              min={startDate || today}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={inputClass}
+            />
           </div>
         </div>
         <div className='space-y-1'>
           <label className={labelClass}>Reason (required)</label>
           <textarea
+            aria-label='Reason (required)'
             required
             minLength={5}
             value={reason}
@@ -71,7 +92,7 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
             placeholder='e.g. client visit at Acme Pune, WFH — plumber coming'
             className={`${inputClass} min-h-16`}
           />
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             You can clock in and out from anywhere as soon as you send this. Your RM approves it —
             if they decline, those days count as absent.
           </p>
@@ -80,7 +101,11 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
         {create.error && <p className='text-sm text-red-600'>{apiErrorMessage(create.error)}</p>}
 
         <div className='flex justify-end gap-2 pt-2'>
-          <button type='button' onClick={onClose} className='rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50'
+          >
             Cancel
           </button>
           <button
@@ -92,7 +117,7 @@ const WfhModal = ({ onClose }: { onClose: () => void }) => {
           </button>
         </div>
       </form>
-    </div>
+    </ModalShell>
   );
 };
 

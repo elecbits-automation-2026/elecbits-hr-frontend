@@ -22,15 +22,13 @@ const cancellable = (l: LeaveRequest): { ok: boolean; label: string } => {
 
 const BalanceCard = ({ b }: { b: LeaveBalance }) => (
   <div className='rounded-xl border border-slate-200 bg-white p-4'>
-    <div className='text-xs font-medium uppercase tracking-wide text-slate-400'>
+    <div className='text-xs font-medium uppercase tracking-wide text-slate-500'>
       {leaveTypeLabel(b.type)}
     </div>
     <div className='mt-1 text-2xl font-semibold text-slate-800'>
       {b.remaining === null ? '∞' : b.remaining}
       {b.allocated !== null && (
-        <span className='ml-1 text-sm font-normal text-slate-400'>
-          / {b.allocated + b.opening}
-        </span>
+        <span className='ml-1 text-sm font-normal text-slate-500'>/ {b.allocated + b.opening}</span>
       )}
     </div>
     <div className='text-xs text-slate-500'>
@@ -38,12 +36,12 @@ const BalanceCard = ({ b }: { b: LeaveBalance }) => (
       {b.type === 'earned' && b.opening > 0 && ` · ${b.opening} carried over`}
     </div>
     {b.type === 'earned' && (
-      <div className='mt-1 text-[11px] text-slate-400'>
+      <div className='mt-1 text-xs text-slate-500'>
         accrues 1.5/month · balance caps at 30 · max 18 used a year
       </div>
     )}
     {b.type === 'menstrual' && (
-      <div className='mt-1 text-[11px] text-slate-400'>accrues 1/month · confidential</div>
+      <div className='mt-1 text-xs text-slate-500'>accrues 1/month · confidential</div>
     )}
   </div>
 );
@@ -77,6 +75,44 @@ const MyLeavesPage = () => {
     },
   });
 
+  /** Cancel / Revoke, armed in two steps (first click asks, "Yes" fires). */
+  const renderCancel = (l: LeaveRequest) => {
+    const c = cancellable(l);
+    if (!c.ok) return null;
+    if (confirmingId === l.id) {
+      return (
+        <span className='flex items-center gap-2 text-xs whitespace-nowrap'>
+          <span className='text-slate-600'>{c.label} this leave?</span>
+          <button
+            type='button'
+            disabled={cancel.isPending}
+            onClick={() => cancel.mutate(l.id)}
+            className='rounded-md bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-50'
+          >
+            Yes
+          </button>
+          <button
+            type='button'
+            onClick={() => setConfirmingId(null)}
+            className='text-slate-600 hover:text-slate-800'
+          >
+            Keep it
+          </button>
+        </span>
+      );
+    }
+    return (
+      <button
+        type='button'
+        disabled={cancel.isPending}
+        onClick={() => setConfirmingId(l.id)}
+        className='rounded-md px-2 py-1 text-xs text-slate-600 hover:text-red-600 disabled:opacity-50'
+      >
+        {c.label}
+      </button>
+    );
+  };
+
   return (
     <div className='w-full space-y-4'>
       <div className='flex items-center justify-between'>
@@ -99,6 +135,19 @@ const MyLeavesPage = () => {
       )}
 
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
+        <div className='mb-3 flex items-center gap-2'>
+          <h2 className='text-sm font-semibold text-slate-700'>Your requests</h2>
+          {leaves.data && (
+            <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500'>
+              {leaves.data.length}
+            </span>
+          )}
+          {leaves.data && leaves.data.some((l) => LIVE.includes(l.status)) && (
+            <span className='rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700'>
+              {leaves.data.filter((l) => LIVE.includes(l.status)).length} pending
+            </span>
+          )}
+        </div>
         {leaves.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
         {leaves.error && <p className='text-sm text-red-600'>{apiErrorMessage(leaves.error)}</p>}
         {cancel.error && <p className='text-sm text-red-600'>{apiErrorMessage(cancel.error)}</p>}
@@ -106,71 +155,80 @@ const MyLeavesPage = () => {
           (leaves.data.length === 0 ? (
             <p className='text-sm text-slate-500'>You have not requested any leave yet.</p>
           ) : (
-            <table className='w-full text-left text-sm'>
-              <thead>
-                <tr className='border-b border-slate-200 text-xs text-slate-500'>
-                  <th className='py-2 pr-3 font-medium'>Type</th>
-                  <th className='py-2 pr-3 font-medium'>Dates</th>
-                  <th className='py-2 pr-3 font-medium'>Days</th>
-                  <th className='py-2 pr-3 font-medium'>Approvals</th>
-                  <th className='py-2 pr-3 font-medium'>Status</th>
-                  <th className='py-2 font-medium'></th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Phones: one card per request, so the Cancel action stays on screen. */}
+              <ul className='space-y-3 sm:hidden'>
                 {leaves.data.map((l) => (
-                  <tr key={l.id} className='border-b border-slate-100'>
-                    <td className='py-2 pr-3'>
-                      {leaveTypeLabel(l.type)}
-                      <LeaveCertificate leave={l} />
-                    </td>
-                    <td className='py-2 pr-3 whitespace-nowrap'>{dateRange(l)}</td>
-                    <td className='py-2 pr-3'>{l.days}</td>
-                    <td className='py-2 pr-3 text-xs text-slate-500'>
+                  <li key={l.id} className='rounded-lg border border-slate-200 p-3 text-sm'>
+                    <div className='flex items-start justify-between gap-2'>
+                      <div>
+                        <p className='font-medium text-slate-800'>{leaveTypeLabel(l.type)}</p>
+                        <p className='text-slate-600'>
+                          {dateRange(l)} · {l.days} day{l.days === 1 ? '' : 's'}
+                        </p>
+                      </div>
+                      <LeaveStatusBadge status={l.status} />
+                    </div>
+                    <p className='mt-1 text-xs text-slate-600'>
                       {leaveSlots(l)}
                       {l.status === 'declined' && l.decisionReason && (
-                        <span className='ml-2 text-red-500'>({l.decisionReason})</span>
+                        <span className='ml-2 text-red-600'>({l.decisionReason})</span>
                       )}
-                    </td>
-                    <td className='py-2 pr-3'>
-                      <LeaveStatusBadge status={l.status} />
-                    </td>
-                    <td className='py-2'>
-                      {cancellable(l).ok &&
-                        (confirmingId === l.id ? (
-                          <span className='flex items-center gap-2 text-xs whitespace-nowrap'>
-                            <span className='text-slate-500'>{cancellable(l).label} this leave?</span>
-                            <button
-                              type='button'
-                              disabled={cancel.isPending}
-                              onClick={() => cancel.mutate(l.id)}
-                              className='rounded-md bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-50'
-                            >
-                              Yes
-                            </button>
-                            <button
-                              type='button'
-                              onClick={() => setConfirmingId(null)}
-                              className='text-slate-400 hover:text-slate-600'
-                            >
-                              Keep it
-                            </button>
-                          </span>
-                        ) : (
-                          <button
-                            type='button'
-                            disabled={cancel.isPending}
-                            onClick={() => setConfirmingId(l.id)}
-                            className='text-xs text-slate-400 hover:text-red-600 disabled:opacity-50'
-                          >
-                            {cancellable(l).label}
-                          </button>
-                        ))}
-                    </td>
-                  </tr>
+                    </p>
+                    <div className='mt-2 flex flex-wrap items-center justify-between gap-2'>
+                      <LeaveCertificate leave={l} />
+                      {renderCancel(l)}
+                    </div>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
+              <table className='hidden w-full text-left text-sm sm:table'>
+                <thead>
+                  <tr className='border-b border-slate-200 text-xs text-slate-500'>
+                    <th scope='col' className='py-2 pr-3 font-medium'>
+                      Type
+                    </th>
+                    <th scope='col' className='py-2 pr-3 font-medium'>
+                      Dates
+                    </th>
+                    <th scope='col' className='py-2 pr-3 font-medium'>
+                      Days
+                    </th>
+                    <th scope='col' className='py-2 pr-3 font-medium'>
+                      Approvals
+                    </th>
+                    <th scope='col' className='py-2 pr-3 font-medium'>
+                      Status
+                    </th>
+                    <th scope='col' className='py-2 font-medium'>
+                      <span className='sr-only'>Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaves.data.map((l) => (
+                    <tr key={l.id} className='border-b border-slate-100'>
+                      <td className='py-2 pr-3'>
+                        {leaveTypeLabel(l.type)}
+                        <LeaveCertificate leave={l} />
+                      </td>
+                      <td className='py-2 pr-3 whitespace-nowrap'>{dateRange(l)}</td>
+                      <td className='py-2 pr-3'>{l.days}</td>
+                      <td className='py-2 pr-3 text-xs text-slate-600'>
+                        {leaveSlots(l)}
+                        {l.status === 'declined' && l.decisionReason && (
+                          <span className='ml-2 text-red-600'>({l.decisionReason})</span>
+                        )}
+                      </td>
+                      <td className='py-2 pr-3'>
+                        <LeaveStatusBadge status={l.status} />
+                      </td>
+                      <td className='py-2'>{renderCancel(l)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           ))}
       </div>
 

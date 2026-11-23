@@ -117,7 +117,11 @@ const ReimbursementDesk = ({ role }: { role: 'pr' | 'admin' }) => {
     <div className='space-y-3 rounded-xl border border-slate-200 bg-white p-5'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex flex-wrap gap-2'>
-          <button type='button' onClick={() => setTab('decide')} className={tabBtn(tab === 'decide')}>
+          <button
+            type='button'
+            onClick={() => setTab('decide')}
+            className={tabBtn(tab === 'decide')}
+          >
             To decide{waiting.data ? ` (${waiting.data.length})` : ''}
           </button>
           <button type='button' onClick={() => setTab('sheet')} className={tabBtn(tab === 'sheet')}>
@@ -135,15 +139,17 @@ const ReimbursementDesk = ({ role }: { role: 'pr' | 'admin' }) => {
 
       {tab === 'decide' && (
         <>
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             {role === 'admin'
               ? 'PR approves first, then you. You can also decide a claim PR hasn’t seen yet — your approval is final. A decline is final too.'
               : 'Approve claims for Admin, or decline them (final, with a reason). Your own claims go to Admin only. Claims are usually approved once a month.'}
           </p>
-          {waiting.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
-          {waiting.error && <p className='text-sm text-red-600'>{apiErrorMessage(waiting.error)}</p>}
+          {waiting.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
+          {waiting.error && (
+            <p className='text-sm text-red-600'>{apiErrorMessage(waiting.error)}</p>
+          )}
           {waiting.data?.length === 0 && (
-            <p className='text-sm text-slate-400'>Nothing waiting for you.</p>
+            <p className='text-sm text-slate-500'>Nothing waiting for you.</p>
           )}
           {role === 'admin' ? (
             <>
@@ -224,16 +230,16 @@ const ReimbursementDesk = ({ role }: { role: 'pr' | 'admin' }) => {
             <p className='text-sm text-red-600'>{apiErrorMessage(download.error)}</p>
           )}
           {sheetView === 'toPay' && (
-            <p className='text-xs text-slate-400'>
+            <p className='text-xs text-slate-500'>
               The bank file has one row per person (name, account, IFSC, total, narration) and a
               second tab with every claim. After the transfer, tick the claims you paid and mark
               them paid with the bank reference.
             </p>
           )}
 
-          {sheet.isLoading && <p className='text-sm text-slate-400'>Loading…</p>}
+          {sheet.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
           {sheet.error && <p className='text-sm text-red-600'>{apiErrorMessage(sheet.error)}</p>}
-          {sheet.data?.length === 0 && <p className='text-sm text-slate-400'>Nothing here.</p>}
+          {sheet.data?.length === 0 && <p className='text-sm text-slate-500'>Nothing here.</p>}
           {sheetRows.length > 0 && (
             <p className='text-xs text-slate-500'>
               {sheetRows.length} claims · {inr(sum(sheetRows))}

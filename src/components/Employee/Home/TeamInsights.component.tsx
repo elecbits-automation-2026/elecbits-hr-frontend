@@ -81,16 +81,16 @@ const TeamInsights = () => {
     <section className='rounded-xl border border-slate-200 bg-white p-5'>
       <div className='flex items-baseline justify-between'>
         <h2 className='text-sm font-semibold text-slate-700'>Team insights</h2>
-        <span className='text-xs text-slate-400'>{team.data.length} reports · this month</span>
+        <span className='text-xs text-slate-500'>{team.data.length} reports · this month</span>
       </div>
 
       <div className='mt-4 grid gap-6 lg:grid-cols-2'>
         <div>
-          <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-slate-400'>
+          <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-slate-500'>
             Needs attention
           </h3>
           {insights.length === 0 ? (
-            <p className='text-sm text-slate-400'>
+            <p className='text-sm text-slate-500'>
               All clear — no late streaks, absences or waiting requests.
             </p>
           ) : (
@@ -133,13 +133,13 @@ const TeamInsights = () => {
 
         <div className='space-y-5'>
           <div>
-            <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-slate-400'>
+            <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-slate-500'>
               Weekly gaps (late / absent)
             </h3>
             <TeamTrendChart months={team.data} today={today} />
           </div>
           <div>
-            <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-slate-400'>
+            <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-slate-500'>
               Month so far, per person
             </h3>
             <TeamLoadStrip
@@ -150,12 +150,27 @@ const TeamInsights = () => {
             />
           </div>
           {/* ONE legend for both charts — every state owns exactly one hue. */}
-          <div className='flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-2 text-[11px] text-slate-400'>
-            <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-green-500' />present</span>
-            <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-blue-400' />leave/remote</span>
-            <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-yellow-400' />late check-in</span>
-            <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-orange-500' />half-day</span>
-            <span><span className='mr-1 inline-block h-2 w-2 rounded-sm bg-red-500' />absent</span>
+          <div className='flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-2 text-xs text-slate-500'>
+            <span>
+              <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-green-500' />
+              present
+            </span>
+            <span>
+              <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-blue-400' />
+              leave/remote
+            </span>
+            <span>
+              <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-yellow-400' />
+              late check-in
+            </span>
+            <span>
+              <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-orange-500' />
+              half-day
+            </span>
+            <span>
+              <span className='mr-1 inline-block h-2 w-2 rounded-sm bg-red-500' />
+              absent
+            </span>
           </div>
         </div>
       </div>

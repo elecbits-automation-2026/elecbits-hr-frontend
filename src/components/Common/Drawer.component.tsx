@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useDialogFocus } from '@hooks/Common/useDialogFocus.hook';
 
 /** A panel that slides over the page from the right; Esc or the backdrop closes it. */
 const Drawer = ({
@@ -15,6 +16,7 @@ const Drawer = ({
   children: React.ReactNode;
   wide?: boolean;
 }) => {
+  const dialogRef = useDialogFocus<HTMLElement>();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -24,7 +26,9 @@ const Drawer = ({
   return createPortal(
     <div className='fixed inset-0 z-40 flex justify-end bg-slate-900/30' onClick={onClose}>
       <aside
+        ref={dialogRef}
         role='dialog'
+        aria-modal='true'
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
         className={`flex h-full w-full flex-col bg-white shadow-xl ${wide ? 'max-w-4xl' : 'max-w-2xl'}`}
@@ -38,7 +42,7 @@ const Drawer = ({
             type='button'
             onClick={onClose}
             aria-label='Close'
-            className='rounded-md px-2 py-1 text-lg leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+            className='rounded-md px-2 py-1 text-lg leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-700'
           >
             ×
           </button>

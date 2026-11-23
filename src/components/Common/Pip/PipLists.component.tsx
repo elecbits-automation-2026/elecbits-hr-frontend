@@ -25,7 +25,7 @@ export const PersonPips = ({ employeeId }: { employeeId: string }) => {
   });
   const canStart = may.data === true;
   const [starting, setStarting] = useState(false);
-  if (pips.error) return <p className='text-sm text-slate-400'>{apiErrorMessage(pips.error)}</p>;
+  if (pips.error) return <p className='text-sm text-slate-500'>{apiErrorMessage(pips.error)}</p>;
   const list = pips.data ?? [];
   const open = list.some((p) => OPEN.has(p.status));
   return (

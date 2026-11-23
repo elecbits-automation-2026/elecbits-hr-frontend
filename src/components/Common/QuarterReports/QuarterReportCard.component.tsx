@@ -54,7 +54,7 @@ const QuarterReportCard = ({
         <span className='font-medium text-slate-800'>
           {showPerson ? report.employee.name : report.cycleName}
           {showPerson && report.departmentName && (
-            <span className='ml-2 text-xs font-normal text-slate-400'>{report.departmentName}</span>
+            <span className='ml-2 text-xs font-normal text-slate-500'>{report.departmentName}</span>
           )}
         </span>
         <span className='flex items-center gap-2'>
@@ -63,12 +63,12 @@ const QuarterReportCard = ({
               {band.label}
             </span>
           ) : (
-            <span className='text-xs text-slate-400'>no goals — unscored</span>
+            <span className='text-xs text-slate-500'>no goals — unscored</span>
           )}
           <span className='text-lg font-semibold tabular-nums text-slate-800'>
             {report.finalScore ?? '—'}
           </span>
-          <span className='text-xs text-slate-400'>{open ? '▴' : '▾'}</span>
+          <span className='text-xs text-slate-500'>{open ? '▴' : '▾'}</span>
         </span>
       </button>
       {open && (
@@ -95,30 +95,32 @@ const QuarterReportCard = ({
           )}
 
           {report.goals.length > 0 && (
-            <table className='w-full text-sm'>
-              <thead>
-                <tr className='text-left text-xs text-slate-400'>
-                  <th className='py-1 pr-3 font-medium'>Goal</th>
-                  <th className='py-1 pr-3 font-medium'>Category</th>
-                  <th className='py-1 pr-3 text-right font-medium'>Weight</th>
-                  <th className='py-1 text-right font-medium'>Progress</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.goals.map((g, i) => (
-                  <tr key={i} className='border-t border-slate-100'>
-                    <td className='py-1.5 pr-3 text-slate-700'>{g.title}</td>
-                    <td className='py-1.5 pr-3 text-xs text-slate-500'>
-                      {GOAL_CATEGORY_LABELS[g.category].label}
-                    </td>
-                    <td className='py-1.5 pr-3 text-right tabular-nums text-slate-500'>
-                      {g.weight}
-                    </td>
-                    <td className='py-1.5 text-right tabular-nums'>{g.progress}%</td>
+            <div className='overflow-x-auto'>
+              <table className='w-full text-sm'>
+                <thead>
+                  <tr className='text-left text-xs text-slate-500'>
+                    <th className='py-1 pr-3 font-medium'>Goal</th>
+                    <th className='py-1 pr-3 font-medium'>Category</th>
+                    <th className='py-1 pr-3 text-right font-medium'>Weight</th>
+                    <th className='py-1 text-right font-medium'>Progress</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {report.goals.map((g, i) => (
+                    <tr key={i} className='border-t border-slate-100'>
+                      <td className='py-1.5 pr-3 text-slate-700'>{g.title}</td>
+                      <td className='py-1.5 pr-3 text-xs text-slate-500'>
+                        {GOAL_CATEGORY_LABELS[g.category].label}
+                      </td>
+                      <td className='py-1.5 pr-3 text-right tabular-nums text-slate-500'>
+                        {g.weight}
+                      </td>
+                      <td className='py-1.5 text-right tabular-nums'>{g.progress}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           <div className='flex flex-wrap gap-6 text-sm'>
@@ -151,7 +153,7 @@ const QuarterReportCard = ({
               tone={report.atRiskGoals > 0 ? 'text-amber-600' : undefined}
             />
           </div>
-          <p className='text-xs text-slate-400'>
+          <p className='text-xs text-slate-500'>
             {report.rm ? `Manager at close: ${report.rm.name}. ` : ''}
             {report.appraisalEligible
               ? 'Eligible for appraisal consideration (six months of service).'
@@ -206,7 +208,7 @@ const QuarterReportCard = ({
                 <button
                   type='button'
                   onClick={() => setAdjusting(false)}
-                  className='text-xs text-slate-400 hover:text-slate-600'
+                  className='text-xs text-slate-500 hover:text-slate-600'
                 >
                   Cancel
                 </button>

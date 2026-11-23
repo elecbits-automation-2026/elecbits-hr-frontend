@@ -6,6 +6,8 @@ import type { Me, PersonRef, UpdateMeInput } from '@app-types/api.types';
 import { RESIGNATION_ROUTE } from '@constants/Common/navigation/routes.constants';
 import { meApi } from '@services/api/me.api';
 import { apiErrorMessage } from '@utils/apiError';
+import QueryError from '@components/Common/Utilities/QueryError.component';
+import MyDataCard from '@components/Common/Privacy/MyDataCard.component';
 
 const inputClass = 'w-full rounded-md border border-slate-300 px-3 py-2 text-sm';
 const labelClass = 'block text-xs font-medium text-slate-600';
@@ -55,6 +57,7 @@ const Field = ({
   <div className='space-y-1'>
     <label className={labelClass}>{label}</label>
     <input
+      aria-label={label}
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -77,7 +80,12 @@ const SelectField = ({
 }) => (
   <div className='space-y-1'>
     <label className={labelClass}>{label}</label>
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={inputClass}
+    >
       <option value=''>—</option>
       {options.map((o) => (
         <option key={o} value={o}>
@@ -116,8 +124,7 @@ const splitName = (full: string): { first: string; middle: string; last: string 
 };
 
 const toForm = (me: Me): FormState => {
-  const parts =
-    me.firstName === null && me.lastName === null ? splitName(me.name) : undefined;
+  const parts = me.firstName === null && me.lastName === null ? splitName(me.name) : undefined;
   return {
     salutation: me.salutation ?? '',
     firstName: me.firstName ?? parts?.first ?? '',
@@ -181,8 +188,7 @@ const ProfilePage = () => {
     },
   });
 
-  const set = (key: keyof FormState) => (v: string) =>
-    setForm((f) => (f ? { ...f, [key]: v } : f));
+  const set = (key: keyof FormState) => (v: string) => setForm((f) => (f ? { ...f, [key]: v } : f));
 
   const editableTab = tab === 'overview' || tab === 'contacts' || tab === 'address';
 
@@ -215,7 +221,7 @@ const ProfilePage = () => {
   }, [form, tab]);
 
   if (isLoading) return <p className='text-sm text-slate-500'>Loading…</p>;
-  if (error || !me || !form) return <p className='text-sm text-red-600'>{apiErrorMessage(error)}</p>;
+  if (error || !me || !form) return <QueryError error={error} />;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -231,13 +237,28 @@ const ProfilePage = () => {
   const tabContent: Record<TabKey, ReactNode> = {
     overview: grid(
       <>
-        <SelectField label='Salutation' value={form.salutation} onChange={set('salutation')} options={SALUTATIONS} />
+        <SelectField
+          label='Salutation'
+          value={form.salutation}
+          onChange={set('salutation')}
+          options={SALUTATIONS}
+        />
         <Field label='First name' value={form.firstName} onChange={set('firstName')} />
         <Field label='Middle name' value={form.middleName} onChange={set('middleName')} />
         <Field label='Last name' value={form.lastName} onChange={set('lastName')} />
         <Fact label='Full name' value={me.name} />
-        <SelectField label='Gender' value={form.gender} onChange={set('gender')} options={GENDERS} />
-        <Field label='Date of birth' type='date' value={form.dateOfBirth} onChange={set('dateOfBirth')} />
+        <SelectField
+          label='Gender'
+          value={form.gender}
+          onChange={set('gender')}
+          options={GENDERS}
+        />
+        <Field
+          label='Date of birth'
+          type='date'
+          value={form.dateOfBirth}
+          onChange={set('dateOfBirth')}
+        />
         <Fact label='Series (employee code)' value={me.employeeCode} />
         <Fact label='Date of joining' value={dash(me.dateOfJoining)} />
         <Fact label='Status' value={me.status} />
@@ -269,7 +290,12 @@ const ProfilePage = () => {
           // 10 digits exactly (user decision): strip non-digits, cap at 10.
           onChange={(v) => set('phone')(v.replace(/\D/g, '').slice(0, 10))}
         />
-        <Field label='Personal email' type='email' value={form.personalEmail} onChange={set('personalEmail')} />
+        <Field
+          label='Personal email'
+          type='email'
+          value={form.personalEmail}
+          onChange={set('personalEmail')}
+        />
         <Fact label='Company email' value={me.email} />
         <SelectField
           label='Preferred contact email'
@@ -284,6 +310,7 @@ const ProfilePage = () => {
         <div className='space-y-1'>
           <label className={labelClass}>Current address</label>
           <textarea
+            aria-label='Current address'
             value={form.currentAddress}
             onChange={(e) => set('currentAddress')(e.target.value)}
             className={`${inputClass} min-h-28`}
@@ -292,6 +319,7 @@ const ProfilePage = () => {
         <div className='space-y-1'>
           <label className={labelClass}>Permanent address</label>
           <textarea
+            aria-label='Permanent address'
             value={form.permanentAddress}
             onChange={(e) => set('permanentAddress')(e.target.value)}
             className={`${inputClass} min-h-28`}
@@ -309,8 +337,8 @@ const ProfilePage = () => {
     salary: (
       <div className='space-y-4'>
         <p className='rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800'>
-          Private to you. Only you, Payroll (PR) and the Owner can see this tab — other HR and
-          your manager cannot.
+          Private to you. Only you, Payroll (PR) and the Owner can see this tab — other HR and your
+          manager cannot.
         </p>
         {salary.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
         {salary.error && <p className='text-sm text-red-600'>{apiErrorMessage(salary.error)}</p>}
@@ -320,9 +348,7 @@ const ProfilePage = () => {
               <>
                 <Fact
                   label='Cost to Company (CTC)'
-                  value={
-                    salary.data.ctc ? `${salary.data.salaryCurrency} ${salary.data.ctc}` : '—'
-                  }
+                  value={salary.data.ctc ? `${salary.data.salaryCurrency} ${salary.data.ctc}` : '—'}
                 />
                 <Fact label='Payroll cost center' value={dash(salary.data.payrollCostCenter)} />
                 <Fact label='Salary currency' value={salary.data.salaryCurrency} />
@@ -330,8 +356,14 @@ const ProfilePage = () => {
                 <Fact label='PAN number' value={dash(salary.data.panNumber)} />
                 <Fact label='UAN' value={dash(salary.data.uanNumber)} />
                 <Fact label='ESIC IP number' value={dash(salary.data.esicIpNumber)} />
-                <Fact label='Provident fund account' value={dash(salary.data.providentFundAccount)} />
-                <Fact label='Employee advance account' value={dash(salary.data.employeeAdvanceAccount)} />
+                <Fact
+                  label='Provident fund account'
+                  value={dash(salary.data.providentFundAccount)}
+                />
+                <Fact
+                  label='Employee advance account'
+                  value={dash(salary.data.employeeAdvanceAccount)}
+                />
                 <Fact
                   label='Structure (basic / HRA %)'
                   value={`${salary.data.basicPercent ?? '50'} / ${salary.data.hraPercent ?? '25'}`}
@@ -343,7 +375,7 @@ const ProfilePage = () => {
               </>,
             )}
             <div>
-              <p className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400'>
+              <p className='mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
                 Bank details
               </p>
               {grid(
@@ -354,7 +386,7 @@ const ProfilePage = () => {
                 </>,
               )}
             </div>
-            <p className='text-xs text-slate-400'>
+            <p className='text-xs text-slate-500'>
               Corrections go through Payroll — these fields are not self-serve.
             </p>
           </>
@@ -369,26 +401,28 @@ const ProfilePage = () => {
           (assets.data.length === 0 ? (
             <p className='text-sm text-slate-500'>No assets are assigned to you.</p>
           ) : (
-            <table className='w-full text-left text-sm'>
-              <thead>
-                <tr className='border-b border-slate-200 text-xs text-slate-500'>
-                  <th className='py-2 pr-3 font-medium'>Code</th>
-                  <th className='py-2 pr-3 font-medium'>Name</th>
-                  <th className='py-2 pr-3 font-medium'>Category</th>
-                  <th className='py-2 font-medium'>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assets.data.map((a) => (
-                  <tr key={a.id} className='border-b border-slate-100'>
-                    <td className='py-2 pr-3 font-mono text-xs'>{a.assetCode}</td>
-                    <td className='py-2 pr-3'>{a.name}</td>
-                    <td className='py-2 pr-3'>{dash(a.category)}</td>
-                    <td className='py-2'>{a.status.replace('_', ' ')}</td>
+            <div className='overflow-x-auto'>
+              <table className='w-full text-left text-sm'>
+                <thead>
+                  <tr className='border-b border-slate-200 text-xs text-slate-500'>
+                    <th className='py-2 pr-3 font-medium'>Code</th>
+                    <th className='py-2 pr-3 font-medium'>Name</th>
+                    <th className='py-2 pr-3 font-medium'>Category</th>
+                    <th className='py-2 font-medium'>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {assets.data.map((a) => (
+                    <tr key={a.id} className='border-b border-slate-100'>
+                      <td className='py-2 pr-3 font-mono text-xs'>{a.assetCode}</td>
+                      <td className='py-2 pr-3'>{a.name}</td>
+                      <td className='py-2 pr-3'>{dash(a.category)}</td>
+                      <td className='py-2'>{a.status.replace('_', ' ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ))}
       </div>
     ),
@@ -415,14 +449,8 @@ const ProfilePage = () => {
                 <Fact label='Status' value={exit.data.status} />
                 <Fact label='Notice from' value={exit.data.noticeStartOn} />
                 <Fact label='Last working day' value={exit.data.lastWorkingDay} />
-                <Fact
-                  label='Exit interview'
-                  value={exit.data.interviewAt ? 'Filled' : 'Not yet'}
-                />
-                <Fact
-                  label='Full & final'
-                  value={exit.data.settledAt ? 'Settled' : 'Not yet'}
-                />
+                <Fact label='Exit interview' value={exit.data.interviewAt ? 'Filled' : 'Not yet'} />
+                <Fact label='Full & final' value={exit.data.settledAt ? 'Settled' : 'Not yet'} />
               </>,
             )}
             <p className='text-sm text-slate-500'>
@@ -466,7 +494,7 @@ const ProfilePage = () => {
 
         {editableTab && (
           <div className='flex items-center justify-end gap-3'>
-            {saved && <span className='text-xs text-green-600'>Saved</span>}
+            {saved && <span className='text-xs text-green-700'>Saved</span>}
             <button
               type='submit'
               disabled={update.isPending}
@@ -478,8 +506,11 @@ const ProfilePage = () => {
         )}
       </form>
 
+      {/* Download my data + privacy-notice acceptance (DPDP, report M12). */}
+      <MyDataCard />
+
       {/* Resign lives here now, not in the main menu (learner, 2026-11-05). */}
-      <p className='text-right text-xs text-slate-400'>
+      <p className='text-right text-xs text-slate-500'>
         Leaving Elecbits?{' '}
         <Link to={RESIGNATION_ROUTE} className='text-slate-500 underline hover:text-slate-700'>
           Resign

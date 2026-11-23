@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import ThemeToggle from '@components/Common/Navigation/ThemeToggle.component';
 import { HOME_ROUTE } from '@constants/Common/navigation/routes.constants';
 import { authService } from '@services/auth.service';
 import { apiErrorMessage } from '@utils/apiError';
@@ -115,11 +116,15 @@ const AuthPage = () => {
         onSubmit={submit}
         className='w-full max-w-sm space-y-4 rounded-xl bg-white p-8 shadow-sm'
       >
-        <div>
-          <h1 className='text-xl font-bold text-brand-600'>Elecbits HR</h1>
-          <p className='text-sm text-slate-500'>
-            {mode === 'login' ? 'Sign in with your company email' : 'Claim your employee record'}
-          </p>
+        <div className='flex items-center gap-3'>
+          {/* The app icon (public/icons) — the same mark as the browser tab. */}
+          <img src='/icons/icon-192.png' alt='' className='h-10 w-10 shrink-0 rounded-lg' />
+          <div>
+            <h1 className='text-xl font-bold text-brand-600'>Elecbits HR</h1>
+            <p className='text-sm text-slate-500'>
+              {mode === 'login' ? 'Sign in with your company email' : 'Claim your employee record'}
+            </p>
+          </div>
         </div>
 
         {mode === 'login' && (
@@ -131,7 +136,7 @@ const AuthPage = () => {
               <GoogleMark />
               Sign in with Google
             </a>
-            <div className='flex items-center gap-3 text-xs text-slate-400'>
+            <div className='flex items-center gap-3 text-xs text-slate-500'>
               <span className='h-px flex-1 bg-slate-200' />
               or use your password
               <span className='h-px flex-1 bg-slate-200' />
@@ -140,6 +145,7 @@ const AuthPage = () => {
         )}
 
         <input
+          aria-label='Company email'
           type='email'
           required
           placeholder='you@elecbits.in'
@@ -148,6 +154,7 @@ const AuthPage = () => {
           className='w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
         />
         <input
+          aria-label='Password'
           type='password'
           required
           minLength={8}
@@ -159,6 +166,7 @@ const AuthPage = () => {
         {mode === 'claim' && (
           <div>
             <input
+              aria-label='Invite token (from the link HR shared)'
               type='text'
               required
               minLength={16}
@@ -167,7 +175,7 @@ const AuthPage = () => {
               onChange={(e) => setToken(e.target.value)}
               className='w-full rounded-md border border-slate-300 px-3 py-2 text-sm'
             />
-            <p className='mt-1 text-xs text-slate-400'>
+            <p className='mt-1 text-xs text-slate-500'>
               Filled automatically when you open the invite link. Expired? Ask HR for a new one.
             </p>
           </div>
@@ -190,6 +198,10 @@ const AuthPage = () => {
         >
           {mode === 'login' ? 'First time here? Claim your record' : 'Already claimed? Sign in'}
         </button>
+
+        <div className='border-t border-slate-200 pt-4 [&>div]:mx-0'>
+          <ThemeToggle />
+        </div>
       </form>
     </div>
   );

@@ -56,7 +56,7 @@ const Stat = ({
   <div className={`${card} p-4`}>
     <p className={`font-mono text-[30px] font-extrabold leading-none ${tone}`}>{value}</p>
     <p className='mt-1.5 text-sm font-medium text-slate-700'>{label}</p>
-    {sub && <p className='text-xs text-slate-400'>{sub}</p>}
+    {sub && <p className='text-xs text-slate-500'>{sub}</p>}
   </div>
 );
 
@@ -153,8 +153,7 @@ const HiringPage = () => {
     heads: visible.filter((i) => i.position.status === 'filled').length,
     inFlight: apps.filter((a) => LIVE_STAGES.includes(a.stage)).length,
     offers: apps.filter((a) => a.stage === 'offered').length,
-    hired: apps.filter((a) => a.stage === 'hired' && quarterOf(a.updatedAt) === thisQuarter)
-      .length,
+    hired: apps.filter((a) => a.stage === 'hired' && quarterOf(a.updatedAt) === thisQuarter).length,
   };
   const oldest = Math.max(
     0,
@@ -168,9 +167,7 @@ const HiringPage = () => {
     setTab('pipeline');
   };
   const drawerLine = board.data?.lines.find((l) => l.id === lineOpen);
-  const drawerApp: Application | undefined = board.data?.applications.find(
-    (a) => a.id === appOpen,
-  );
+  const drawerApp: Application | undefined = board.data?.applications.find((a) => a.id === appOpen);
   // Hold / resume: the line's TA RM or an HRBP (the backend checks the same).
   const canHold = (i: BoardPosition) =>
     !!meId && (i.line.taRm?.id === meId || !!me.data?.batches.includes('HRBP'));
@@ -239,7 +236,7 @@ const HiringPage = () => {
             />
             <Stat value={stats.inFlight} label='Candidates in flight' tone='text-violet-600' />
             <Stat value={stats.offers} label='Offers out' tone='text-amber-600' />
-            <Stat value={stats.hired} label='Hired this quarter' tone='text-green-600' />
+            <Stat value={stats.hired} label='Hired this quarter' tone='text-green-700' />
           </div>
 
           {board.isLoading && <p className='text-sm text-slate-500'>Loading…</p>}
@@ -313,10 +310,13 @@ const HiringPage = () => {
                     JD, scorecard &amp; recruiter
                   </button>
                 )}
-                <span className='ml-auto text-xs text-slate-400'>
+                <span className='ml-auto text-xs text-slate-500'>
                   {shown.flatMap((i) => i.apps).filter((a) => LIVE_STAGES.includes(a.stage)).length}{' '}
                   live ·{' '}
-                  {shown.flatMap((i) => i.apps).filter((a) => !LIVE_STAGES.includes(a.stage)).length}{' '}
+                  {
+                    shown.flatMap((i) => i.apps).filter((a) => !LIVE_STAGES.includes(a.stage))
+                      .length
+                  }{' '}
                   closed out
                 </span>
               </div>
@@ -361,19 +361,25 @@ const HiringPage = () => {
             <div className='flex flex-wrap items-center justify-between gap-2'>
               <p className='text-sm font-semibold text-slate-800'>Scorecard summary</p>
               <span className='flex flex-wrap items-center gap-2 text-xs'>
-                <span className={`rounded-full px-2 py-0.5 font-medium ${STAGE_CLASS[drawerApp.stage]}`}>
+                <span
+                  className={`rounded-full px-2 py-0.5 font-medium ${STAGE_CLASS[drawerApp.stage]}`}
+                >
                   {STAGE_LABEL[drawerApp.stage]}
                 </span>
                 {drawerApp.currentRound && (
-                  <span className='text-violet-700'>Round open: {ROUND_LABEL[drawerApp.currentRound]}</span>
+                  <span className='text-violet-700'>
+                    Round open: {ROUND_LABEL[drawerApp.currentRound]}
+                  </span>
                 )}
                 <span className='rounded-full bg-slate-800 px-2 py-0.5 font-mono font-semibold text-white'>
-                  {drawerApp.scoreTotal === null ? 'not scored yet' : `${drawerApp.scoreTotal} / 100`}
+                  {drawerApp.scoreTotal === null
+                    ? 'not scored yet'
+                    : `${drawerApp.scoreTotal} / 100`}
                 </span>
               </span>
             </div>
             <ScorecardSummary app={drawerApp} />
-            <p className='text-[11px] text-slate-400'>
+            <p className='text-xs text-slate-500'>
               Click a scored round to see every answer&apos;s 1–4 score and the evidence.
             </p>
           </section>
