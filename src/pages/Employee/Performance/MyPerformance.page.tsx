@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
@@ -186,6 +186,140 @@ const scoreTone = (score: number): string =>
       ? 'text-amber-700 bg-amber-50'
       : 'text-red-700 bg-red-50';
 
+/** Wait this long after the last change before saving (arrow keys commit once per press). */
+const PROGRESS_SAVE_DELAY_MS = 300;
+
+/**
+ * One of your own goals, with its progress slider. The slider's value lives
+ * here, not on the page, so dragging re-renders only this card. It saves on
+ * the native `change` event (mouse or touch release, or keyboard), shows the
+ * new value straight away, and stays usable while saving. Saves run one after
+ * another; once none is left (and the list has been refetched) it goes back
+ * to the server's value, which also rolls back a failed save.
+ */
+const GoalRow = memo(function GoalRow({
+  goal,
+  today,
+  onCommit,
+}: {
+  goal: Goal;
+  today: string;
+  onCommit: (id: string, value: number) => Promise<unknown>;
+}) {
+  const [local, setLocal] = useState<number | null>(null);
+  const shown = local ?? goal.progress;
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const valueRef = useRef(shown);
+  const serverRef = useRef(goal.progress);
+  serverRef.current = goal.progress;
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
+  const holding = useRef(false);
+  const timer = useRef<number | undefined>(undefined);
+  const pending = useRef(0);
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const send = () => {
+      timer.current = undefined;
+      const v = valueRef.current;
+      if (pending.current === 0 && v === serverRef.current) {
+        if (!holding.current) setLocal(null);
+        return;
+      }
+      pending.current += 1;
+      chain.current = chain.current
+        .then(() => onCommitRef.current(goal.id, v))
+        .catch(() => undefined)
+        .finally(() => {
+          pending.current -= 1;
+          if (pending.current === 0 && timer.current === undefined && !holding.current)
+            setLocal(null);
+        });
+    };
+    const onChange = () => {
+      holding.current = false;
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(send, PROGRESS_SAVE_DELAY_MS);
+    };
+    input.addEventListener('change', onChange);
+    return () => {
+      input.removeEventListener('change', onChange);
+      // Leaving mid-wait: save now rather than drop the change.
+      if (timer.current !== undefined) {
+        window.clearTimeout(timer.current);
+        send();
+      }
+    };
+  }, [goal.id, goal.positionId]);
+
+  return (
+    <div className='rounded-lg border border-slate-100 bg-slate-50 p-4'>
+      <div className='flex flex-wrap items-baseline justify-between gap-2'>
+        <div className='min-w-0'>
+          <span className='font-medium text-slate-800'>{goal.title}</span>
+          <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600'>
+            {GOAL_CATEGORY_LABELS[goal.category].label}
+          </span>
+          {goal.positionId && (
+            <Link
+              to={`${HR_HIRING_ROUTE}?position=${goal.positionId}`}
+              title='Progress follows the position — work it (JD, scorecard, candidates) in HR → Hiring'
+              className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 hover:bg-sky-100'
+            >
+              hiring · open →
+            </Link>
+          )}
+          {isAtRisk(goal, today) && (
+            <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold uppercase text-red-700'>
+              at risk
+            </span>
+          )}
+          <p className='mt-0.5 text-xs text-slate-500'>
+            {goal.metric && (
+              <>
+                {goal.metric}
+                {goal.target ? ` → ${goal.target}` : ''} ·{' '}
+              </>
+            )}
+            weight {goal.weight} · due {goal.dueOn} ·{' '}
+            <DaysLeftTag dueOn={goal.dueOn} today={today} />
+            {goal.createdByName && <> · set by {goal.createdByName}</>}
+          </p>
+        </div>
+        <span className='text-lg font-semibold tabular-nums text-slate-800'>{shown}%</span>
+      </div>
+      {goal.positionId ? (
+        <div className='mt-2 h-2 w-full rounded-full bg-slate-200'>
+          <div className='h-2 rounded-full bg-sky-500' style={{ width: `${goal.progress}%` }} />
+        </div>
+      ) : (
+        <input
+          ref={inputRef}
+          aria-label='Progress'
+          type='range'
+          min={0}
+          max={100}
+          step={1}
+          value={shown}
+          onPointerDown={() => (holding.current = true)}
+          onPointerUp={() => (holding.current = false)}
+          onPointerCancel={() => (holding.current = false)}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            valueRef.current = v;
+            setLocal(v);
+          }}
+          className='mt-2 w-full accent-brand-600'
+        />
+      )}
+    </div>
+  );
+});
+
 const EMPTY_GOAL: Omit<CreateGoalInput, 'employeeId'> = {
   title: '',
   weight: 25,
@@ -254,20 +388,18 @@ const MyPerformancePage = () => {
   });
   const openSheet = (id: string, name: string) => setPeek({ id, name });
 
-  // Progress sliders: local value while dragging, saved on release.
-  const [dragging, setDragging] = useState<Record<string, number>>({});
+  // Progress: each goal card owns its slider value (see GoalRow); the page only
+  // saves. onSettled returns the refetch, so a save resolves once the list is fresh.
   const progress = useMutation({
     mutationFn: ({ id, value }: { id: string; value: number }) =>
       performanceApi.updateProgress(id, value),
-    onSettled: (_data, _err, { id }) => {
-      setDragging((d) => {
-        const rest = { ...d };
-        delete rest[id];
-        return rest;
-      });
-      queryClient.invalidateQueries({ queryKey: ['my-goals'] });
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['my-goals'] }),
   });
+  const { mutateAsync: saveProgressAsync } = progress;
+  const saveProgress = useCallback(
+    (id: string, value: number) => saveProgressAsync({ id, value }),
+    [saveProgressAsync],
+  );
 
   // Today's update editor — prefilled with today's note when one exists.
   const todays = myUpdates.data?.updates.find((u) => u.date === today) ?? null;
@@ -430,76 +562,9 @@ const MyPerformancePage = () => {
             </p>
           ) : (
             <div className='mt-3 space-y-3'>
-              {g.goals.map((goal) => {
-                const value = dragging[goal.id] ?? goal.progress;
-                return (
-                  <div key={goal.id} className='rounded-lg border border-slate-100 bg-slate-50 p-4'>
-                    <div className='flex flex-wrap items-baseline justify-between gap-2'>
-                      <div className='min-w-0'>
-                        <span className='font-medium text-slate-800'>{goal.title}</span>
-                        <span className='ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600'>
-                          {GOAL_CATEGORY_LABELS[goal.category].label}
-                        </span>
-                        {goal.positionId && (
-                          <Link
-                            to={`${HR_HIRING_ROUTE}?position=${goal.positionId}`}
-                            title='Progress follows the position — work it (JD, scorecard, candidates) in HR → Hiring'
-                            className='ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 hover:bg-sky-100'
-                          >
-                            hiring · open →
-                          </Link>
-                        )}
-                        {isAtRisk(goal, today) && (
-                          <span className='ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold uppercase text-red-700'>
-                            at risk
-                          </span>
-                        )}
-                        <p className='mt-0.5 text-xs text-slate-500'>
-                          {goal.metric && (
-                            <>
-                              {goal.metric}
-                              {goal.target ? ` → ${goal.target}` : ''} ·{' '}
-                            </>
-                          )}
-                          weight {goal.weight} · due {goal.dueOn} ·{' '}
-                          <DaysLeftTag dueOn={goal.dueOn} today={today} />
-                          {goal.createdByName && <> · set by {goal.createdByName}</>}
-                        </p>
-                      </div>
-                      <span className='text-lg font-semibold tabular-nums text-slate-800'>
-                        {value}%
-                      </span>
-                    </div>
-                    {goal.positionId ? (
-                      <div className='mt-2 h-2 w-full rounded-full bg-slate-200'>
-                        <div
-                          className='h-2 rounded-full bg-sky-500'
-                          style={{ width: `${goal.progress}%` }}
-                        />
-                      </div>
-                    ) : (
-                      <input
-                        aria-label='Progress'
-                        type='range'
-                        min={0}
-                        max={100}
-                        step={5}
-                        value={value}
-                        disabled={progress.isPending}
-                        onChange={(e) =>
-                          setDragging((d) => ({ ...d, [goal.id]: Number(e.target.value) }))
-                        }
-                        onPointerUp={() => {
-                          const v = dragging[goal.id];
-                          if (v !== undefined && v !== goal.progress)
-                            progress.mutate({ id: goal.id, value: v });
-                        }}
-                        className='mt-2 w-full accent-brand-600'
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {g.goals.map((goal) => (
+                <GoalRow key={goal.id} goal={goal} today={today} onCommit={saveProgress} />
+              ))}
               {progress.error && (
                 <p className='text-sm text-red-600'>{apiErrorMessage(progress.error)}</p>
               )}
