@@ -119,6 +119,7 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
                   <th className='py-2 pr-3 font-medium'>Remote</th>
                   <th className='py-2 pr-3 font-medium'>Late ins</th>
                   <th className='py-2 pr-3 font-medium'>Early outs</th>
+                  <th className='py-2 pr-3 font-medium'>Marked by HR</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,6 +140,12 @@ const TeamAttendancePage = ({ embedded = false }: { embedded?: boolean }) => {
                     </td>
                     <td className={`py-2 pr-3 ${t.summary.earlyOuts > 0 ? 'text-red-600' : ''}`}>
                       {t.summary.earlyOuts}
+                    </td>
+                    <td
+                      className='py-2 pr-3'
+                      title='Days HR marked by hand — hover the day in the calendar for the reason'
+                    >
+                      {t.summary.regularized}
                     </td>
                   </tr>
                 ))}

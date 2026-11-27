@@ -255,6 +255,11 @@ const MyAttendancePage = () => {
               <span>
                 Early outs: <b className='text-slate-700'>{summary.earlyOuts}</b>
               </span>
+              {summary.regularized > 0 && (
+                <span title='Days HR marked by hand — the dashed outline on the calendar; click a day for the reason'>
+                  Marked by HR: <b className='text-slate-700'>{summary.regularized}</b>
+                </span>
+              )}
               <span title='Present over the working days so far (week offs, holidays and full-day leave left out; half a day counts 0.5)'>
                 Attendance: <b className='text-slate-700'>{pct ? `${pct.pct}%` : '—'}</b>
               </span>

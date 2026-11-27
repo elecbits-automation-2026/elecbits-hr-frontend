@@ -45,3 +45,11 @@ export const averageHours = (days: AttendanceDay[], today: string) => {
     days: worked.length,
   };
 };
+
+/** A day HR marked by hand: a dashed outline, the same in every calendar. */
+export const REGULARIZED_OUTLINE =
+  'outline-dashed outline-2 outline-offset-[-3px] outline-slate-600';
+
+/** "marked by Farah Khan: forgot to punch" — for tooltips. */
+export const regularizedNote = (d: AttendanceDay): string =>
+  `marked by ${d.regularizedByName ?? 'HR'}${d.regularizedReason ? `: ${d.regularizedReason}` : ''}`;
