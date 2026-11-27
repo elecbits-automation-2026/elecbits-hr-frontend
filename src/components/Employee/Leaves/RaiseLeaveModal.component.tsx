@@ -16,7 +16,11 @@ const SICK_CERT_AFTER_DAYS = 3;
 const CERT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 const CERT_MAX_BYTES = 10 * 1024 * 1024;
 
-/** Mon–Fri days in the range — a quick floor of what the backend will count. */
+/**
+ * Mon–Fri days in the range — only a floor while the server's count loads
+ * (it never counts a working Saturday or a holiday, so it can't wrongly say
+ * "required"). The server's /leaves/day-count is the real number.
+ */
 const weekdaysBetween = (from: string, to: string): number => {
   if (!from || !to || to < from) return 0;
   let n = 0;
@@ -72,10 +76,26 @@ const RaiseLeaveModal = ({
         : r.rm
           ? `Goes to ${r.rm.name} (your manager).`
           : 'Goes to HR.';
+  // The server's working-day count for the range — the same rule raising
+  // uses, so a working Saturday counts here too (it used to be skipped).
+  const rangeOk =
+    !half &&
+    !!startDate &&
+    !!endDate &&
+    endDate >= startDate &&
+    startDate.slice(0, 4) === endDate.slice(0, 4);
+  const dayCount = useQuery({
+    queryKey: ['leave-day-count', startDate, endDate],
+    queryFn: () => leavesApi.dayCount(startDate, endDate),
+    enabled: rangeOk,
+    staleTime: 5 * 60_000,
+  });
+  const days = half ? 0.5 : rangeOk ? (dayCount.data?.days ?? null) : null;
+  const certAfter = dayCount.data?.sickCertificateAfterDays ?? SICK_CERT_AFTER_DAYS;
   // Sick leave of more than 3 days: the medical certificate goes with the
   // request (learner, 2026-11-05); it can't be approved without one.
   const sickLong =
-    type === 'sick' && !half && weekdaysBetween(startDate, endDate) > SICK_CERT_AFTER_DAYS;
+    type === 'sick' && !half && (days ?? weekdaysBetween(startDate, endDate)) > certAfter;
   const certProblem =
     certificate === null
       ? null
@@ -221,7 +241,13 @@ const RaiseLeaveModal = ({
 
         {goesTo && <p className='text-xs font-medium text-slate-600'>{goesTo}</p>}
         <p className='text-xs text-slate-500'>
-          Weekends and company holidays inside the range don’t count — Fri→Mon costs 2 days.
+          {days !== null && !half && (
+            <span className='font-medium text-slate-700'>
+              {days} working {days === 1 ? 'day' : 'days'}.{' '}
+            </span>
+          )}
+          Sundays, off Saturdays and company holidays inside the range don’t count; working
+          Saturdays do.
         </p>
         {noticeDays > 0 && (
           <p className='text-xs text-amber-700'>
@@ -235,7 +261,7 @@ const RaiseLeaveModal = ({
             <label className={labelClass}>
               Medical certificate{' '}
               {sickLong
-                ? `(required — sick leave of more than ${SICK_CERT_AFTER_DAYS} days)`
+                ? `(required — sick leave of more than ${certAfter} working days)`
                 : '(optional)'}
             </label>
             <input

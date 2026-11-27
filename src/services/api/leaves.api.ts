@@ -37,6 +37,12 @@ export const leavesApi = {
   /** Who a request of this type would go to (the same rule the backend raises with). */
   approvalRoute: async (type: LeaveRequest['type']): Promise<LeaveApprovalRoute> =>
     (await api.get<LeaveApprovalRoute>('/leaves/approval-route', { params: { type } })).data,
+  /** Working days in a full-day range — the server's own count (working Saturdays, holidays). */
+  dayCount: async (
+    startDate: string,
+    endDate: string,
+  ): Promise<{ days: number; sickCertificateAfterDays: number }> =>
+    (await api.get('/leaves/day-count', { params: { startDate, endDate } })).data,
   create: async (input: CreateLeaveRequestInput): Promise<LeaveRequest> =>
     (await api.post<LeaveRequest>('/leaves', input)).data,
   cancel: async (id: string): Promise<LeaveRequest> =>
