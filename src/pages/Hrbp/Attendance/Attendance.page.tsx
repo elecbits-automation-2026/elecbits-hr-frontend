@@ -32,6 +32,7 @@ const AttendancePage = () => {
   const [markDate, setMarkDate] = useState('');
   const [markIn, setMarkIn] = useState('09:30');
   const [markOut, setMarkOut] = useState('18:30');
+  const [markReason, setMarkReason] = useState('');
 
   // HR marks a missed day directly — recorded as `regularized`; a single-day
   // approved leave on that date is revoked and refunded by the backend.
@@ -42,10 +43,12 @@ const AttendancePage = () => {
         date: markDate,
         checkInAt: new Date(`${markDate}T${markIn}:00`).toISOString(),
         checkOutAt: new Date(`${markDate}T${markOut}:00`).toISOString(),
+        reason: markReason.trim(),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['org-attendance'] });
       setMarkDate('');
+      setMarkReason('');
     },
   });
 
@@ -208,8 +211,9 @@ const AttendancePage = () => {
       <div className='rounded-xl border border-slate-200 bg-white p-5'>
         <h2 className='mb-3 text-sm font-semibold text-slate-700'>Mark attendance</h2>
         <p className='mb-3 text-xs text-slate-500'>
-          For days someone worked but didn’t punch — recorded as regularized. A single-day approved
-          leave on that date is revoked and its balance refunded.
+          For days someone worked but didn’t punch — recorded as regularized and marked on their
+          calendar with your name and the reason. The employee and their manager get a notification.
+          A single-day approved leave on that date is revoked and its balance refunded.
         </p>
         <form
           onSubmit={(e) => {
@@ -255,6 +259,16 @@ const AttendancePage = () => {
             value={markOut}
             onChange={(e) => setMarkOut(e.target.value)}
             className='rounded-md border border-slate-300 px-3 py-2 text-sm'
+          />
+          <input
+            aria-label='Reason'
+            required
+            minLength={3}
+            maxLength={500}
+            placeholder='Reason (e.g. forgot to punch, phone died)'
+            value={markReason}
+            onChange={(e) => setMarkReason(e.target.value)}
+            className='min-w-64 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm'
           />
           <button
             type='submit'

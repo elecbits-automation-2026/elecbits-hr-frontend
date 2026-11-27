@@ -533,6 +533,9 @@ export interface AttendanceDay {
   /** The punch fixes' accuracy in metres; null without a fix. */
   checkInAccuracyM: number | null;
   checkOutAccuracyM: number | null;
+  /** When HR marked the day (source 'regularized'): why, and who. */
+  regularizedReason: string | null;
+  regularizedByName: string | null;
 }
 
 export interface AttendanceSummary {

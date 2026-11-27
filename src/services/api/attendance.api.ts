@@ -60,6 +60,8 @@ export const attendanceApi = {
     date: string;
     checkInAt: string;
     checkOutAt: string;
+    /** Required — shown to the employee and their manager on the day. */
+    reason: string;
   }) => (await api.post('/attendance/hr-mark', input)).data,
 
   // CSV export (HRBP or PR) — returns the raw CSV text.

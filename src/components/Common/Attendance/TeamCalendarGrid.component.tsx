@@ -1,4 +1,5 @@
 import type { AttendanceDay, EmployeeAttendance } from '@app-types/api.types';
+import { REGULARIZED_OUTLINE, regularizedNote } from '@utils/attendance';
 
 /**
  * The month wall: one row per person, one coloured cell per day (adopted from
@@ -42,6 +43,7 @@ const tooltip = (d: AttendanceDay): string => {
   const inAt = time(d.checkInAt);
   const outAt = time(d.checkOutAt);
   if (inAt) parts.push(`in ${inAt}${outAt ? ` · out ${outAt}` : ''}`);
+  if (d.source === 'regularized') parts.push(regularizedNote(d));
   return parts.join(' · ');
 };
 
@@ -127,7 +129,9 @@ const TeamCalendarGrid = ({ months, today }: { months: EmployeeAttendance[]; tod
                         title={tooltip(d)}
                         className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-xs tabular-nums ${
                           cell ? cell.cls : 'border border-slate-200 text-slate-500'
-                        } ${isToday ? 'ring-2 ring-brand-500 ring-offset-1' : ''}`}
+                        } ${isToday ? 'ring-2 ring-brand-500 ring-offset-1' : ''} ${
+                          d.source === 'regularized' ? REGULARIZED_OUTLINE : ''
+                        }`}
                       >
                         {Number(d.date.slice(8))}
                       </span>
@@ -150,6 +154,10 @@ const TeamCalendarGrid = ({ months, today }: { months: EmployeeAttendance[]; tod
         <span className='flex items-center gap-1.5'>
           <span className='h-2.5 w-2.5 rounded-md border border-slate-200' />
           No record
+        </span>
+        <span className='flex items-center gap-1.5'>
+          <span className={`h-2.5 w-2.5 rounded-sm bg-green-500 ${REGULARIZED_OUTLINE}`} />
+          Marked by HR (hover for the reason)
         </span>
         <span className='flex items-center gap-1.5'>
           <span className='h-1.5 w-1.5 rounded-full bg-blue-500' />

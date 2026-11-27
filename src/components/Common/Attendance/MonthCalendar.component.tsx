@@ -6,6 +6,7 @@ import type {
   CheckInTiming,
   CheckOutTiming,
 } from '@app-types/api.types';
+import { REGULARIZED_OUTLINE, regularizedNote } from '@utils/attendance';
 
 const STATUS_STYLES: Record<AttendanceDayStatus, string> = {
   none: 'bg-white text-slate-500',
@@ -76,6 +77,7 @@ const title = (d: AttendanceDay, isToday: boolean): string => {
   if (d.checkInTiming) parts.push(`in ${inTimingLabel[d.checkInTiming]}`);
   if (d.checkOutTiming) parts.push(`out ${outTimingLabel[d.checkOutTiming]}`);
   if (d.workedHours !== null) parts.push(`${d.workedHours}h`);
+  if (d.source === 'regularized') parts.push(regularizedNote(d));
   return parts.join(' · ');
 };
 
@@ -129,11 +131,15 @@ const DayDetail = ({
       rows.push([
         'Source',
         day.source === 'regularized'
-          ? 'regularized'
+          ? 'marked by HR (regularized)'
           : day.source === 'remote'
             ? 'remote (approved)'
             : 'office',
       ]);
+    }
+    if (day.source === 'regularized') {
+      rows.push(['Marked by', day.regularizedByName ?? 'HR']);
+      rows.push(['Reason', day.regularizedReason ?? 'not recorded']);
     }
     // How far each punch's location can be trusted (the browser's error radius).
     const acc = [
@@ -224,7 +230,7 @@ const MonthCalendar = ({
                   : STATUS_STYLES[d.status]
               } ${isToday ? 'font-semibold' : ''} ${
                 isSelected ? 'ring-2 ring-slate-700' : isToday ? 'ring-2 ring-brand-500' : ''
-              }`}
+              } ${d.source === 'regularized' ? REGULARIZED_OUTLINE : ''}`}
             >
               {Number(d.date.slice(8))}
               {d.checkInTiming && (
@@ -268,6 +274,10 @@ const MonthCalendar = ({
       )}
 
       <div className='flex flex-wrap gap-3 text-xs text-slate-500'>
+        <span className='flex items-center gap-1'>
+          <span className={`inline-block h-3 w-3 rounded bg-green-100 ${REGULARIZED_OUTLINE}`} />
+          Marked by HR
+        </span>
         {LEGEND.map((l) => (
           <span key={l.status} className='flex items-center gap-1'>
             <span className={`inline-block h-3 w-3 rounded ${STATUS_STYLES[l.status]}`} />
