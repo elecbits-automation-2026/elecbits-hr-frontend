@@ -547,6 +547,8 @@ export interface AttendanceSummary {
   weekend: number;
   lateIns: number;
   earlyOuts: number;
+  /** Days HR marked by hand (regularized) this month. */
+  regularized: number;
 }
 
 export interface MyAttendance {

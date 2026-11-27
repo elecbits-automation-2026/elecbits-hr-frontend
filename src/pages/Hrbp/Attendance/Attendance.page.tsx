@@ -159,6 +159,7 @@ const AttendancePage = () => {
                   <th className='py-2 pr-3 font-medium'>Remote</th>
                   <th className='py-2 pr-3 font-medium'>Late ins</th>
                   <th className='py-2 pr-3 font-medium'>Early outs</th>
+                  <th className='py-2 pr-3 font-medium'>Marked by HR</th>
                   <th className='py-2 font-medium'></th>
                 </tr>
               </thead>
@@ -180,6 +181,12 @@ const AttendancePage = () => {
                     </td>
                     <td className={`py-2 pr-3 ${t.summary.earlyOuts > 0 ? 'text-red-600' : ''}`}>
                       {t.summary.earlyOuts}
+                    </td>
+                    <td
+                      className='py-2 pr-3'
+                      title='Days HR marked by hand — hover the day in the calendar for the reason'
+                    >
+                      {t.summary.regularized}
                     </td>
                     <td className='py-2'>
                       <button
