@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AssistantLauncher } from '@components/Common/Assistant/AssistantDrawer.component';
 import { APP_SECTION } from '@constants/Common/auth/portal.constants';
 import { usePublicSettings } from '@hooks/Common/usePublicSettings.hook';
+import { assistantApi } from '@services/api/assistant.api';
 import {
   ADMIN_NAV,
   EMPLOYEE_NAV,
@@ -170,9 +171,17 @@ const PortalShell = ({ sectionLabel, children }: { sectionLabel: string; childre
   const hrItems = me ? hrItemsFor(me) : [];
   const showHr = me !== undefined && canEnterSection(me, APP_SECTION.hr) && hrItems.length > 0;
   const showAdmin = me !== undefined && canEnterSection(me, APP_SECTION.admin);
-  // HR Assistant: HR and managers, once the Admin switch is on (the server re-checks).
+  // HR Assistant: only for people it will answer — the server's own rule
+  // (switch on, HR or a manager), so Payroll / TA / OPS-only roles whose HR
+  // section has no people or attendance view don't get a button that refuses.
   const { assistantEnabled } = usePublicSettings();
-  const showAssistant = assistantEnabled && (!!me?.hasReports || showHr);
+  const assistantAccess = useQuery({
+    queryKey: ['assistant-access', me?.id],
+    queryFn: assistantApi.access,
+    enabled: assistantEnabled && !!me,
+    staleTime: 5 * 60_000,
+  });
+  const showAssistant = assistantEnabled && assistantAccess.data?.allowed === true;
 
   return (
     <div className='flex min-h-screen'>

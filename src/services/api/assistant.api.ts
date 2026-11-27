@@ -88,6 +88,10 @@ export const assistantApi = {
   },
 
   /** The offline buttons: one whitelisted read, answered without the model. */
+  /** Would the Assistant answer me? Same rule as chat (switch on, HR or a manager). */
+  access: async (): Promise<{ allowed: boolean }> =>
+    (await api.get<{ allowed: boolean }>('/assistant/access')).data,
+
   quick: async (question: AssistantQuickQuestion): Promise<AssistantQuickResult> =>
     (await api.post<AssistantQuickResult>('/assistant/quick', { question })).data,
 
